@@ -52,7 +52,8 @@ function allCorrectUpTo(maxId) {
   console.log('Caso 3 OK: ceiling =', result.ceilingLevel, '(correctamente se corta en el hueco de B1)');
 }
 
-// Caso 4: decideUnlocks -- los 3 sub-scores llegan a B2 -> OET y Roleplay se desbloquean
+// Caso 4: decideUnlocks -- los 3 sub-scores llegan a B2 -> OET se desbloquea y el
+// Speaking Assessment queda tipo 'OET' (agendar el roleplay)
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
@@ -61,23 +62,60 @@ function allCorrectUpTo(maxId) {
   };
   const unlocks = decideUnlocks(subScores);
   assert.equal(unlocks.oetUnlocked, true);
-  assert.equal(unlocks.roleplayUnlocked, true);
+  assert.equal(unlocks.speakingAssessmentType, 'OET');
+  assert.equal(unlocks.speakingAssessmentUnlocked, true);
   assert.equal(unlocks.steps2Unlocked, true);
-  console.log('Caso 4 OK: OET y Roleplay desbloqueados cuando los 3 sub-scores llegan a B2');
+  console.log("Caso 4 OK: OET desbloqueado y Speaking Assessment tipo 'OET' cuando los 3 sub-scores llegan a B2");
 }
 
-// Caso 5: grammar y listening en B2 pero writing se queda en B1 -> OET NO se desbloquea
+// Caso 5a: grammar y listening en B2 pero writing se queda en B1 -> OET NO se desbloquea.
+// STEPS 2 (reading + vocab médico) SÍ llega a B2 -> sigue en STEPS 2, sin sesión en vivo.
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
     listening: { ceilingLevel: 'B2' },
     writing: { cefrEstimate: 'B1' },
+    steps2: { ceilingLevel: 'B2' },
   };
   const unlocks = decideUnlocks(subScores);
   assert.equal(unlocks.oetUnlocked, false, 'writing en B1 (no llega a B1 alto) debe bloquear OET');
-  assert.equal(unlocks.roleplayUnlocked, false);
+  assert.equal(unlocks.steps2Ok, true);
+  assert.equal(unlocks.speakingAssessmentType, null, 'si STEPS 2 sí alcanza, no corresponde Speaking Assessment todavía');
   assert.equal(unlocks.steps2Unlocked, true, 'STEPS 2 siempre debe quedar disponible');
-  console.log('Caso 5 OK: writing insuficiente bloquea OET (y roleplay), STEPS 2 sigue disponible');
+  console.log('Caso 5a OK: writing insuficiente bloquea OET, pero STEPS 2 alcanza -> sigue en STEPS 2 sin sesión en vivo');
+}
+
+// Caso 5b: igual que 5a, pero el ceiling de STEPS 2 (reading + vocab médico) tampoco
+// llega a B2 -> el estudiante queda en English Level -> Speaking Assessment tipo 'English'
+{
+  const subScores = {
+    grammar: { ceilingLevel: 'B2' },
+    listening: { ceilingLevel: 'B2' },
+    writing: { cefrEstimate: 'B1' },
+    steps2: { ceilingLevel: 'A2' },
+  };
+  const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.oetUnlocked, false);
+  assert.equal(unlocks.steps2Ok, false);
+  assert.equal(unlocks.speakingAssessmentType, 'English', 'si ni OET ni STEPS 2 se alcanzan, corresponde el Speaking Assessment breve (English)');
+  assert.equal(unlocks.speakingAssessmentUnlocked, true);
+  console.log("Caso 5b OK: ni OET ni STEPS 2 se alcanzan -> Speaking Assessment tipo 'English' desbloqueado");
+}
+
+// Caso 6: STEPS 2 todavía no existe como módulo (subScores.steps2 llega null) -> no se
+// debe inventar un resultado; steps2Ok y speakingAssessmentType quedan en null ("pendiente")
+{
+  const subScores = {
+    grammar: { ceilingLevel: 'B1' },
+    listening: null,
+    writing: null,
+    steps2: null,
+  };
+  const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.oetUnlocked, false);
+  assert.equal(unlocks.steps2Ok, null, 'sin datos de STEPS 2 no se puede afirmar que sí ni que no');
+  assert.equal(unlocks.speakingAssessmentType, null, 'no se debe simular un Speaking Assessment sin datos reales');
+  console.log('Caso 6 OK: sin sub-score de STEPS 2 todavía, el resultado queda pendiente (null) en vez de simulado');
 }
 
 console.log('\nTodos los casos de prueba pasaron.');
