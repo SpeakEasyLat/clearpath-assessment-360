@@ -82,6 +82,14 @@ const selectedAnswer = typeof body.selected_answer === "string" ? body.selected_
 if (!sessionToken || !questionId) {
 return json({ error: "Faltan session_token o question_id." }, 400);
 }
+  // El token es un uuid en la base -- si no tiene ese formato, la query de
+//   abajo tira un error de Postgres ("invalid input syntax for type uuid")
+//   en vez de simplemente no encontrar nada. Lo cortamos aca como 401
+//   generico (sesion invalida), igual que si no existiera.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!UUID_RE.test(sessionToken)) {
+    return json({ error: "Sesion invalida o expirada. Volve a ingresar tu codigo de acceso." }, 401);
+  }
 
 const supabase = createClient(
 Deno.env.get("SUPABASE_URL"),
