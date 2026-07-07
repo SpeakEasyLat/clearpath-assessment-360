@@ -71,12 +71,22 @@ create table sub_scores (
 );
 
 -- 6. Estado de desbloqueo -----------------------------------------------------
+-- speaking_assessment_type resume a qué sesión en vivo (si alguna) quedó habilitado el
+-- estudiante, según la regla que definió Diana:
+--   * 'OET'     -> grammar+listening+writing (Nivel 1) superan el umbral B1 alto:
+--                  se agenda el Speaking Assessment / roleplay OET completo.
+--   * 'English' -> NO se alcanza OET Y el ceiling de reading + vocabulario médico de
+--                  STEPS 2 tampoco llega a steps2_min_cefr_level: el estudiante queda
+--                  en English Level y se agenda un Speaking Assessment breve en su lugar.
+--   * null      -> no corresponde sesión en vivo por ahora (o bien porque el estudiante
+--                  sigue con nivel para STEPS 2, o porque aún faltan sub-scores por rendir).
 create table unlock_state (
   attempt_id uuid primary key references attempts(id) on delete cascade,
   steps2_unlocked boolean not null default true,  -- obligatorio para todos tras Nivel 1
   oet_unlocked boolean not null default false,    -- true solo si grammar+listening+writing >= umbral B1 alto
-  roleplay_unlocked boolean not null default false, -- se habilita junto con oet_unlocked
+  speaking_assessment_type text check (speaking_assessment_type in ('English','OET')), -- null = sin sesión en vivo asignada todavía
   threshold_b1_alto int not null default 70,      -- % mínimo por sub-score para desbloquear OET (ajustable)
+  steps2_min_cefr_level text not null default 'B2', -- nivel CEFR mínimo (ceiling de reading + vocab médico) para considerar "capacitado para STEPS 2"
   updated_at timestamptz not null default now()
 );
 
@@ -108,10 +118,17 @@ create table writing_submissions (
   submitted_at timestamptz not null default now()
 );
 
--- 9. Roleplay oral (en vivo, no automático) ----------------------------------
-create table roleplay_bookings (
+-- 9. Speaking Assessment (sesión en vivo, no automática) ---------------------
+-- Cubre los dos tipos de sesión en vivo que puede terminar agendando un estudiante:
+--   * assessment_type = 'OET'     -> el roleplay OET completo (estudiante apto para OET).
+--   * assessment_type = 'English' -> un Speaking Assessment breve, para quien no
+--     alcanza ni el nivel de STEPS 2 (queda en English Level).
+-- (este nombre reemplaza al antiguo "roleplay_bookings": ahora es una sola tabla para
+-- cualquiera de las dos sesiones en vivo, distinguidas por assessment_type)
+create table speaking_assessment_bookings (
   id uuid primary key default gen_random_uuid(),
   attempt_id uuid not null references attempts(id) on delete cascade,
+  assessment_type text not null check (assessment_type in ('English','OET')),
   scheduled_at timestamptz,
   status text not null default 'pending' check (status in ('pending','scheduled','completed','no_show')),
   evaluator_score jsonb,
@@ -130,7 +147,7 @@ alter table unlock_state enable row level security;
 alter table audio_assets enable row level security;
 alter table audio_play_log enable row level security;
 alter table writing_submissions enable row level security;
-alter table roleplay_bookings enable row level security;
+alter table speaking_assessment_bookings enable row level security;
 
 -- El rol "anon" (frontend público) NO tiene policies de acceso directo a nada
 -- de esto salvo la vista student_facing_questions (las vistas heredan RLS de
