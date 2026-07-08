@@ -1,0 +1,109 @@
+{
+    "_meta": {
+          "module": "nivel1_listening",
+          "version": 1,
+          "note": "Este archivo es público y NO contiene respuestas correctas ni audios. Las respuestas se validan server-side vía la Edge Function submit-response, y los audios se sirven vía la Edge Function get-audio-url (con límite de reproducciones)."
+    },
+    "audios": [
+          {
+                  "audio_asset_id": "c3e4c5f6-5714-456a-a8b8-404a540915d0",
+                  "title": "En la cafetería",
+                  "cefr_level": "A2",
+                  "max_plays": 2,
+                  "questions": [
+                            { "id": "43714073-6060-48c3-9493-748dd00ef828", "position": 1, "answer_format": "multiple_choice", "question_text": "What does the customer want to eat?", "options": ["Ham sandwich", "Cheese sandwich", "Salad", "Cake"] },
+                            { "id": "01ba91be-c3f1-4fff-b693-c6bf130f0ebb", "position": 2, "answer_format": "multiple_choice", "question_text": "What does the customer want to drink?", "options": ["Tea", "Juice", "Coffee", "Water"] },
+                            { "id": "51190f36-303c-4712-b37b-2f492e6a2b08", "position": 3, "answer_format": "multiple_choice", "question_text": "How much is the order?", "options": ["$5", "$6", "$8", "$10"] },
+                            { "id": "39a1a26e-3e64-4c70-af72-b2bb47e51116", "position": 4, "answer_format": "multiple_choice", "question_text": "Where does the customer sit?", "options": ["Near the door", "Near the window", "At the counter", "Outside"] }
+                  ]
+          },
+          {
+                  "audio_asset_id": "56d22df6-c4b2-440f-8973-9dd8162caf8f",
+                  "title": "La rutina diaria de Laura",
+                  "cefr_level": "A2",
+                  "max_plays": 2,
+                  "questions": [
+                            { "id": "f1781397-704b-4cd8-80e7-a7863eb6c855", "position": 5, "answer_format": "multiple_choice", "question_text": "What time does Laura wake up?", "options": ["6:00", "7:00", "8:00", "9:00"] },
+                            { "id": "60e4989e-7a54-4542-a3d1-224116c6a0d6", "position": 6, "answer_format": "multiple_choice", "question_text": "How does Laura go to work?", "options": ["By car", "By bus", "By bike", "On foot"] },
+                            { "id": "da85e204-d1a4-4aa6-91fc-9b9f68d3b0e4", "position": 7, "answer_format": "multiple_choice", "question_text": "Where does Laura have lunch?", "options": ["At home", "At a small restaurant near the office", "At the park", "At the office"] },
+                            { "id": "c8587d47-0fd5-49ec-b048-a6e0abe901b9", "position": 8, "answer_format": "multiple_choice", "question_text": "What does Laura usually eat for breakfast?", "options": ["Eggs", "Toast", "Cereal", "Fruit"] }
+                  ]
+          },
+          {
+                  "audio_asset_id": "6abe07c0-1601-445b-b7d5-689f2991ea2b",
+                  "title": "Membresía del gimnasio",
+                  "cefr_level": "B1",
+                  "max_plays": 2,
+                  "questions": [
+                            { "id": "80478b1b-c761-4aa4-bf0f-bca6110bc1ce", "position": 9, "answer_format": "multiple_choice", "question_text": "How much is the annual membership plan?", "options": ["$45", "$70", "$480", "$520"] },
+                            { "id": "c35e7177-b080-4184-8730-9e07998cf186", "position": 10, "answer_format": "multiple_choice", "question_text": "What is included in the monthly plan?", "options": ["Pool and group classes", "Only the pool", "Only group classes", "Neither"] },
+                            { "id": "50ef0db4-0a33-4b0b-835e-55d6636bd2ba", "position": 11, "answer_format": "multiple_choice", "question_text": "What time does the gym open on Saturdays?", "options": ["6:00 a.m.", "8:00 a.m.", "9:00 a.m.", "11:00 a.m."] },
+                            { "id": "ec457a90-014d-4967-a255-961afca139d5", "position": 12, "answer_format": "multiple_choice", "question_text": "What happens if someone cancels the annual plan early?", "options": ["There is no penalty", "They lose access immediately", "They pay a $70 fee", "They get a partial refund"] }
+                  ]
+          },
+          {
+                  "audio_asset_id": "08fe2e1a-c8c3-4df7-83e0-7ad659de65ae",
+                  "title": "Reserva de hotel",
+                  "cefr_level": "B1",
+                  "max_plays": 2,
+                  "questions": [
+                            { "id": "84b36832-da56-4796-87b6-2677222f371e", "position": 13, "answer_format": "multiple_choice", "question_text": "How much is the sea-view suite per night?", "options": ["$95", "$140", "$107", "$165"] },
+              { "id": "dfa36ec6-5194-4035-a3eb-624ca95ed63f", "position": 14, "answer_format": "multiple_choice", "question_text": "When is breakfast included for free?", "options": ["With the double room", "With the suite", "With both rooms", "With neither room"] },
+        { "id": "9aec47be-1637-4afb-b513-b9b0b6186b81", "position": 15, "answer_format": "multiple_choice", "question_text": "What is required to get free parking?", "options": ["Staying more than two nights", "Paying an extra fee", "Booking directly with the hotel", "Requesting it at check-in"] },
+        { "id": "d926fe9a-55b2-440a-901c-2325049e9e39", "position": 16, "answer_format": "multiple_choice", "question_text": "What time is check-out?", "options": ["3:00 p.m.", "1:00 p.m.", "11:00 a.m.", "12:00 p.m."] }
+]
+},
+    {
+            "audio_asset_id": "d91781e1-23fe-4836-85eb-e97d960287c1",
+            "title": "Opinión sobre el trabajo remoto",
+            "cefr_level": "B2",
+            "max_plays": 2,
+            "questions": [
+                      { "id": "4dd24a41-8cdb-48e3-ab1d-5868d5abbc75", "position": 17, "answer_format": "multiple_choice", "question_text": "What is the speaker mainly talking about?", "options": ["How to find a remote job", "Their changing opinion about working from home", "The history of remote work", "How to organize a home office"] },
+                      { "id": "83c90d8d-1622-4e70-8874-e01c893ddffc", "position": 18, "answer_format": "multiple_choice", "question_text": "According to the speaker, what was the biggest unexpected downside of working from home?", "options": ["Missing colleagues", "Poor internet connection", "Difficulty separating work and personal life", "Lack of motivation"] },
+                      { "id": "9e8c3059-3e79-4878-9ad9-d4248f862de1", "position": 19, "answer_format": "multiple_choice", "question_text": "What can be inferred about the speaker's current work arrangement?", "options": ["They work from home five days a week", "They work in the office five days a week", "They split their week between home and the office", "They are looking for a new job"] },
+                      { "id": "2c9a1cd9-79f9-4afb-9607-2d89b384b962", "position": 20, "answer_format": "multiple_choice", "question_text": "What does the speaker suggest to someone starting a fully remote job?", "options": ["Avoid remote work if possible", "Work as many hours as possible", "Set clear boundaries from the beginning", "Ask to go hybrid immediately"] }
+]
+    },
+    {
+            "audio_asset_id": "4f7fb3b4-ebab-4f38-9df4-7f43c3dc3014",
+            "title": "La importancia de dormir bien",
+            "cefr_level": "B2",
+            "max_plays": 2,
+            "questions": [
+                      { "id": "f78d3334-0034-4a79-b6eb-8bd65df485a3", "position": 21, "answer_format": "multiple_choice", "question_text": "What is the main topic of this talk?", "options": ["How to fall asleep faster", "Why the speaker changed their attitude toward sleep", "The science of dreams", "A comparison of sleep habits around the world"] },
+        { "id": "f8f47772-a97c-4341-bc8a-29f5e6541efa", "position": 22, "answer_format": "multiple_choice", "question_text": "What convinced the speaker to take sleep more seriously?", "options": ["Advice from a doctor", "A book about health", "Noticing the effect on their own performance at work", "A sleep-tracking app"] },
+        { "id": "f70e8e6d-432c-4bdc-bd2f-7b9c03defce3", "position": 23, "answer_format": "multiple_choice", "question_text": "Why does the speaker say lack of sleep is easy to ignore?", "options": ["Because it does not feel dangerous right away", "Because most people do not know it is unhealthy", "Because it only affects athletes", "Because doctors do not warn people about it"] },
+        { "id": "1eb5355c-2ecf-4ee0-93ea-8c28cf4ed505", "position": 24, "answer_format": "multiple_choice", "question_text": "What is the speaker's overall opinion by the end of the talk?", "options": ["Everyone needs exactly eight hours of sleep", "Society should take sleep more seriously than it does", "Sleep is less important than diet", "Working late is generally a good habit"] }
+]
+},
+    {
+            "audio_asset_id": "fe01fa27-feb5-452f-a655-2eae6aeb450c",
+            "title": "Historia clínica: síntomas gripales",
+            "cefr_level": "C1",
+            "max_plays": 2,
+            "case_notes_heading": "PATIENT NOTES",
+            "questions": [
+                      { "id": "512acdff-7c14-4ba1-a0d0-6c473468762f", "position": 25, "answer_format": "note_completion", "question_text": "Presenting complaint: Fever and sore throat, for ___ days", "options": [] },
+                      { "id": "9c686613-f0b3-4b75-a68f-b6281e336e50", "position": 26, "answer_format": "note_completion", "question_text": "History of presenting complaint — Temperature recorded: ___ °C", "options": [] },
+        { "id": "d17e012c-2437-4685-8bc2-49d05bd8a3fd", "position": 27, "answer_format": "note_completion", "question_text": "Medication history — Taking: ___", "options": [] },
+        { "id": "7442e279-cd52-4db7-9ec7-1bcaa43e7b76", "position": 28, "answer_format": "note_completion", "question_text": "Allergies — Allergic to: ___", "options": [] },
+        { "id": "cc41d6e3-0125-4ee2-a431-c9bad827f5c5", "position": 29, "answer_format": "note_completion", "question_text": "Social / contact history — Recent contact with illness: ___", "options": [] }
+]
+},
+    {
+            "audio_asset_id": "c5c2e96d-904c-4963-89fd-82608d03b617",
+            "title": "Historia clínica: esguince de tobillo",
+            "cefr_level": "C1",
+            "max_plays": 2,
+            "case_notes_heading": "PATIENT NOTES",
+            "questions": [
+                      { "id": "c0e0136a-8fa6-468d-a21f-4c613e48b6e2", "position": 30, "answer_format": "note_completion", "question_text": "Presenting complaint: ___ ankle, while playing football", "options": [] },
+                      { "id": "95fca138-86a3-4576-a746-f477324d5762", "position": 31, "answer_format": "note_completion", "question_text": "Current pain score: ___ / 10", "options": [] },
+        { "id": "6d005a7b-ccbc-4b42-b7d5-0e45e4f89678", "position": 32, "answer_format": "note_completion", "question_text": "Weight-bearing status: only with ___", "options": [] },
+        { "id": "51ea10f4-4898-40cc-8e38-11dfed737678", "position": 33, "answer_format": "note_completion", "question_text": "Previous injury to same ankle: ___ ago", "options": [] },
+        { "id": "5426060e-c127-4ac4-955c-6d5fdbfc37b8", "position": 34, "answer_format": "note_completion", "question_text": "Self-treatment: ___ and ibuprofen", "options": [] }
+]
+}
+]
+}
