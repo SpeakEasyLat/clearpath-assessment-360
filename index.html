@@ -24,10 +24,10 @@
 NOTA DE DESARROLLO (para Diana): esta pantalla ya valida el código contra Supabase de
 verdad (Edge Function <code>login</code>). Después del login vas a un formulario corto
 sin calificar (nivel autopercibido, disponibilidad horaria) y recién ahí arranca Nivel
-1. Ojo: Nivel 1 (nivel1.html) todavía corrige del lado del cliente con el archivo JSON
-público, que ya no tiene las respuestas correctas (las movimos a Supabase por
-seguridad) -- así que por ahora el examen en sí va a marcar todo como incorrecto hasta
-que conectemos ese último paso al Edge Function <code>submit-response</code>.
+1. Grammar (nivel1.html) ya guarda cada respuesta vía el Edge Function
+<code>submit-response</code>, igual que Listening -- la corrección, el ceiling CEFR y
+el desbloqueo de OET/STEPS2 se calculan 100% server-side, y esta pantalla nunca ve
+aciertos ni puntaje en vivo.
 </p>
 </div>
 <script>
