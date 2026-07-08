@@ -1,13 +1,27 @@
-import { computeGrammarCefr, decideUnlocks, CEFR_ORDER } from './scoring.js';
+// Nivel 1 — Grammar.
+//
+// Cada respuesta se guarda vía submit-response, que corrige server-side contra
+// question_bank.correct_answer -- el navegador nunca lo ve (data/nivel1-grammar.json
+// solo trae el id real de question_bank, el texto y las opciones, nunca la respuesta
+// correcta). A pedido explícito de Diana, esta pantalla NO muestra ningún acierto ni
+// puntaje en vivo, ni nivel CEFR alcanzado -- solo confirma que se guardó cada
+// respuesta y, al final, que el módulo quedó completo. El cálculo real del ceiling
+// CEFR y el desbloqueo de OET/STEPS2 los hace submit-response server-side (mismo
+// patrón que Listening).
+//
+// Cronómetro: el estudiante tiene 20 minutos en total para las 44 preguntas. Si se
+// acaba el tiempo, igual guardamos todo lo que quede pendiente (la pregunta actual, si
+// tenía una respuesta elegida sin confirmar, y las que nunca llegó a ver, como "sin
+// respuesta") para que las 44 preguntas queden registradas en Supabase -- si faltan
+// filas en student_responses, el Edge Function nunca considera terminado el módulo y
+// el desbloqueo de OET queda trabado para siempre (este era justamente el bug
+// original: el frontend nunca llamaba a submit-response).
+
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
 const TIME_LIMIT_SECONDS = 20 * 60; // 20 minutos, número redondo (ajustado por Diana)
 const IDK_LABEL = "I don't know the answer.";
-
-// Listening y Writing (Nivel 1) y el módulo STEPS 2 todavía no están construidos en esta
-// app (ver backlog en README.md). Mientras eso no exista, el gate real de OET y de STEPS 2
-// no se puede calcular de verdad -- este flag es el único lugar que hay que cambiar a
-// `true` cuando esos módulos ya alimenten decideUnlocks() con datos reales.
-const LISTENING_WRITING_STEPS2_BUILT = false;
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -19,17 +33,16 @@ const progressFill = document.getElementById('progressFill');
 let grammarData = null;
 let questions = [];
 let currentIndex = 0;
-const answers = new Map(); // questionId -> selected option string
+const answers = new Map(); // questionId (uuid) -> opción elegida, todavía no confirmada guardada
+const savedAnswers = new Map(); // questionId (uuid) -> última respuesta ya guardada en el server
 let timeRemaining = TIME_LIMIT_SECONDS;
 let timerHandle = null;
 let finished = false;
+let saving = false;
 
 async function init() {
-  const studentName = sessionStorage.getItem('cp360_student_name');
-  if (!studentName) {
-    window.location.href = 'index.html';
-    return;
-  }
+  const sessionToken = sessionTokenOrRedirect();
+  if (!sessionToken) return;
 
   const res = await fetch('data/nivel1-grammar.json');
   grammarData = await res.json();
@@ -37,6 +50,15 @@ async function init() {
 
   startTimer();
   renderQuestion();
+}
+
+function sessionTokenOrRedirect() {
+  const token = sessionStorage.getItem('cp360_session_token');
+  if (!token) {
+    window.location.href = 'index.html';
+    return null;
+  }
+  return token;
 }
 
 function startTimer() {
@@ -68,12 +90,13 @@ function renderQuestion() {
 
   quizArea.innerHTML = `
     <div class="card question-card">
-      <div class="q-index">CEFR objetivo: ${q.cefrLevel || bandForId(q.id)}</div>
-      <div class="q-text">${escapeHtml(q.text)}</div>
+      <div class="q-index">CEFR objetivo: ${q.cefr_level}</div>
+      <div class="q-text">${escapeHtml(q.question_text)}</div>
       <div id="optionsList"></div>
+      <p class="note" id="saveError" style="color:#c62828; display:none;"></p>
       <div class="nav-row">
-        <button class="secondary" id="prevBtn" ${currentIndex === 0 ? 'disabled' : ''}>Anterior</button>
-        <button class="primary" id="nextBtn" ${selected ? '' : 'disabled'}>
+        <button class="secondary" id="prevBtn" type="button" ${currentIndex === 0 ? 'disabled' : ''}>Anterior</button>
+        <button class="primary" id="nextBtn" type="button" ${selected ? '' : 'disabled'}>
           ${currentIndex === questions.length - 1 ? 'Finalizar' : 'Siguiente'}
         </button>
       </div>
@@ -83,6 +106,7 @@ function renderQuestion() {
   const optionsList = document.getElementById('optionsList');
   allOptions.forEach((opt) => {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'option' + (opt === IDK_LABEL ? ' idk' : '') + (selected === opt ? ' selected' : '');
     btn.textContent = opt;
     btn.addEventListener('click', () => {
@@ -95,114 +119,117 @@ function renderQuestion() {
   document.getElementById('prevBtn').addEventListener('click', () => {
     if (currentIndex > 0) { currentIndex--; renderQuestion(); }
   });
-  document.getElementById('nextBtn').addEventListener('click', () => {
-    if (currentIndex < questions.length - 1) {
+  document.getElementById('nextBtn').addEventListener('click', handleNext);
+}
+
+async function handleNext() {
+  if (saving) return;
+  const sessionToken = sessionTokenOrRedirect();
+  if (!sessionToken) return;
+
+  const q = questions[currentIndex];
+  const selected = answers.get(q.id);
+  const isLast = currentIndex === questions.length - 1;
+  const nextBtn = document.getElementById('nextBtn');
+  const errorEl = document.getElementById('saveError');
+
+  saving = true;
+  nextBtn.disabled = true;
+  nextBtn.textContent = 'Guardando...';
+  errorEl.style.display = 'none';
+
+  try {
+    const result = await saveAnswer(sessionToken, q, selected);
+    if (result === 'unauthorized') return; // ya redirigido a index.html
+    if (result === 'error') {
+      errorEl.textContent = 'No pudimos guardar tu respuesta. Intenta de nuevo.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    savedAnswers.set(q.id, selected);
+    if (isLast) {
+      finishQuiz(false);
+    } else {
       currentIndex++;
       renderQuestion();
-    } else {
-      finishQuiz(false);
     }
-  });
+  } finally {
+    saving = false;
+    const btn = document.getElementById('nextBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = currentIndex === questions.length - 1 ? 'Finalizar' : 'Siguiente';
+    }
+  }
 }
 
-function bandForId(id) {
-  const band = grammarData.cefrRanges.find((b) => id >= b.range[0] && id <= b.range[1]);
-  return band ? band.level : '?';
+// Devuelve 'ok', 'error' (fallo de red o del server) o 'unauthorized' (sesión vencida,
+// ya redirige a index.html).
+async function saveAnswer(sessionToken, q, selected) {
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/submit-response`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({
+        session_token: sessionToken,
+        question_id: q.id,
+        selected_answer: typeof selected === 'string' && selected !== IDK_LABEL ? selected : null,
+      }),
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        window.location.href = 'index.html';
+        return 'unauthorized';
+      }
+      return 'error';
+    }
+    return 'ok';
+  } catch (err) {
+    return 'error';
+  }
 }
 
-function finishQuiz(timedOut) {
+async function finishQuiz(timedOut) {
   if (finished) return;
   finished = true;
   clearInterval(timerHandle);
 
-  const responses = new Map();
-  for (const q of questions) {
-    const selected = answers.get(q.id);
-    responses.set(q.id, selected !== undefined && selected !== IDK_LABEL && selected === q.correct);
+  if (timedOut) {
+    const sessionToken = sessionStorage.getItem('cp360_session_token');
+    if (sessionToken) {
+      // Guardamos todo lo que haya quedado pendiente: la pregunta donde estaba parado
+      // el estudiante (si había elegido algo sin confirmar) y todas las que nunca
+      // llegó a ver (sin respuesta = se cuenta como incorrecta, igual que en un examen
+      // real que corta al llegar el tiempo). Necesario para que las 44 preguntas
+      // queden guardadas y el módulo se marque completo server-side.
+      for (let i = currentIndex; i < questions.length; i++) {
+        const q = questions[i];
+        if (savedAnswers.has(q.id)) continue;
+        const selected = answers.get(q.id);
+        const result = await saveAnswer(sessionToken, q, selected);
+        if (result === 'unauthorized') return; // ya redirigido a index.html
+        savedAnswers.set(q.id, selected);
+      }
+    }
   }
 
-  const result = computeGrammarCefr(questions, responses, grammarData.cefrRanges);
-
-  // Mock de sub-scores: listening, writing y STEPS 2 (reading + vocab médico) todavía no
-  // están construidos en la app, así que decideUnlocks() los recibe en null -- el gate
-  // real de OET y de STEPS 2 queda marcado explícitamente como "pendiente" en vez de
-  // simular un resultado que no existe (ver LISTENING_WRITING_STEPS2_BUILT arriba).
-  const unlockPreview = decideUnlocks({
-    grammar: { ceilingLevel: result.ceilingLevel },
-    listening: null,
-    writing: null,
-    steps2: null,
-  });
-
-  renderResults(result, unlockPreview, timedOut);
+  renderDone(timedOut);
 }
 
-function renderResults(result, unlockPreview, timedOut) {
+function renderDone(timedOut) {
   quizArea.style.display = 'none';
   resultArea.style.display = 'block';
-
-  const bandsHtml = CEFR_ORDER.map((level) => {
-    const b = result.perBand[level];
-    if (!b || b.total === 0) return '';
-    return `
-      <div class="result-band">
-        <span>${level} (${b.correct}/${b.total})</span>
-        <span class="badge ${b.passed ? 'pass' : 'fail'}">${b.percent}% ${b.passed ? 'OK' : 'insuficiente'}</span>
-      </div>`;
-  }).join('');
-
-  const oetRow = !LISTENING_WRITING_STEPS2_BUILT
-    ? { cls: 'pending', text: 'Pendiente — falta rendir Listening y Writing del Nivel 1' }
-    : unlockPreview.oetUnlocked
-      ? { cls: 'unlocked', text: 'Desbloqueado' }
-      : { cls: 'locked', text: 'Bloqueado — no se alcanzó el umbral de B1 alto en los 3 sub-scores' };
-
-  let speakingRow;
-  if (!LISTENING_WRITING_STEPS2_BUILT) {
-    speakingRow = { cls: 'pending', text: 'Pendiente — depende de Listening, Writing (Nivel 1) y STEPS 2' };
-  } else if (unlockPreview.speakingAssessmentType === 'OET') {
-    speakingRow = { cls: 'unlocked', text: 'Desbloqueado — agendar Speaking Assessment (OET, roleplay completo)' };
-  } else if (unlockPreview.speakingAssessmentType === 'English') {
-    speakingRow = { cls: 'unlocked', text: 'Desbloqueado — agendar Speaking Assessment breve (English Level)' };
-  } else {
-    speakingRow = { cls: 'locked', text: 'No corresponde por ahora — continúa en STEPS 2' };
-  }
+  progressFill.style.width = '100%';
+  progressLabel.textContent = `Pregunta ${questions.length} / ${questions.length}`;
 
   resultArea.innerHTML = `
     <div class="card">
-      <h3>${timedOut ? '⏱ Se acabó el tiempo — resultados con lo respondido' : 'Nivel 1 completado'}</h3>
-      <p>Nivel CEFR alcanzado (grammar): <strong>${result.ceilingLevel || 'por debajo de A1'}</strong>
-         &nbsp;·&nbsp; Acierto general: <strong>${result.overallPercent}%</strong></p>
-      ${bandsHtml}
-    </div>
-
-    <div class="card">
-      <h3>Próximos módulos</h3>
-      <div class="module-row">
-        <span class="module-name">STEPS 2 (lectura y diagnóstico médico)</span>
-        <span class="module-status unlocked">Desbloqueado — obligatorio para todos</span>
-      </div>
-      <div class="module-row">
-        <span class="module-name">OET Skills</span>
-        <span class="module-status ${oetRow.cls}">${oetRow.text}</span>
-      </div>
-      <div class="module-row">
-        <span class="module-name">Speaking Assessment (en vivo)</span>
-        <span class="module-status ${speakingRow.cls}">${speakingRow.text}</span>
-      </div>
-      <p class="note">
-        NOTA DE DESARROLLO (para Diana): el gate real de OET necesita los sub-scores de
-        listening y writing, y la decisión de "English Level vs STEPS 2" para el Speaking
-        Assessment necesita el sub-score de STEPS 2 (reading + vocabulario médico) — ninguno
-        de esos módulos está construido todavía en esta versión. Por eso arriba figura
-        "Pendiente" en vez de un desbloqueo simulado — no queríamos mostrar un resultado que
-        la app todavía no puede calcular de verdad. Regla completa: si el estudiante alcanza
-        el umbral de B1 alto en grammar+listening+writing, se agenda el Speaking Assessment
-        tipo OET (roleplay); si no lo alcanza y el ceiling de reading + vocabulario médico de
-        STEPS 2 tampoco llega a B2, queda en English Level y se agenda un Speaking Assessment
-        breve tipo English en su lugar; si no alcanza OET pero sí tiene nivel para STEPS 2,
-        simplemente continúa ahí, sin sesión en vivo por ahora.
-      </p>
+      <h3>${timedOut ? 'Se acabó el tiempo — guardamos lo que respondiste' : 'Nivel 1 — Grammar completado'}</h3>
+      <p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- Diana revisa los resultados completos más adelante.</p>
     </div>
   `;
 }
