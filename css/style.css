@@ -200,3 +200,68 @@ font-size: 0.85rem;
 color: var(--gray-600);
 margin-top: 6px;
 }
+
+
+/* --- Nivel 1 · Listening --------------------------------------------------- */
+audio.player {
+width: 100%;
+margin-bottom: 16px;
+}
+.audio-controls {
+display: flex;
+align-items: center;
+gap: 14px;
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+button.audio-play {
+background: var(--teal-dark);
+color: #fff;
+border: none;
+padding: 12px 20px;
+border-radius: var(--radius);
+font-size: 0.95rem;
+font-weight: 700;
+font-family: var(--font-heading);
+cursor: pointer;
+}
+button.audio-play:hover:not(:disabled) { background: var(--teal); }
+button.audio-play:disabled {
+background: var(--gray-300);
+cursor: not-allowed;
+}
+.plays-remaining {
+font-size: 0.85rem;
+color: var(--gray-600);
+}
+.case-notes-heading {
+font-family: var(--font-heading);
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.04em;
+font-size: 0.8rem;
+color: var(--gray-600);
+border-bottom: 1px solid var(--gray-300);
+padding-bottom: 8px;
+margin-bottom: 16px;
+margin-top: 20px;
+}
+.note-row {
+font-size: 1rem;
+line-height: 2.1;
+margin-bottom: 4px;
+}
+input.blank-input {
+width: 150px;
+padding: 6px 10px;
+border: 1px solid var(--gray-300);
+border-radius: 8px;
+font-size: 0.95rem;
+font-family: var(--font-body);
+margin: 0 4px;
+}
+input.blank-input:focus {
+outline: none;
+border-color: var(--teal);
+box-shadow: 0 0 0 3px var(--teal-light);
+}
