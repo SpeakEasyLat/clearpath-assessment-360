@@ -1,6 +1,6 @@
 import { computeGrammarCefr, decideUnlocks, CEFR_ORDER } from './scoring.js';
 
-const TIME_LIMIT_SECONDS = 44 * 25; // 44 preguntas x 25 segundos c/u = 18:20 (ajustado por Diana)
+const TIME_LIMIT_SECONDS = 20 * 60; // 20 minutos, número redondo (ajustado por Diana)
 const IDK_LABEL = "I don't know the answer.";
 
 // Listening y Writing (Nivel 1) y el módulo STEPS 2 todavía no están construidos en esta
