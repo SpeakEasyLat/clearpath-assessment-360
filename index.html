@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speak Easy - Assessment 360</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+</head>
+<body>
+<div class="wrap">
+<div class="brand">Speak Easy - ClearPath</div>
+<div class="subtitle">Assessment 360 -- English Level - STEPS 2 - OET Skills</div>
+<div class="card">
+<p>Ingresa con el código de acceso que recibiste después de confirmar tu inscripción.</p>
+<label for="fullName">Nombre completo</label>
+<input type="text" id="fullName" placeholder="Ej: María Fernanda Gómez" />
+<label for="accessCode">Código de acceso</label>
+<input type="text" id="accessCode" placeholder="Ej: CP-2026-XXXX" />
+<button class="primary" id="startBtn">Continuar</button>
+<p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
+</div>
+<p class="note">
+NOTA DE DESARROLLO (para Diana): esta pantalla ya valida el código contra Supabase de
+verdad (Edge Function <code>login</code>). Después del login vas a un formulario corto
+sin calificar (nivel autopercibido, disponibilidad horaria) y recién ahí arranca Nivel
+1. Ojo: Nivel 1 (nivel1.html) todavía corrige del lado del cliente con el archivo JSON
+público, que ya no tiene las respuestas correctas (las movimos a Supabase por
+seguridad) -- así que por ahora el examen en sí va a marcar todo como incorrecto hasta
+que conectemos ese último paso al Edge Function <code>submit-response</code>.
+</p>
+</div>
+<script>
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+const startBtn = document.getElementById('startBtn');
+const errorMsg = document.getElementById('errorMsg');
+function showError(msg) {
+errorMsg.textContent = msg;
+errorMsg.style.display = 'block';
+}
+startBtn.addEventListener('click', async () => {
+const fullName = document.getElementById('fullName').value.trim();
+const accessCode = document.getElementById('accessCode').value.trim();
+errorMsg.style.display = 'none';
+if (!fullName || !accessCode) {
+showError('Completa tu nombre y el código de acceso para continuar.');
+return;
+}
+startBtn.disabled = true;
+startBtn.textContent = 'Verificando...';
+try {
+const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/login`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+'apikey': SUPABASE_ANON_KEY,
+},
+body: JSON.stringify({ access_code: accessCode }),
+});
+const data = await res.json();
+if (!res.ok) {
+showError(data.error || 'No pudimos validar tu código. Intenta de nuevo.');
+startBtn.disabled = false;
+startBtn.textContent = 'Continuar';
+return;
+}
+sessionStorage.setItem('cp360_session_token', data.session_token);
+sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
+window.location.href = 'intake.html';
+} catch (err) {
+showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
+startBtn.disabled = false;
+startBtn.textContent = 'Continuar';
+}
+});
+</script>
+</body>
+</html>
