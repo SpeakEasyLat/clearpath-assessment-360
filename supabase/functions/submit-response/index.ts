@@ -1,11 +1,19 @@
 // Edge Function: submit-response
 //
 // Recibe la respuesta que el estudiante elige para una pregunta (session_token +
-// question_id + selected_answer), la corrige contra question_bank.correct_answer
-// (que el navegador nunca ve), la guarda, y -- a pedido explicito de Diana -- NO
-// devuelve si acerto o no, ni ningun puntaje parcial. El estudiante solo se entera
-// de "guardado, pasa a la siguiente" (o "se termino este modulo"), nunca de su
-// desempeno en vivo.
+// question_id + selected_answer), la corrige contra question_bank.correct_answer /
+// accepted_answers (que el navegador nunca ve), la guarda, y -- a pedido explicito
+// de Diana -- NO devuelve si acerto o no, ni ningun puntaje parcial. El estudiante
+// solo se entera de "guardado, pasa a la siguiente" (o "se termino este modulo"),
+// nunca de su desempeno en vivo.
+//
+// Soporta dos formatos de pregunta (question_bank.answer_format):
+//   - multiple_choice: selected_answer debe coincidir con correct_answer
+//     (comparacion insensible a mayusculas/espacios).
+//   - note_completion: selected_answer se compara contra CUALQUIERA de las
+//     variantes en accepted_answers (ej. "4" y "four" son ambas correctas),
+//     tambien insensible a mayusculas/espacios. Si accepted_answers viene
+//     vacio o null, se usa correct_answer como unica variante valida.
 //
 // Cuando la respuesta guardada completa todas las preguntas del modulo para este
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
@@ -29,11 +37,14 @@ headers: { "Content-Type": "application/json", ...CORS_HEADERS },
 });
 }
 
+// --- Mismos umbrales y algoritmo que js/scoring.js (mantenerlos sincronizados) ----
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 const PERCENT_THRESHOLD = 70;
 const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
 
+// module (question_bank) -> skill (sub_scores). oet_listening/oet_reading todavia
+// no tienen skill propio en el esquema actual, asi que no generan sub_score por ahora.
 const MODULE_TO_SKILL = {
 nivel1_grammar: "grammar",
 nivel1_listening: "listening",
@@ -60,6 +71,29 @@ break;
 return ceilingLevel;
 }
 
+// Normaliza para comparar respuestas de forma insensible a mayusculas/espacios
+// (ej. " Four " === "four", "38.5" === "38.5 "). No toca acentos porque las
+// respuestas de Listening son en ingles.
+function normalizeAnswer(value) {
+return typeof value === "string" ? value.trim().toLowerCase().replace(/\s+/g, " ") : "";
+}
+
+function gradeAnswer(question, selectedAnswer) {
+if (selectedAnswer === null || selectedAnswer === undefined) return false;
+const normalizedSelected = normalizeAnswer(selectedAnswer);
+if (!normalizedSelected) return false;
+
+if (question.answer_format === "note_completion") {
+const variants = Array.isArray(question.accepted_answers) && question.accepted_answers.length > 0
+? question.accepted_answers
+: [question.correct_answer];
+return variants.some((variant) => normalizeAnswer(variant) === normalizedSelected);
+}
+
+// multiple_choice (default)
+return normalizedSelected === normalizeAnswer(question.correct_answer);
+}
+
 Deno.serve(async (req) => {
 if (req.method === "OPTIONS") {
 return new Response(null, { headers: CORS_HEADERS });
@@ -82,14 +116,14 @@ const selectedAnswer = typeof body.selected_answer === "string" ? body.selected_
 if (!sessionToken || !questionId) {
 return json({ error: "Faltan session_token o question_id." }, 400);
 }
-  // El token es un uuid en la base -- si no tiene ese formato, la query de
-//   abajo tira un error de Postgres ("invalid input syntax for type uuid")
-//   en vez de simplemente no encontrar nada. Lo cortamos aca como 401
-//   generico (sesion invalida), igual que si no existiera.
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  if (!UUID_RE.test(sessionToken)) {
-    return json({ error: "Sesion invalida o expirada. Volve a ingresar tu codigo de acceso." }, 401);
-  }
+// El token es un uuid en la base -- si no tiene ese formato, la query de
+// abajo tira un error de Postgres ("invalid input syntax for type uuid")
+// en vez de simplemente no encontrar nada. Lo cortamos aca como 401
+// generico (sesion invalida), igual que si no existiera.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!UUID_RE.test(sessionToken)) {
+return json({ error: "Sesion invalida o expirada. Volve a ingresar tu codigo de acceso." }, 401);
+}
 
 const supabase = createClient(
 Deno.env.get("SUPABASE_URL"),
@@ -115,7 +149,7 @@ const attemptId = session.attempt_id;
 // 2. Buscar la pregunta (con la respuesta correcta, invisible para el navegador).
 const { data: question, error: questionError } = await supabase
 .from("question_bank")
-.select("id, module, cefr_level, correct_answer")
+.select("id, module, cefr_level, correct_answer, answer_format, accepted_answers")
 .eq("id", questionId)
 .maybeSingle();
 
@@ -127,7 +161,7 @@ if (!question) {
 return json({ error: "Pregunta no encontrada." }, 404);
 }
 
-const isCorrect = selectedAnswer !== null && selectedAnswer === question.correct_answer;
+const isCorrect = gradeAnswer(question, selectedAnswer);
 
 // 3. Guardar la respuesta (upsert: si el estudiante vuelve atras y cambia la
 // respuesta, se actualiza en vez de duplicar -- unique(attempt_id, question_id)).
