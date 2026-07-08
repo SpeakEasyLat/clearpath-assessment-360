@@ -95,7 +95,7 @@ Storage: bucket privado `audio-assets` con los 8 audios de Listening; cero polí
 - Esta lógica está **duplicada intencionalmente** en dos lugares: `js/scoring.js` (para el preview client-side de Grammar) y dentro de la Edge Function `submit-response` (que es la que de verdad decide `unlock_state` en la base de datos). Los umbrales (70%, B2) están hardcodeados en ambos lugares — si alguna vez los cambias, hay que tocar los dos.
 - Cubierto por 7 casos de test en `js/scoring.test.mjs` (`node js/scoring.test.mjs` para correrlos).
 
-⚠️ **Decisión pendiente de confirmar contigo, señalada en el propio código:** "B1 alto" no es un sub-nivel oficial del CEFR (el estándar es A1/A2/B1/B2/C1/C2). Se modeló como ceiling ≥ B2. Además, esta sesión dividí el "B2-C1" de tu guion de Listening en dos valores CEFR distintos (B2 para audios 5-6, C1 para audios 7-8), porque afecta directamente este cálculo de ceiling. Falta que confirmes si esa interpretación es la que querías.
+✅ **Decisión confirmada por Diana (provisoriamente, "usemos como quedó por lo pronto, luego lo revisamos"):** "B1 alto" no es un sub-nivel oficial del CEFR (el estándar es A1/A2/B1/B2/C1/C2); se modela como ceiling ≥ B2 en cada uno de grammar/listening/writing (lo cual, por cómo funciona el algoritmo de ceiling, ya implica ≥70% de acierto en toda la banda B1 antes de llegar ahí). El split "B2-C1" del guion de Listening para los audios 5-8 queda así: B2 para audios 5-6 (opinión/dormir bien), C1 para audios 7-8 (historias clínicas con note completion, más difíciles). Diana pidió dejarlo así por ahora y revisarlo más adelante — no está cerrado de forma definitiva.
 
 ---
 
@@ -160,7 +160,7 @@ La función desplegada estaba en **v3** (con calificación de `note_completion`,
 
 1. ~~Arreglar Grammar~~ — ✅ hecho (sección 6.1).
 2. ~~Sincronizar el repo con lo desplegado~~ — ✅ hecho (secciones 6.2 y 6.3).
-3. **Confirmar la decisión de CEFR B2/C1** para los audios 5-8 de Listening (ver sección 3.4).
+3. ~~Confirmar la decisión de CEFR B2/C1~~ — ✅ Diana confirmó usar la interpretación actual por lo pronto, pendiente de revisión futura (ver sección 3.4).
 4. Construir **Nivel 1 — Writing** (consigna + rúbrica + evaluación, probablemente con IA).
 5. Construir **STEPS 2** (lectura clínica + vocabulario médico + razonamiento diagnóstico).
 6. Construir **OET Skills** (Listening de una sola reproducción, Reading).
