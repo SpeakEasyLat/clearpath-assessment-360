@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speak Easy - Nivel 1 - Writing</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+<style>
+/* Estilos propios de Writing (por si css/style.css no los cubre) */
+.writing-title { font-size: 1.15rem; margin: 0 0 0.6rem; }
+.writing-prompt { line-height: 1.5; margin: 0 0 0.8rem; }
+.writing-guidance { font-size: 0.9rem; color: #555; background: #f4f6f8; border-left: 3px solid #b9c4cc; padding: 0.6rem 0.8rem; border-radius: 4px; margin: 0 0 1rem; }
+.writing-label { display: block; font-weight: 600; margin: 0 0 0.35rem; }
+.writing-textarea { width: 100%; box-sizing: border-box; font: inherit; padding: 0.7rem; border: 1px solid #b9c4cc; border-radius: 6px; resize: vertical; min-height: 220px; }
+.writing-textarea:focus { outline: 2px solid #2a6f97; border-color: #2a6f97; }
+.writing-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: #666; margin: 0.4rem 0 0.9rem; }
+.writing-wordcount { font-weight: 600; }
+.timer-box { text-align: right; font-variant-numeric: tabular-nums; color: #333; margin-bottom: 0.5rem; }
+.timer-box.timer-low { color: #c62828; font-weight: 700; }
+.progress-track { height: 6px; background: #e6ebee; border-radius: 3px; overflow: hidden; margin: 0.4rem 0 1rem; }
+.progress-fill { height: 100%; width: 0; background: #2a6f97; transition: width 0.2s ease; }
+.progress-label { font-size: 0.85rem; color: #666; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="brand">Speak Easy - ClearPath</div>
+<div class="subtitle">Nivel 1 — Writing</div>
+<div class="card">
+<div class="timer-box" id="timerBox">Tiempo restante: <span id="timerLabel">40:00</span></div>
+<div class="progress-label" id="progressLabel">Tarea 1 de 2</div>
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+<div id="quizArea"></div>
+<div id="resultArea" style="display:none;"></div>
+</div>
+<p class="note">
+NOTA DE DESARROLLO (para Diana): esta pantalla presenta las 2 tareas de Writing y
+guarda cada texto vía el Edge Function <code>submit-writing</code>. La corrección la
+hace la IA del lado del servidor (rúbrica de placement 0–10 combinada con CEFR); el
+navegador nunca ve la rúbrica ni el resultado, y no se muestra puntaje ni nivel en
+vivo. El CEFR promediado de las 2 tareas alimenta el desbloqueo de OET.
+</p>
+</div>
+<script src="js/app-nivel1-writing.js"></script>
+</body>
+</html>
