@@ -1,0 +1,28 @@
+{
+  "_meta": {
+    "module": "nivel1_writing",
+    "scoringNote": "Los id son writing_prompts.id reales de Supabase. El navegador nunca ve la rúbrica ni la calificación; la Edge Function submit-writing califica server-side con IA combinando la rúbrica de placement 0-10 con los criterios CEFR, y promedia las dos tareas para el sub_score de writing. Writing no tiene 'respuesta correcta', así que este archivo es público y seguro.",
+    "gradingNote": "El desbloqueo de OET usa el CEFR promediado de las 2 tareas (requiere ≥ B2). El resultado detallado (banda 0-10 + comentarios) queda en writing_submissions para revisión posterior."
+  },
+  "timeLimitSeconds": 2400,
+  "prompts": [
+    {
+      "id": "80c719b4-b904-4366-82e3-011f7ad272a6",
+      "position": 1,
+      "title": "Task 1 — An email about your country",
+      "prompt_text": "Write an email to a friend who lives in another country and wants to learn more about where you live. Describe your country in your own words — for example, what the landscape is like, its main cities or landmarks, the local language and culture, and what the people and food are like. Finish your email by inviting your friend to visit you. Write between 120 and 180 words.",
+      "guidance": "Write in clear, well-organized paragraphs and use a friendly, natural tone. Your writing is not graded on live feedback — once you submit, your response is saved and reviewed afterwards.",
+      "min_words": 120,
+      "max_words": 180
+    },
+    {
+      "id": "1f80339b-5253-48c7-9a39-6dffa850ddbe",
+      "position": 2,
+      "title": "Task 2 — A referral letter to a community nurse",
+      "prompt_text": "You are a doctor. Today you saw Mr. Alan Reyes, a 62-year-old patient who has just been diagnosed with type 2 diabetes and needs ongoing support to manage his condition at home. Write a letter to the community nurse asking them to follow up with the patient. In your letter: (1) give the reason for your referral, (2) summarise the relevant background, and (3) clearly state what you would like the nurse to do (for example, teaching the patient how to monitor blood sugar, giving diet and lifestyle advice, and arranging a follow-up visit). Use an appropriate professional tone and write between 150 and 200 words.",
+      "guidance": "Use a clear professional register suitable for a letter between healthcare colleagues. Organize the letter logically (purpose, background, request). Your writing is not graded on live feedback — once you submit, your response is saved and reviewed afterwards.",
+      "min_words": 150,
+      "max_words": 200
+    }
+  ]
+}
