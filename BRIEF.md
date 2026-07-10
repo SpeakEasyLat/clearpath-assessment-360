@@ -1,6 +1,6 @@
 # Brief — ClearPath Assessment 360
 
-**Actualizado:** 8 de julio de 2026 (revisado más tarde el mismo día: se arregló Grammar y se sincronizó el repo — ver secciones 6.1, 6.2 y 6.3)
+**Actualizado:** 9 de julio de 2026 (se construyó y verificó el módulo Nivel 1 — Writing con calificación por IA; ver secciones 3.3 y 4)
 **Preparado por:** Claude, a partir de la revisión completa del repositorio (`SpeakEasyLat/clearpath-assessment-360`), la base de datos y las Edge Functions de Supabase (proyecto `qqdxmmvhthwcqhgmvyic`), y del historial de esta conversación.
 
 > **Nota sobre el alcance de este brief:** no tengo forma de leer conversaciones de otras sesiones de chat fuera de esta. Este documento se armó revisando el estado *real* de las cosas — el código del repositorio, el historial completo de commits de git, el esquema y los datos actuales de Supabase, y las Edge Functions desplegadas — en vez de basarme solo en lo que se haya dicho en el chat. Donde encontré diferencias entre lo que el código dice que pasa y lo que realmente está pasando, las señalo explícitamente en la sección 6.
@@ -65,7 +65,8 @@ CNAME → assessment.speakeasy.lat
 | `unlock_state` | 1 | Si se desbloqueó OET, STEPS2, y qué tipo de Speaking Assessment corresponde |
 | `audio_assets` | 8 | Metadata de los audios de Listening (`storage_path`, `max_plays`) |
 | `audio_play_log` | 1 | Registro de reproducciones ya usadas, para hacer cumplir `max_plays` |
-| `writing_submissions` | 0 | Reservada para el módulo de Writing (no construido aún) |
+| `writing_prompts` | 2 | Consignas de Writing (2 tareas de Nivel 1). RLS sin acceso anon; solo la Edge Function la lee. El texto visible también vive en `data/nivel1-writing.json` |
+| `writing_submissions` | 0 | Texto de cada tarea de Writing + la calificación de IA (`ai_rubric_scores`, `cefr_estimate`). La escribe `submit-writing` |
 | `speaking_assessment_bookings` | 0 | Reservada para agendar la sesión en vivo (OET o English) |
 | `attempt_sessions` | 7 | Tokens de sesión (expiran 4 h después del login) |
 | `intake_responses` | 1 | Respuestas del formulario previo (no calificado) |
@@ -82,8 +83,9 @@ Storage: bucket privado `audio-assets` con los 8 audios de Listening; cero polí
 | `submit-intake` | v2 | Guarda el formulario previo (no calificado) |
 | `submit-response` | **v3** | Corrige la respuesta server-side, la guarda, y si con eso se completa el módulo, calcula el ceiling CEFR y recalcula `unlock_state` |
 | `get-audio-url` | v1 | Valida sesión + `max_plays`, emite URL firmada (120 s), registra la reproducción |
+| `submit-writing` | **v4** | Guarda cada tarea de Writing, la califica con IA combinando la rúbrica de placement 0-10 con el CEFR, promedia las 2 tareas, escribe `sub_scores` y recalcula `unlock_state`. Sin feedback en vivo. Key de IA en el secret `ANTHROPIC_API_KEY`; modelo por defecto `claude-sonnet-4-5-20250929` (configurable con el secret `ANTHROPIC_MODEL`) |
 
-✅ Las cuatro coinciden con el código fuente del repositorio (ver sección 6.2 y 6.3 — resuelto).
+✅ Las cinco coinciden con el código fuente del repositorio (ver sección 6.2 y 6.3 — resuelto).
 
 ### 3.4 Algoritmo de scoring y reglas de desbloqueo (`js/scoring.js`)
 
@@ -107,7 +109,7 @@ Storage: bucket privado `audio-assets` con los 8 audios de Listening; cero polí
 | **Intake (formulario previo)** | ✅ Completo. Recoge nivel autopercibido, experiencia previa, frecuencia de uso, horas disponibles, días y horarios preferidos — para que armes horarios y reportes, no afecta ningún puntaje |
 | **Nivel 1 — Grammar** | ✅ Arreglado (ver 6.1): las 44 preguntas se guardan vía `submit-response`, igual que Listening, con timer de 20 min. Falta que un estudiante real lo rinda completo en producción para confirmar el flujo de punta a punta con las 44 preguntas |
 | **Nivel 1 — Listening** | ✅ Completo y verificado en vivo hoy (ver sección 5): 8 audios, 34 preguntas, incluye el formato "note completion" tipo OET para los audios 7 y 8, reproducción limitada a 2 veces con URL firmada, calificación server-side (incluye variantes de respuesta aceptadas e insensibilidad a mayúsculas), sin feedback en vivo |
-| **Nivel 1 — Writing** | ❌ No construido (backlog) |
+| **Nivel 1 — Writing** | ✅ Construido y verificado end-to-end (ver 3.3): 2 tareas (una general, una médica tipo OET, carta de derivación), calificación por IA que combina la rúbrica de placement 0-10 con el CEFR y promedia las 2 tareas, sin feedback en vivo. **Destraba OET** (que antes era imposible porque faltaba el `sub_score` de writing). Pendiente menor: agregar el enlace de navegación hacia Writing desde el flujo |
 | **STEPS 2** (lectura clínica + vocabulario médico + razonamiento diagnóstico) | ❌ No construido (backlog) |
 | **OET Skills** (Listening una sola reproducción, Reading) | ❌ No construido (backlog) |
 | **Speaking Assessment (en vivo)** | ❌ No construido — la tabla `speaking_assessment_bookings` existe pero no hay UI ni flujo de agenda todavía |
@@ -161,7 +163,7 @@ La función desplegada estaba en **v3** (con calificación de `note_completion`,
 1. ~~Arreglar Grammar~~ — ✅ hecho (sección 6.1).
 2. ~~Sincronizar el repo con lo desplegado~~ — ✅ hecho (secciones 6.2 y 6.3).
 3. ~~Confirmar la decisión de CEFR B2/C1~~ — ✅ Diana confirmó usar la interpretación actual por lo pronto, pendiente de revisión futura (ver sección 3.4).
-4. Construir **Nivel 1 — Writing** (consigna + rúbrica + evaluación, probablemente con IA).
+4. ~~Construir **Nivel 1 — Writing**~~ — ✅ hecho: 2 tareas (general + médica tipo OET), calificación por IA con rúbrica de placement 0-10 combinada con CEFR (ver 3.3). Pendiente menor: enlace de navegación hacia Writing en el flujo.
 5. Construir **STEPS 2** (lectura clínica + vocabulario médico + razonamiento diagnóstico).
 6. Construir **OET Skills** (Listening de una sola reproducción, Reading).
 7. Construir el flujo de **Speaking Assessment** (agenda de la sesión en vivo, tanto OET como English) — la tabla ya existe, falta la UI/flujo.
