@@ -53,7 +53,7 @@ quizArea.innerHTML = `
 <div class="q-index">Nivel CEFR: ${group.cefr_level}</div>
 <div class="q-text">${escapeHtml(group.title)}</div>
 <p class="note">Vas a escuchar este audio como máximo ${group.max_plays} veces en total. Lee las preguntas antes de reproducirlo.</p>
-<audio class="player" id="audioPlayer" controls></audio>
+<audio class="player" id="audioPlayer"></audio>
 <div class="audio-controls">
 <button class="audio-play" id="playBtn" type="button" ${remaining <= 0 ? 'disabled' : ''}>${remaining <= 0 ? 'Sin reproducciones disponibles' : 'Reproducir audio'}</button>
 <span class="plays-remaining" id="playsRemaining">Reproducciones usadas: ${used} / ${group.max_plays}</span>
