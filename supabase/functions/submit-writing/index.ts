@@ -353,15 +353,10 @@ const listeningOk = meetsLevel(bySkill.listening, MIN_LEVEL_FOR_OET);
 const writingOk = meetsLevel(bySkill.writing, MIN_LEVEL_FOR_OET);
 const oetUnlocked = grammarOk && listeningOk && writingOk;
 
-const steps2Level = bySkill.steps2_reading ?? null;
-const steps2Ok = steps2Level == null ? null : meetsLevel(steps2Level, MIN_LEVEL_FOR_STEPS2);
-
-let speakingAssessmentType = null;
-if (oetUnlocked) {
-speakingAssessmentType = "OET";
-} else if (steps2Ok === false) {
-speakingAssessmentType = "English";
-}
+// Ruta binaria (decisión de Diana): si desbloquea OET -> Speaking OET;
+// en cualquier otro caso (se queda en nivel CEFR) -> Speaking CEFR English.
+// El estudiante no elige: la ruta depende solo del resultado.
+const speakingAssessmentType = oetUnlocked ? "OET" : "English";
 
 const { error: unlockError } = await supabase
 .from("unlock_state")
