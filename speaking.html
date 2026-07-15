@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speak Easy - Speaking Assessment</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+<style>
+.speaking-intro { line-height: 1.5; margin: 0 0 1.2rem; }
+.speaking-btn {
+  display: block; width: 100%; box-sizing: border-box; text-align: center;
+  text-decoration: none; font: inherit; font-weight: 600; cursor: pointer;
+  padding: 0.9rem 1rem; border-radius: 8px; margin: 0 0 0.8rem;
+  background: #2a6f97; color: #fff; border: none;
+}
+.speaking-btn:hover { background: #235a7c; }
+.speaking-btn .small { display: block; font-weight: 400; font-size: 0.82rem; opacity: 0.9; margin-top: 0.15rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="brand">Speak Easy - ClearPath</div>
+<div class="subtitle">Speaking Assessment — Agenda tu sesión en vivo</div>
+<div class="card">
+<div id="content"><p class="note">Cargando tu información...</p></div>
+</div>
+<p class="note">
+NOTA DE DESARROLLO (para Diana): esta pantalla lee el resultado del estudiante (Edge Function
+<code>get-unlock-state</code>) y muestra automáticamente SOLO el botón que le corresponde: si
+desbloqueó OET, el de OET; si quedó en nivel CEFR, el de CEFR English. El estudiante no elige.
+Los enlaces son tus dos páginas de reserva de Google Calendar y se editan directo en este archivo.
+</p>
+</div>
+<script src="js/fetch-retry.js"></script>
+<script>
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+
+// Tus dos páginas de reserva de Google Calendar.
+const BOOKING_URLS = {
+  OET: 'https://calendar.app.google/X1issmHYsmSC6WR59',
+  CEFR: 'https://calendar.app.google/Kodi8TgwsQuxN7By5',
+};
+
+const content = document.getElementById('content');
+
+function bookingButton(url, titulo, subtitulo) {
+  return `<a class="speaking-btn" href="${url}" target="_blank" rel="noopener noreferrer">${titulo}<span class="small">${subtitulo}</span></a>`;
+}
+
+async function init() {
+  const token = sessionStorage.getItem('cp360_session_token');
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  let data;
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-unlock-state`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ session_token: token }),
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem('cp360_session_token');
+      window.location.href = 'index.html';
+      return;
+    }
+    data = await res.json();
+    if (!res.ok) throw new Error(data && data.error);
+  } catch (err) {
+    content.innerHTML = '<p class="note" style="color:#c62828;">No pudimos cargar tu información. Recarga la página e intenta de nuevo.</p>';
+    return;
+  }
+
+  const type = data.speaking_assessment_type;
+  if (type === 'OET') {
+    content.innerHTML =
+      '<p class="speaking-intro">¡Felicitaciones! Completaste tu evaluación y tu siguiente paso es el <strong>OET Speaking Assessment</strong> (roleplay clínico en vivo). Agenda tu sesión:</p>' +
+      bookingButton(BOOKING_URLS.OET, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET');
+  } else if (type === 'English') {
+    content.innerHTML =
+      '<p class="speaking-intro">¡Completaste tu evaluación! Tu siguiente paso es el <strong>CEFR English Speaking Assessment</strong> (conversación de nivel de inglés en vivo). Agenda tu sesión:</p>' +
+      bookingButton(BOOKING_URLS.CEFR, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general');
+  } else {
+    content.innerHTML =
+      '<p class="speaking-intro">Tu Speaking Assessment todavía no está habilitado.</p>' +
+      '<p class="note">Asegúrate de haber completado tu evaluación (Grammar, Listening y Writing). Si crees que es un error, escríbenos y te ayudamos.</p>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
