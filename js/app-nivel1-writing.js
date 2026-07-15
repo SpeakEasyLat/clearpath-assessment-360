@@ -234,6 +234,12 @@ resultArea.innerHTML = `
 <p class="note">Tu writing se revisa después; no se muestran resultados en esta pantalla.</p>
 `;
 }
+
+  var __spk = document.createElement('a');
+  __spk.href = 'speaking.html';
+  __spk.textContent = 'Agendar tu Speaking Assessment';
+  __spk.style.cssText = 'display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;font-weight:600;padding:0.9rem 1rem;border-radius:8px;margin:1.2rem 0 0;background:#2a6f97;color:#fff;';
+  resultArea.appendChild(__spk);
 }
 
 function escapeHtml(str) {
