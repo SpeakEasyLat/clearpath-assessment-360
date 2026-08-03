@@ -23,6 +23,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const TIME_LIMIT_SECONDS = 10 * 60; // 10 minutos para las 20 preguntas (recorte decidido por Diana el 3/08/2026)
 const IDK_LABEL = "I don't know the answer.";
 
+// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing.
+// Por ahora el siguiente módulo está fijo acá. Cuando exista la pantalla router
+// (siguiente.html, tarea 1.5), basta con cambiar estas dos constantes por
+// 'siguiente.html' y el backend decide a dónde mandar al estudiante.
+const NEXT_MODULE_URL = 'nivel1-listening.html';
+const NEXT_MODULE_LABEL = 'Continuar a Listening';
+
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
 const timerLabel = document.getElementById('timerLabel');
@@ -232,8 +239,17 @@ function renderDone(timedOut) {
     <div class="card">
       <h3>${timedOut ? 'Se acabó el tiempo — guardamos lo que respondiste' : 'Nivel 1 — Grammar completado'}</h3>
       <p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- Diana revisa los resultados completos más adelante.</p>
+      <p>Sigue el módulo de <strong>Listening</strong>. Puedes continuar ahora.</p>
+      <button class="primary" id="nextModuleBtn" type="button">${NEXT_MODULE_LABEL}</button>
     </div>
   `;
+
+  const nextBtn = document.getElementById('nextModuleBtn');
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      window.location.href = NEXT_MODULE_URL;
+    });
+  }
 }
 
 function escapeHtml(str) {
