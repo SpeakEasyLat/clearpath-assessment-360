@@ -9,10 +9,10 @@
 // CEFR y el desbloqueo de OET/STEPS2 los hace submit-response server-side (mismo
 // patrón que Listening).
 //
-// Cronómetro: el estudiante tiene 20 minutos en total para las 44 preguntas. Si se
+// Cronómetro: el estudiante tiene 10 minutos en total para las 20 preguntas. Si se
 // acaba el tiempo, igual guardamos todo lo que quede pendiente (la pregunta actual, si
 // tenía una respuesta elegida sin confirmar, y las que nunca llegó a ver, como "sin
-// respuesta") para que las 44 preguntas queden registradas en Supabase -- si faltan
+// respuesta") para que las 20 preguntas queden registradas en Supabase -- si faltan
 // filas en student_responses, el Edge Function nunca considera terminado el módulo y
 // el desbloqueo de OET queda trabado para siempre (este era justamente el bug
 // original: el frontend nunca llamaba a submit-response).
@@ -20,7 +20,7 @@
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
-const TIME_LIMIT_SECONDS = 20 * 60; // 20 minutos, número redondo (ajustado por Diana)
+const TIME_LIMIT_SECONDS = 10 * 60; // 10 minutos para las 20 preguntas (recorte decidido por Diana el 3/08/2026)
 const IDK_LABEL = "I don't know the answer.";
 
 const quizArea = document.getElementById('quizArea');
@@ -44,7 +44,9 @@ async function init() {
   const sessionToken = sessionTokenOrRedirect();
   if (!sessionToken) return;
 
-  const res = await fetch('data/nivel1-grammar.json');
+  // ?v=2 fuerza al navegador a bajar el banco nuevo de 20 preguntas en vez del de 44
+  // que pueda tener cacheado de antes. Subir este número cada vez que cambie el banco.
+  const res = await fetch('data/nivel1-grammar.json?v=2');
   grammarData = await res.json();
   questions = grammarData.questions;
 
@@ -204,7 +206,7 @@ async function finishQuiz(timedOut) {
       // Guardamos todo lo que haya quedado pendiente: la pregunta donde estaba parado
       // el estudiante (si había elegido algo sin confirmar) y todas las que nunca
       // llegó a ver (sin respuesta = se cuenta como incorrecta, igual que en un examen
-      // real que corta al llegar el tiempo). Necesario para que las 44 preguntas
+      // real que corta al llegar el tiempo). Necesario para que las 20 preguntas
       // queden guardadas y el módulo se marque completo server-side.
       for (let i = currentIndex; i < questions.length; i++) {
         const q = questions[i];
