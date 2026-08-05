@@ -3,14 +3,14 @@
     "module": "nivel1_writing",
     "totalPrompts": 2
   },
-  "timeLimitSeconds": 2400,
+  "timeLimitSeconds": 1200,
   "prompts": [
     {
       "id": "80c719b4-b904-4366-82e3-011f7ad272a6",
       "position": 1,
       "title": "Task 1 — An email about your country",
       "prompt_text": "Write an email to a friend who lives in another country and wants to learn more about where you live. Describe your country in your own words — for example, what the landscape is like, its main cities or landmarks, the local language and culture, and what the people and food are like. Finish your email by inviting your friend to visit you. Write between 120 and 180 words.",
-      "guidance": "Write in clear, well-organized paragraphs and use a friendly, natural tone. Your writing is not graded on live feedback — once you submit, your response is saved and reviewed afterwards.",
+      "guidance": "Write in clear, well-organized paragraphs and use a friendly, natural tone. You will not see a score right after submitting — your response is saved and reviewed afterwards.",
       "min_words": 120,
       "max_words": 180
     },
@@ -19,7 +19,7 @@
       "position": 2,
       "title": "Task 2 — A referral letter to a community nurse",
       "prompt_text": "You are a doctor. Today you saw Mr. Alan Reyes, a 62-year-old patient who has just been diagnosed with type 2 diabetes and needs ongoing support to manage his condition at home. Write a letter to the community nurse asking them to follow up with the patient. In your letter: (1) give the reason for your referral, (2) summarise the relevant background, and (3) clearly state what you would like the nurse to do (for example, teaching the patient how to monitor blood sugar, giving diet and lifestyle advice, and arranging a follow-up visit). Use an appropriate professional tone and write between 150 and 200 words.",
-      "guidance": "Use a clear professional register suitable for a letter between healthcare colleagues. Organize the letter logically (purpose, background, request). Your writing is not graded on live feedback — once you submit, your response is saved and reviewed afterwards.",
+      "guidance": "Use a clear professional register suitable for a letter between healthcare colleagues. Organize the letter logically (purpose, background, request). You will not see a score right after submitting — your response is saved and reviewed afterwards.",
       "min_words": 150,
       "max_words": 200
     }
