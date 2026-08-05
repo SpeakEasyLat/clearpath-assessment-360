@@ -1,8 +1,7 @@
 {
   "_meta": {
     "module": "nivel1_writing",
-    "scoringNote": "Los id son writing_prompts.id reales de Supabase. El navegador nunca ve la rúbrica ni la calificación; la Edge Function submit-writing califica server-side con IA combinando la rúbrica de placement 0-10 con los criterios CEFR, y promedia las dos tareas para el sub_score de writing. Writing no tiene 'respuesta correcta', así que este archivo es público y seguro.",
-    "gradingNote": "El desbloqueo de OET usa el CEFR promediado de las 2 tareas (requiere ≥ B2). El resultado detallado (banda 0-10 + comentarios) queda en writing_submissions para revisión posterior."
+    "totalPrompts": 2
   },
   "timeLimitSeconds": 2400,
   "prompts": [
