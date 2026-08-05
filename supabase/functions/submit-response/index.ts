@@ -19,6 +19,18 @@
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
 // y recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH).
 //
+// v10 (05/08/2026): agrega el modulo STEP CK 2 (module === 'steps2'). A diferencia de
+// Grammar/Listening/Reading, sus preguntas tienen cefr_level = null (no hay bandas --
+// decision de Diana: "en steps no hay banda, tiene que sacar al menos el 75% correcto
+// para aprobarlos o falla"). Se agrega una rama separada que calcula porcentaje simple
+// y pass/fail (>=75%) y la guarda en sub_scores.band_detail con cefr_estimate = null,
+// sin pasar por computeCeiling()/detectPatternInconsistency() (que asumen bandas CEFR y
+// siempre devolverian null/false para este modulo). No se llama a
+// recomputeRouteAndPersist para steps2: la ruta del Nivel 1 (OET/STEPS2/ENGLISH) ya
+// quedo fija cuando se completaron los 4 modulos de Nivel 1 y no depende de
+// steps2_reading -- ese sub_score solo le sirve a get-unlock-state para saber si el
+// estudiante ya rindio STEP CK 2.
+//
 // v9 (05/08/2026): decision de Diana -- "nunca decision manual, si es inconsistente
 // debe quedar un registro en el resultado del assessment 360". Se agrega
 // detectPatternInconsistency() y se persiste sub_scores.band_detail (jsonb, columna
@@ -65,6 +77,10 @@ const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 const PERCENT_THRESHOLD = 70;
 const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
+
+// STEP CK 2 (Fase 3): pass/fail puro, sin bandas CEFR. Decision de Diana (05/08/2026):
+// ">=75% correcto para aprobar". Con 8 preguntas eso es exactamente 6/8 (75.0%).
+const STEPS2_PASS_THRESHOLD = 75;
 
 // module (question_bank) -> skill (sub_scores). oet_listening/oet_reading/oet_writing
 // todavia no tienen pantalla propia (Fase 4), asi que no generan sub_score por ahora.
@@ -355,7 +371,49 @@ if (!moduleComplete) {
 return json({ ok: true, module_complete: false });
 }
 
-// 5. Modulo completo: calcular el ceiling CEFR (mismo algoritmo que js/scoring.js).
+// 5. Modulo completo: calcular el resultado. STEP CK 2 (module === 'steps2') es
+// pass/fail simple sobre el total de preguntas -- sus filas en question_bank tienen
+// cefr_level = null, asi que computeCeiling() siempre devolveria null para este
+// modulo y no serviria. El resto de los modulos (grammar/listening/reading) siguen
+// el ceiling CEFR de siempre (mismo algoritmo que js/scoring.js).
+const totalCorrect = responses.filter((r) => r.is_correct === true).length;
+const skill = MODULE_TO_SKILL[question.module];
+
+if (skill && question.module === "steps2") {
+const totalQuestions = moduleQuestionIds.length;
+const percent = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+const passed = percent >= STEPS2_PASS_THRESHOLD;
+
+const { error: subScoreError } = await supabase
+.from("sub_scores")
+.upsert(
+{
+attempt_id: attemptId,
+skill,
+raw_score: totalCorrect,
+max_score: totalQuestions,
+cefr_estimate: null,
+computed_at: new Date().toISOString(),
+band_detail: {
+type: "pass_fail",
+correct: totalCorrect,
+total: totalQuestions,
+percent,
+threshold: STEPS2_PASS_THRESHOLD,
+passed,
+},
+},
+{ onConflict: "attempt_id,skill" },
+);
+
+if (subScoreError) {
+console.error("submit-response: error guardando sub_score de steps2", subScoreError);
+return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
+}
+// No se llama a recomputeRouteAndPersist aca -- la ruta del Nivel 1 no depende de
+// steps2_reading (ver comentario v10 arriba). get-unlock-state usa la presencia de
+// este sub_score para saber que STEP CK 2 ya se rindio y mandar a speaking.html.
+} else if (skill) {
 const correctByQuestion = new Map(responses.map((r) => [r.question_id, r.is_correct === true]));
 const perBand = {};
 for (const level of CEFR_ORDER) {
@@ -367,10 +425,7 @@ perBand[level] = { correct, total, percent };
 }
 const ceilingLevel = computeCeiling(perBand);
 const patternInconsistent = detectPatternInconsistency(perBand, ceilingLevel);
-const totalCorrect = responses.filter((r) => r.is_correct === true).length;
 
-const skill = MODULE_TO_SKILL[question.module];
-if (skill) {
 const { error: subScoreError } = await supabase
 .from("sub_scores")
 .upsert(
