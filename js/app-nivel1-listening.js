@@ -17,12 +17,12 @@
 // en vivo, solo confirma que se guardó cada módulo.
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
-// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing.
-// Por ahora el siguiente módulo está fijo acá. Cuando exista la pantalla router
-// (siguiente.html, tarea 1.5), basta con cambiar estas dos constantes por
-// 'siguiente.html' y el backend decide a dónde mandar al estudiante.
-const NEXT_MODULE_URL = 'nivel1-writing.html';
-const NEXT_MODULE_LABEL = 'Continuar a Writing';
+// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing -> Reading -> router.
+// Ya no hay una URL fija acá (tarea 1.7): al terminar, todos los módulos del Nivel 1
+// mandan a siguiente.html, que le pregunta al backend (get-unlock-state, tarea 1.6)
+// cuál es el próximo paso real del estudiante.
+const NEXT_MODULE_URL = 'siguiente.html';
+const NEXT_MODULE_LABEL = 'Continuar';
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -252,7 +252,7 @@ progressLabel.textContent = `Audio ${listeningData.audios.length} / ${listeningD
 resultArea.innerHTML = `
 <div class="card">
 <h3>Listening completado</h3>
-<p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- Diana revisa los resultados completos más adelante.</p>
+<p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- nuestro equipo revisa los resultados completos más adelante.</p>
 <p>Sigue el módulo de <strong>Writing</strong>. Puedes continuar ahora.</p>
 <button class="primary" id="nextModuleBtn" type="button">${NEXT_MODULE_LABEL}</button>
 </div>
