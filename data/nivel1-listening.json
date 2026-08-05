@@ -1,69 +1,68 @@
 {
-    "_meta": {
-          "module": "nivel1_listening",
-          "version": 2,
-          "note": "Este archivo es público y NO contiene respuestas correctas ni audios. Las respuestas se validan server-side vía la Edge Function submit-response, y los audios se sirven vía la Edge Function get-audio-url (con límite de reproducciones)."
+  "_meta": {
+    "module": "nivel1_listening",
+    "version": 2
+  },
+  "audios": [
+    {
+      "audio_asset_id": "2f776e01-94cb-455d-8db2-38273705ccd8",
+      "title": "Pedir cita por teléfono",
+      "cefr_level": "A1",
+      "max_plays": 1,
+      "questions": [
+        { "id": "0c229f31-be36-4bd9-a8f5-0d84a803450c", "position": 1, "answer_format": "multiple_choice", "question_text": "Which doctor will Mateo see?", "options": ["Doctor Ortiz", "Doctor Bell", "Both doctors"] },
+        { "id": "6c3d395b-2c11-425d-848a-6def3f619071", "position": 2, "answer_format": "multiple_choice", "question_text": "When is the appointment?", "options": ["Monday at ten", "Tuesday at two", "Tuesday at ten"] },
+        { "id": "c070f33f-0a9b-4e52-869d-664d922929b0", "position": 3, "answer_format": "multiple_choice", "question_text": "Why can Mateo not come on Monday?", "options": ["He works on Monday", "Doctor Ortiz is away on Monday", "The clinic is closed on Monday"] },
+        { "id": "b5286435-ba0b-4235-8a67-148fd2da720d", "position": 4, "answer_format": "multiple_choice", "question_text": "What is his family name?", "options": ["Mateo", "Riverside", "Ruiz"] }
+      ]
     },
-    "audios": [
-          {
-                  "audio_asset_id": "2f776e01-94cb-455d-8db2-38273705ccd8",
-                  "title": "Pedir cita por teléfono",
-                  "cefr_level": "A1",
-                  "max_plays": 1,
-                  "questions": [
-                            { "id": "0c229f31-be36-4bd9-a8f5-0d84a803450c", "position": 1, "answer_format": "multiple_choice", "question_text": "Which doctor will Mateo see?", "options": ["Doctor Ortiz", "Doctor Bell", "Both doctors"] },
-                            { "id": "6c3d395b-2c11-425d-848a-6def3f619071", "position": 2, "answer_format": "multiple_choice", "question_text": "When is the appointment?", "options": ["Monday at ten", "Tuesday at two", "Tuesday at ten"] },
-                            { "id": "c070f33f-0a9b-4e52-869d-664d922929b0", "position": 3, "answer_format": "multiple_choice", "question_text": "Why can Mateo not come on Monday?", "options": ["He works on Monday", "Doctor Ortiz is away on Monday", "The clinic is closed on Monday"] },
-                            { "id": "b5286435-ba0b-4235-8a67-148fd2da720d", "position": 4, "answer_format": "multiple_choice", "question_text": "What is his family name?", "options": ["Mateo", "Riverside", "Ruiz"] }
-                  ]
-          },
-          {
-                  "audio_asset_id": "b1b7bdd2-7530-475f-8eb1-3083cb402345",
-                  "title": "Describir síntomas",
-                  "cefr_level": "A2",
-                  "max_plays": 1,
-                  "questions": [
-                            { "id": "7988b488-caed-4af0-ab93-2c658dde38ae", "position": 5, "answer_format": "multiple_choice", "question_text": "What is wrong with Mr Torres?", "options": ["He has a sore throat", "He has a headache", "His throat and his head both hurt"] },
-                            { "id": "ffd8ecb3-5b16-4e7c-a704-cc670be9f8f9", "position": 6, "answer_format": "multiple_choice", "question_text": "How long has he had it?", "options": ["Since this morning", "Three days", "Since Thursday"] },
-                            { "id": "6c5635c6-1ebd-41a0-9402-84f5e55c535e", "position": 7, "answer_format": "multiple_choice", "question_text": "What is his temperature now?", "options": ["Thirty-nine", "Normal", "Thirty-eight"] },
-                            { "id": "5a1213da-3c87-421d-966c-0d2ff96eb87c", "position": 8, "answer_format": "multiple_choice", "question_text": "What does he take?", "options": ["Antibiotics", "Nothing", "Paracetamol"] }
-                  ]
-          },
-          {
-                  "audio_asset_id": "524178d9-df2d-428f-ba52-85a0eea55085",
-                  "title": "Instrucciones de farmacia",
-                  "cefr_level": "B1",
-                  "max_plays": 1,
-                  "questions": [
-                            { "id": "85d5cb32-d5bc-4365-bac3-6e33d4dc3d8c", "position": 9, "answer_format": "multiple_choice", "question_text": "What are the white tablets for?", "options": ["The cough", "An infection", "Helping her sleep"] },
-                            { "id": "a31c4618-aa40-49e9-a884-ef9d7790f79f", "position": 10, "answer_format": "multiple_choice", "question_text": "How often should he take them?", "options": ["Twice a day", "Every eight hours", "For four days"] },
-                            { "id": "11b94b06-4c28-4cdb-8463-06dbde0120ec", "position": 11, "answer_format": "multiple_choice", "question_text": "What should he do if he misses a dose?", "options": ["Take two together next time", "Skip the whole day", "Take it when he remembers, unless the next is nearly due"] },
-                            { "id": "066fc810-af99-4775-98de-46ffc4d0d3e9", "position": 12, "answer_format": "multiple_choice", "question_text": "When should he take the syrup?", "options": ["Every night", "Only if the cough stops him sleeping", "After driving"] }
-                  ]
-          },
-          {
-                  "audio_asset_id": "eb6197ff-0559-41e5-9f99-f1dfcd6600f5",
-                  "title": "Entrega de guardia",
-                  "cefr_level": "B2",
-                  "max_plays": 1,
-                  "questions": [
-                            { "id": "2c6c4487-8bea-4ab4-9d51-4dfbf148a059", "position": 13, "answer_format": "multiple_choice", "question_text": "What is the speaker most concerned about?", "options": ["Her breathing has not improved", "The cough has never been explained", "Her mobility"] },
-                            { "id": "99b0909b-9660-40a6-8107-88f2ef46decf", "position": 14, "answer_format": "multiple_choice", "question_text": "What does he think of the chest X-ray report?", "options": ["He accepts it: it was reported as clear", "He wants a repeat because the first showed a problem", "He doubts it because the image quality was poor"] },
-                            { "id": "28ac0814-b014-4190-8b97-c0e45be4a27d", "position": 15, "answer_format": "multiple_choice", "question_text": "What does he advise about the Friday discharge?", "options": ["Confirm Friday with the family", "Stop repeating that date for now", "Tell them she will have to stay longer"] },
-                            { "id": "8c173b4a-4496-4863-81a5-008ac8f8b6bc", "position": 16, "answer_format": "multiple_choice", "question_text": "Which best describes his attitude?", "options": ["Confident: the diagnosis is settled", "Alarmed: the patient is deteriorating", "Cautious: the picture may be incomplete"] }
-                  ]
-          },
-          {
-                  "audio_asset_id": "a9ffd1f1-1f05-4d06-b306-91f93a668a62",
-                  "title": "Seminario sobre IA en radiología",
-                  "cefr_level": "C1",
-                  "max_plays": 1,
-                  "questions": [
-                            { "id": "c431b00d-569b-4592-b739-b401572044f6", "position": 17, "answer_format": "multiple_choice", "question_text": "What is her overall position?", "options": ["She is opposed to its use", "She supports AI but warns about how it is adopted", "She believes the figures were manipulated"] },
-                            { "id": "989e9a60-015a-4c28-b1ed-77beaf109f2c", "position": 18, "answer_format": "multiple_choice", "question_text": "Why does she question the published figures?", "options": ["They were deliberately manipulated", "They are worse than a general radiologist", "They come from curated data, unlike everyday practice"] },
-                            { "id": "dfeb0207-fa31-487e-bc2c-7340566ca149", "position": 19, "answer_format": "multiple_choice", "question_text": "What does she mean by saying it fails quietly?", "options": ["The system gives no warning message", "Its errors are less likely to be challenged because the algorithm endorsed them", "The failures are visible and easy to correct"] },
-                            { "id": "77034c13-4b98-439a-99af-02a53f5bd604", "position": 20, "answer_format": "multiple_choice", "question_text": "What does she want before a department adopts these tools?", "options": ["More validation data", "A ban until performance in real conditions improves", "A clear account of who may disagree with the machine, and what happens to them"] }
-                  ]
-          }
-    ]
+    {
+      "audio_asset_id": "b1b7bdd2-7530-475f-8eb1-3083cb402345",
+      "title": "Describir síntomas",
+      "cefr_level": "A2",
+      "max_plays": 1,
+      "questions": [
+        { "id": "7988b488-caed-4af0-ab93-2c658dde38ae", "position": 5, "answer_format": "multiple_choice", "question_text": "What is wrong with Mr Torres?", "options": ["He has a sore throat", "He has a headache", "His throat and his head both hurt"] },
+        { "id": "ffd8ecb3-5b16-4e7c-a704-cc670be9f8f9", "position": 6, "answer_format": "multiple_choice", "question_text": "How long has he had it?", "options": ["Since this morning", "Three days", "Since Thursday"] },
+        { "id": "6c5635c6-1ebd-41a0-9402-84f5e55c535e", "position": 7, "answer_format": "multiple_choice", "question_text": "What is his temperature now?", "options": ["Thirty-nine", "Normal", "Thirty-eight"] },
+        { "id": "5a1213da-3c87-421d-966c-0d2ff96eb87c", "position": 8, "answer_format": "multiple_choice", "question_text": "What does he take?", "options": ["Antibiotics", "Nothing", "Paracetamol"] }
+      ]
+    },
+    {
+      "audio_asset_id": "524178d9-df2d-428f-ba52-85a0eea55085",
+      "title": "Instrucciones de farmacia",
+      "cefr_level": "B1",
+      "max_plays": 1,
+      "questions": [
+        { "id": "85d5cb32-d5bc-4365-bac3-6e33d4dc3d8c", "position": 9, "answer_format": "multiple_choice", "question_text": "What are the white tablets for?", "options": ["The cough", "An infection", "Helping her sleep"] },
+        { "id": "a31c4618-aa40-49e9-a884-ef9d7790f79f", "position": 10, "answer_format": "multiple_choice", "question_text": "How often should he take them?", "options": ["Twice a day", "Every eight hours", "For four days"] },
+        { "id": "11b94b06-4c28-4cdb-8463-06dbde0120ec", "position": 11, "answer_format": "multiple_choice", "question_text": "What should he do if he misses a dose?", "options": ["Take two together next time", "Skip the whole day", "Take it when he remembers, unless the next is nearly due"] },
+        { "id": "066fc810-af99-4775-98de-46ffc4d0d3e9", "position": 12, "answer_format": "multiple_choice", "question_text": "When should he take the syrup?", "options": ["Every night", "Only if the cough stops him sleeping", "After driving"] }
+      ]
+    },
+    {
+      "audio_asset_id": "eb6197ff-0559-41e5-9f99-f1dfcd6600f5",
+      "title": "Entrega de guardia",
+      "cefr_level": "B2",
+      "max_plays": 1,
+      "questions": [
+        { "id": "2c6c4487-8bea-4ab4-9d51-4dfbf148a059", "position": 13, "answer_format": "multiple_choice", "question_text": "What is the speaker most concerned about?", "options": ["Her breathing has not improved", "The cough has never been explained", "Her mobility"] },
+        { "id": "99b0909b-9660-40a6-8107-88f2ef46decf", "position": 14, "answer_format": "multiple_choice", "question_text": "What does he think of the chest X-ray report?", "options": ["He accepts it: it was reported as clear", "He wants a repeat because the first showed a problem", "He doubts it because the image quality was poor"] },
+        { "id": "28ac0814-b014-4190-8b97-c0e45be4a27d", "position": 15, "answer_format": "multiple_choice", "question_text": "What does he advise about the Friday discharge?", "options": ["Confirm Friday with the family", "Stop repeating that date for now", "Tell them she will have to stay longer"] },
+        { "id": "8c173b4a-4496-4863-81a5-008ac8f8b6bc", "position": 16, "answer_format": "multiple_choice", "question_text": "Which best describes his attitude?", "options": ["Confident: the diagnosis is settled", "Alarmed: the patient is deteriorating", "Cautious: the picture may be incomplete"] }
+      ]
+    },
+    {
+      "audio_asset_id": "a9ffd1f1-1f05-4d06-b306-91f93a668a62",
+      "title": "Seminario sobre IA en radiología",
+      "cefr_level": "C1",
+      "max_plays": 1,
+      "questions": [
+        { "id": "c431b00d-569b-4592-b739-b401572044f6", "position": 17, "answer_format": "multiple_choice", "question_text": "What is her overall position?", "options": ["She is opposed to its use", "She supports AI but warns about how it is adopted", "She believes the figures were manipulated"] },
+        { "id": "989e9a60-015a-4c28-b1ed-77beaf109f2c", "position": 18, "answer_format": "multiple_choice", "question_text": "Why does she question the published figures?", "options": ["They were deliberately manipulated", "They are worse than a general radiologist", "They come from curated data, unlike everyday practice"] },
+        { "id": "dfeb0207-fa31-487e-bc2c-7340566ca149", "position": 19, "answer_format": "multiple_choice", "question_text": "What does she mean by saying it fails quietly?", "options": ["The system gives no warning message", "Its errors are less likely to be challenged because the algorithm endorsed them", "The failures are visible and easy to correct"] },
+        { "id": "77034c13-4b98-439a-99af-02a53f5bd604", "position": 20, "answer_format": "multiple_choice", "question_text": "What does she want before a department adopts these tools?", "options": ["More validation data", "A ban until performance in real conditions improves", "A clear account of who may disagree with the machine, and what happens to them"] }
+      ]
+    }
+  ]
 }
