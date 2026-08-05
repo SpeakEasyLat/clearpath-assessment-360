@@ -1,33 +1,27 @@
 /**
  * scoring.js
  * Lógica pura (sin dependencias de UI ni de red) para:
- *   1. Determinar el nivel CEFR alcanzado en un módulo tipo "escalera" (grammar Nivel 1,
- *      y más adelante también el reading + vocabulario médico de STEPS 2).
- *   2. Calcular el % de acierto de un sub-score (grammar / listening / writing / steps2_reading).
- *   3. Decidir el desbloqueo de OET y de la sesión en vivo de Speaking Assessment según
- *      la regla que definió Diana:
- *        "Si el estudiante está apto para OET (grammar, listening y writing del Nivel 1
- *         superan el umbral de B1 alto), se desbloquea agendar el Speaking Assessment
- *         de tipo OET (el roleplay). Si NO está listo para OET y además el ceiling de
- *         reading + vocabulario médico de STEPS 2 tampoco llega a B2 (sin importar
- *         writing, speaking ni grammar fuera de textos médicos), el estudiante queda
- *         en English Level y se desbloquea un Speaking Assessment breve de tipo English
- *         en su lugar. Si no está listo para OET pero SÍ tiene el nivel de STEPS 2,
- *         simplemente continúa en STEPS 2, sin sesión en vivo por ahora."
+ *   1. Determinar el nivel CEFR alcanzado en un módulo tipo "escalera" (grammar, listening
+ *      y reading del Nivel 1, todos calificados por ceiling de bandas CEFR).
+ *   2. Calcular el % de acierto de un sub-score (grammar / listening / writing / reading).
+ *   3. Decidir la ruta del estudiante al terminar el Nivel 1, según el flujo validado por
+ *      Diana el 26/07/2026 (ver claude/flujo-objetivo.md) y ampliado con Reading el
+ *      05/08/2026 (tarea 1.3/1.4):
+ *        "El Nivel 1 tiene CUATRO sub-scores: grammar, listening, writing y reading.
+ *         La decisión se toma recién cuando los cuatro existen.
+ *           - Si los CUATRO llegan a B2 -> módulo OET -> Speaking Assessment tipo 'OET'.
+ *           - Si no, pero reading llega a B2 -> el estudiante está listo para STEPS 2.
+ *           - Si reading NO llega a B2 -> el estudiante queda en English Level.
+ *         'El reading es la llave de STEPS 2': los otros tres sub-scores solo deciden el
+ *         acceso al módulo OET, nunca el de STEPS 2.
+ *         Mientras el módulo STEPS 2 (Fase 3) no exista todavía, tanto la rama STEPS2 como
+ *         la rama ENGLISH desembocan en el mismo Speaking Assessment breve tipo 'English'
+ *         (ver el diagrama: STEPS 2 -> Link English Speaking). El campo assignedRoute sí
+ *         queda registrado distinto para cuando STEPS 2 se construya y haya que enchufarlo."
  *
- * OJO / decisión pendiente de confirmar con Diana:
- *   "B1 alto" no es un sub-nivel oficial del CEFR (el CEFR estándar es A1/A2/B1/B2/C1/C2).
- *   Acá lo modelamos como DOS condiciones combinadas, configurables:
- *     a) el nivel CEFR alcanzado (ceiling) debe ser >= MIN_LEVEL_FOR_OET (por defecto 'B2',
- *        para capturar la idea de "B1 alto/casi B2"), Y
- *     b) el % de acierto en la banda B1 debe ser >= PERCENT_THRESHOLD (por defecto 70%).
- *   Estos dos valores son fácilmente ajustables acá abajo sin tocar el resto del código.
- *
- *   El umbral de STEPS 2 (MIN_LEVEL_FOR_STEPS2) usa el mismo mecanismo de ceiling CEFR,
- *   pero aplicado SOLO al sub-score de reading + vocabulario médico de STEPS 2 -- todavía
- *   no existe el módulo STEPS 2 en la app (está en el backlog), así que por ahora
- *   `subScores.steps2` llega como null/undefined y la función lo trata como "aún no se sabe"
- *   en vez de asumir que falla.
+ * Los umbrales son los mismos para las cuatro habilidades y para el gate de reading
+ * (MIN_LEVEL_FOR_OET y MIN_LEVEL_FOR_STEPS2, ambos B2 por defecto) -- configurables acá
+ * abajo sin tocar el resto del código.
  */
 
 export const CEFR_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1'];
@@ -90,42 +84,37 @@ export function computeGrammarCefr(questions, responses, cefrRanges, percentThre
 }
 
 /**
- * Decide el desbloqueo de OET y de la sesión en vivo de Speaking Assessment, en base a:
- *   - los 3 sub-scores del Nivel 1 (grammar, listening, writing) para el gate de OET, y
- *   - el sub-score de STEPS 2 (reading + vocabulario médico) para decidir si, cuando NO
- *     se alcanza OET, el estudiante todavía tiene nivel para STEPS 2 o si queda en
- *     English Level y se le agenda un Speaking Assessment breve en su lugar.
+ * Decide la ruta del estudiante (OET / STEPS2 / ENGLISH) al terminar el Nivel 1, en base
+ * a los CUATRO sub-scores (grammar, listening, writing, reading). Debe mantenerse
+ * sincronizada con la misma lógica en las Edge Functions submit-response y submit-writing.
  *
- * Reglas (definidas por Diana):
- *   1. Si grammar Y listening Y writing (Nivel 1) superan el umbral de "B1 alto"
- *      (>= minLevelOet) -> OET se desbloquea -> Speaking Assessment tipo 'OET'
- *      (agendar el roleplay OET en vivo).
- *   2. Si NO se cumple lo anterior, se mira el ceiling de reading + vocabulario médico
- *      de STEPS 2 (ignora writing, speaking y grammar fuera de textos médicos):
- *        a) si ese ceiling >= minLevelSteps2 -> el estudiante sigue en STEPS 2, sin
- *           sesión en vivo por ahora (speakingAssessmentType = null).
- *        b) si ese ceiling < minLevelSteps2 -> el estudiante queda en English Level
- *           (ni OET ni STEPS 2) -> se desbloquea un Speaking Assessment breve tipo
- *           'English' en su lugar.
- *   3. Si todavía no existe el sub-score de STEPS 2 (subScores.steps2 es null/undefined,
- *      porque ese módulo aún no está construido), no se puede decidir 2a/2b -- se deja
- *      steps2Ok en null y speakingAssessmentType en null ("pendiente", no se inventa
- *      un resultado que la app todavía no puede calcular de verdad).
+ * Reglas (flujo validado por Diana, ver claude/flujo-objetivo.md):
+ *   1. La decisión NO se toma hasta que existan los cuatro sub-scores. Mientras falte
+ *      alguno, assignedRoute queda en null ("pendiente") -- no se inventa un resultado.
+ *   2. Si grammar Y listening Y writing Y reading superan minLevelOet (por defecto B2)
+ *      -> assignedRoute = 'OET' -> Speaking Assessment tipo 'OET'.
+ *   3. Si no, pero reading solo (sin importar los otros tres) llega a minLevelSteps2
+ *      (por defecto B2) -> assignedRoute = 'STEPS2'. "El reading es la llave de STEPS 2."
+ *   4. Si reading tampoco llega -> assignedRoute = 'ENGLISH'.
+ *   5. Mientras el módulo STEPS 2 (Fase 3) no exista, tanto la rama STEPS2 como la rama
+ *      ENGLISH agendan el mismo Speaking Assessment breve tipo 'English' (coincide con el
+ *      diagrama: STEPS 2 -> Link English Speaking). Solo la rama OET agenda 'OET'.
  *
  * @param {{
  *   grammar: {ceilingLevel:string},
  *   listening: {ceilingLevel:string},
  *   writing: {cefrEstimate:string},
- *   steps2: {ceilingLevel:string} | null | undefined
+ *   reading: {ceilingLevel:string}
  * }} subScores
  * @param {{minLevelOet?: string, minLevelSteps2?: string}} [thresholds]
  * @returns {{
- *   steps2Unlocked: boolean,
+ *   assignedRoute: 'OET' | 'STEPS2' | 'ENGLISH' | null,  // null = Nivel 1 todavía incompleto
  *   oetUnlocked: boolean,
- *   steps2Ok: boolean | null,       // null = todavía no se rindió/construyó STEPS 2
+ *   steps2Unlocked: boolean,        // true solo cuando assignedRoute === 'STEPS2'
+ *   steps2Ok: boolean | null,       // ¿reading llega a minLevelSteps2? null = aún no se sabe
  *   speakingAssessmentType: 'OET' | 'English' | null,
  *   speakingAssessmentUnlocked: boolean,
- *   detail: {grammarOk: boolean, listeningOk: boolean, writingOk: boolean, steps2Ok: boolean | null}
+ *   detail: {grammarOk: boolean, listeningOk: boolean, writingOk: boolean, readingOk: boolean, steps2Ok: boolean | null}
  * }}
  */
 export function decideUnlocks(subScores, thresholds = {}) {
@@ -139,29 +128,46 @@ export function decideUnlocks(subScores, thresholds = {}) {
     return idx >= 0 && minIdx >= 0 && idx >= minIdx;
   };
 
-  const grammarOk = meetsLevel(subScores.grammar?.ceilingLevel, minLevelOet);
-  const listeningOk = meetsLevel(subScores.listening?.ceilingLevel, minLevelOet);
-  const writingOk = meetsLevel(subScores.writing?.cefrEstimate, minLevelOet);
+  const grammarLevel = subScores.grammar?.ceilingLevel ?? null;
+  const listeningLevel = subScores.listening?.ceilingLevel ?? null;
+  const writingLevel = subScores.writing?.cefrEstimate ?? null;
+  const readingLevel = subScores.reading?.ceilingLevel ?? null;
 
-  const oetUnlocked = grammarOk && listeningOk && writingOk;
+  // OJO: un módulo puede estar COMPLETO con un nivel null (el estudiante no superó ni
+  // la banda A1 -- un resultado legítimo, no "todavía no lo rindió"). Por eso
+  // "completo" se determina por la PRESENCIA del objeto sub-score (subScores.grammar,
+  // etc.), nunca por si el nivel extraído es truthy -- confundir esto es un bug real
+  // (un estudiante por debajo de A1 se quedaría sin ruta asignada para siempre). Debe
+  // mantenerse igual que recomputeRouteAndPersist en submit-response/submit-writing.
+  const nivel1Complete =
+    subScores.grammar != null && subScores.listening != null && subScores.writing != null && subScores.reading != null;
 
-  // steps2Ok: true/false solo si ya tenemos el sub-score de STEPS 2; null = aún no se sabe.
-  const steps2Level = subScores.steps2?.ceilingLevel;
-  const steps2Ok = steps2Level == null ? null : meetsLevel(steps2Level, minLevelSteps2);
+  const grammarOk = meetsLevel(grammarLevel, minLevelOet);
+  const listeningOk = meetsLevel(listeningLevel, minLevelOet);
+  const writingOk = meetsLevel(writingLevel, minLevelOet);
+  const readingOk = meetsLevel(readingLevel, minLevelOet);
 
-  let speakingAssessmentType = null;
-  if (oetUnlocked) {
-    speakingAssessmentType = 'OET';
-  } else if (steps2Ok === false) {
-    speakingAssessmentType = 'English';
+  // steps2Ok: ¿reading llega al umbral de STEPS 2? Solo se puede afirmar/negar una vez
+  // que el Nivel 1 está completo; null = aún no se sabe.
+  const steps2Ok = nivel1Complete ? meetsLevel(readingLevel, minLevelSteps2) : null;
+
+  let assignedRoute = null;
+  if (nivel1Complete) {
+    const allFourOk = grammarOk && listeningOk && writingOk && readingOk;
+    assignedRoute = allFourOk ? 'OET' : (steps2Ok ? 'STEPS2' : 'ENGLISH');
   }
 
+  const oetUnlocked = assignedRoute === 'OET';
+  const steps2Unlocked = assignedRoute === 'STEPS2';
+  const speakingAssessmentType = assignedRoute == null ? null : (assignedRoute === 'OET' ? 'OET' : 'English');
+
   return {
-    steps2Unlocked: true, // el módulo STEPS 2 en sí es obligatorio y secuencial para todos, sin condición
+    assignedRoute,
     oetUnlocked,
+    steps2Unlocked,
     steps2Ok,
     speakingAssessmentType,
     speakingAssessmentUnlocked: speakingAssessmentType !== null,
-    detail: { grammarOk, listeningOk, writingOk, steps2Ok },
+    detail: { grammarOk, listeningOk, writingOk, readingOk, steps2Ok },
   };
 }
