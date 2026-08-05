@@ -1,12 +1,15 @@
-// Nivel 1 — Listening.
+// Nivel 1 — Listening (v2: 5 audios, 20 preguntas, todas multiple_choice).
 //
-// Por cada audio: primero se muestran las preguntas (o la hoja de "patient notes"
-// para los audios 7 y 8, formato note completion tipo OET), y recién después el
+// Por cada audio: primero se muestran las preguntas, y recién después el
 // estudiante reproduce el audio -- máximo la cantidad de veces que indique
-// max_plays (normalmente 2), controlado server-side por el Edge Function
-// get-audio-url (que devuelve una signed URL de corta duración y registra la
-// reproducción en audio_play_log; el navegador nunca ve la ruta real del archivo
-// en Storage).
+// max_plays (v2: 1, una sola escucha), controlado server-side por el Edge
+// Function get-audio-url (que devuelve una signed URL de corta duración y
+// registra la reproducción en audio_play_log; el navegador nunca ve la ruta
+// real del archivo en Storage).
+//
+// La pantalla sigue soportando el formato "patient notes" / note_completion
+// (renderCaseNotes) por si algún audio futuro lo vuelve a usar, aunque ningún
+// audio de v2 lo necesita.
 //
 // Cada respuesta se guarda vía submit-response, que corrige server-side contra
 // question_bank.correct_answer / accepted_answers -- el navegador nunca los ve.
