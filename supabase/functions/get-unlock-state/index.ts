@@ -6,6 +6,14 @@
 // al estudiante despues de cada modulo. No expone puntajes, aciertos ni respuestas --
 // solo la ruta / el siguiente paso.
 //
+// v4 (05/08/2026): agrega STEP CK 2. Antes, una vez completo el Nivel 1 (los 4
+// sub_scores), next_step_url era SIEMPRE speaking.html, sin importar la ruta asignada.
+// Ahora, si assigned_route === 'STEPS2' y el estudiante todavia no tiene el sub_score
+// steps2_reading, next_step_url pasa a ser steps2.html (con next_step_skill
+// 'steps2_reading') -- recien cuando ese sub_score existe (submit-response, rama nueva
+// para module 'steps2') el router lo manda a speaking.html. Las rutas OET y ENGLISH no
+// cambian: van directo a speaking.html como antes.
+//
 // v3 (05/08/2026, tarea 1.6): agrega next_step_url y next_step_skill. Mira que
 // sub_scores existen para este attempt (grammar, listening, writing, reading, en ese
 // orden) y devuelve la URL del primero que falte; si los 4 ya existen, next_step_url es
@@ -115,12 +123,26 @@ break;
 }
 const nivel1Complete = nextStepSkill === null;
 
+const assignedRoute = unlock ? unlock.assigned_route : null;
+
+// Nivel 1 completo: si la ruta asignada es STEPS2, el estudiante debe rendir STEP CK 2
+// antes de Speaking. Las rutas OET y ENGLISH siguen yendo directo a speaking.html.
+if (nivel1Complete) {
+if (assignedRoute === "STEPS2" && !completedSkills.has("steps2_reading")) {
+nextStepUrl = "steps2.html";
+nextStepSkill = "steps2_reading";
+} else {
+nextStepUrl = "speaking.html";
+nextStepSkill = null;
+}
+}
+
 return json({
 ok: true,
 oet_unlocked: unlock ? unlock.oet_unlocked === true : false,
 steps2_unlocked: unlock ? unlock.steps2_unlocked === true : false,
 speaking_assessment_type: unlock ? unlock.speaking_assessment_type : null,
-assigned_route: unlock ? unlock.assigned_route : null,
+assigned_route: assignedRoute,
 nivel1_complete: nivel1Complete,
 next_step_skill: nextStepSkill,
 next_step_url: nextStepUrl,
