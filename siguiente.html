@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speak Easy · ClearPath</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+</head>
+<body>
+<div class="wrap">
+<div class="brand">Speak Easy · ClearPath</div>
+<div class="subtitle">Un momento...</div>
+<div class="card">
+<div id="content"><p class="note">Buscando tu siguiente paso...</p></div>
+</div>
+<!--
+  NOTA DE DESARROLLO (para Diana, no visible en pantalla): esta pantalla es el router
+  (tarea 1.5). Le pregunta al backend (Edge Function get-unlock-state, extendida con
+  next_step_url en la tarea 1.6) a qué módulo mandar al estudiante, en vez de que cada
+  pantalla tenga la URL del siguiente módulo escrita a mano. Grammar, Listening, Writing
+  y Reading ya redirigen todas acá al terminar (tarea 1.7) en vez de saltar directo al
+  siguiente archivo .html -- así, si mañana se agrega o se reordena un módulo, alcanza
+  con cambiar esta Edge Function, sin tocar las 4 pantallas.
+-->
+</div>
+<script src="js/fetch-retry.js"></script>
+<script>
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+
+const content = document.getElementById('content');
+
+async function init() {
+  const token = sessionStorage.getItem('cp360_session_token');
+  if (!token) {
+    window.location.href = 'index.html';
+    return;
+  }
+  let data;
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-unlock-state`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ session_token: token }),
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem('cp360_session_token');
+      window.location.href = 'index.html';
+      return;
+    }
+    data = await res.json();
+    if (!res.ok) throw new Error(data && data.error);
+  } catch (err) {
+    content.innerHTML =
+      '<p class="note" style="color:#c62828;">No pudimos calcular tu siguiente paso. Recarga la página e intenta de nuevo.</p>' +
+      '<button class="primary" id="retryBtn" type="button">Reintentar</button>';
+    const retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) retryBtn.addEventListener('click', () => window.location.reload());
+    return;
+  }
+
+  const nextUrl = data.next_step_url || 'speaking.html';
+  window.location.href = nextUrl;
+}
+
+init();
+</script>
+</body>
+</html>
