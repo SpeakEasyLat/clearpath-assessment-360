@@ -1,0 +1,366 @@
+{
+  "_meta": {
+    "module": "nivel1_reading",
+    "version": 2
+  },
+  "time_limit_seconds": 1200,
+  "texts": [
+    {
+      "title": "Notice: Clinic Opening Hours",
+      "cefr_level": "A1",
+      "passage_text": "The clinic is open from Monday to Friday, from 8 a.m. to 5 p.m. It is closed on Saturdays and Sundays.\n\nIf you need help on the weekend, please call the emergency number: 555-0199.\n\nDo not come to the clinic without an appointment.",
+      "questions": [
+        {
+          "id": "934056f9-a855-42e1-9e88-c6685e89c14d",
+          "position": 1,
+          "answer_format": "multiple_choice",
+          "question_text": "In this text, \"closed\" means:",
+          "options": [
+            "not open",
+            "very busy",
+            "far away"
+          ]
+        },
+        {
+          "id": "07dbc6ba-f953-4fe2-9b07-fd82b49e42e4",
+          "position": 2,
+          "answer_format": "multiple_choice",
+          "question_text": "Is the clinic open on Sundays?",
+          "options": [
+            "Yes, from 8 a.m. to 5 p.m.",
+            "No, it is closed.",
+            "Only in an emergency."
+          ]
+        },
+        {
+          "id": "442beb96-fba2-416b-a24f-017ef2dea86a",
+          "position": 3,
+          "answer_format": "multiple_choice",
+          "question_text": "\"If you need help on the weekend, please call...\" — here, \"if\" introduces:",
+          "options": [
+            "a reason",
+            "a condition",
+            "a result"
+          ]
+        },
+        {
+          "id": "d97187da-031a-40e8-a4e0-68bd2499433e",
+          "position": 4,
+          "answer_format": "multiple_choice",
+          "question_text": "What is this notice mainly about?",
+          "options": [
+            "The clinic's phone number only",
+            "The clinic's opening times and what to do on weekends",
+            "How to make an appointment online"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Appointment Reminder",
+      "cefr_level": "A2",
+      "passage_text": "Dear Mr. Ortiz,\n\nThis is a reminder about your appointment with Dr. Lima on Thursday, August 13, at 10:30 a.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this appointment, please call us at least 24 hours before, so we can give the time to another patient. Remember to bring your ID card and your insurance information.\n\nThank you,\nRiverside Clinic",
+      "questions": [
+        {
+          "id": "13400d9b-117c-4639-b850-0aba4879c653",
+          "position": 5,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Reminder\" means:",
+          "options": [
+            "a message that helps you remember something",
+            "a type of medicine",
+            "a form to complete"
+          ]
+        },
+        {
+          "id": "a222117d-2195-4ea4-9459-ec940922c490",
+          "position": 6,
+          "answer_format": "multiple_choice",
+          "question_text": "What time is the appointment?",
+          "options": [
+            "10:15 a.m.",
+            "10:30 a.m.",
+            "3:00 p.m."
+          ]
+        },
+        {
+          "id": "84a403d4-d452-4cf7-92cb-a41bdec0e0a6",
+          "position": 7,
+          "answer_format": "multiple_choice",
+          "question_text": "\"If you cannot come to this appointment, please call us...\" — this sentence describes:",
+          "options": [
+            "a condition and an action",
+            "two things happening at the same time",
+            "a cause with no solution"
+          ]
+        },
+        {
+          "id": "c0b90898-9e45-4b79-b9c5-cecf383a20a6",
+          "position": 8,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
+          "options": [
+            "Come to the clinic a quarter of an hour before your appointment.",
+            "Come to the clinic 15 minutes after your appointment.",
+            "You may arrive at any time you like."
+          ]
+        },
+        {
+          "id": "a980b738-63f3-439c-8033-d35a16181056",
+          "position": 9,
+          "answer_format": "multiple_choice",
+          "question_text": "What is the main purpose of this message?",
+          "options": [
+            "To cancel an appointment",
+            "To remind the patient of an appointment and give instructions",
+            "To ask the patient for payment"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "The Importance of Sleep for Learning",
+      "cefr_level": "B1",
+      "passage_text": "Getting enough sleep is essential for learning new skills, including languages. During deep sleep, the brain organizes the information gathered throughout the day and stores it in long-term memory. However, many students underestimate how much rest they need, especially before an exam or an important class. As a result, they may study for hours but remember very little the next day.\n\nExperts recommend at least seven hours of sleep per night for adults, although this can vary depending on age and lifestyle. Interestingly, taking a short nap after studying can also improve memory, as long as it does not replace a full night's sleep.",
+      "questions": [
+        {
+          "id": "9843e263-ffdb-4a3c-b813-400980b31817",
+          "position": 10,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Underestimate\" means:",
+          "options": [
+            "to think something is less important or serious than it really is",
+            "to study for too many hours",
+            "to sleep for a very short time"
+          ]
+        },
+        {
+          "id": "81c28a17-38c3-4588-83af-e507fb7659c1",
+          "position": 11,
+          "answer_format": "multiple_choice",
+          "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
+          "options": [
+            "a contrast",
+            "a consequence",
+            "an example"
+          ]
+        },
+        {
+          "id": "6011707d-cc78-4446-851a-c3ac7964942b",
+          "position": 12,
+          "answer_format": "multiple_choice",
+          "question_text": "Choose the best word: \"Experts recommend seven hours of sleep, ___ this can vary depending on age.\"",
+          "options": [
+            "because",
+            "although",
+            "so"
+          ]
+        },
+        {
+          "id": "684abaea-b108-4c64-bf23-fd5f87c3035d",
+          "position": 13,
+          "answer_format": "multiple_choice",
+          "question_text": "What is this passage mainly about?",
+          "options": [
+            "Why students should avoid naps",
+            "The connection between sleep and memory",
+            "How long a university exam should last"
+          ]
+        },
+        {
+          "id": "fcdb5eeb-6efd-4777-8351-e2981170b2fb",
+          "position": 14,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence best summarises the text?",
+          "options": [
+            "Sleep has no real effect on studying.",
+            "Deep sleep helps the brain store new information, so rest matters as much as study time.",
+            "Naps are always more effective than a full night's sleep."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Remote Work and Communication",
+      "cefr_level": "B2",
+      "passage_text": "Since remote work became widespread, many companies have had to rethink how they communicate internally. Face-to-face conversations, once the default way to resolve misunderstandings quickly, have largely been replaced by written messages and video calls. While this shift has given employees greater flexibility, it has also introduced new challenges.\n\nWritten communication, for instance, can easily be misread, since tone and body language are absent. Consequently, some organisations now train staff specifically in written communication skills, encouraging them to be clear, concise, and mindful of how a message might be interpreted by someone who cannot see their face. Others have adopted stricter rules about which topics should be discussed by call rather than by chat, precisely to avoid this kind of ambiguity.",
+      "questions": [
+        {
+          "id": "5ecc7a4a-f59a-4f45-88a6-6094a5386d51",
+          "position": 15,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
+          "options": [
+            "unclear meaning",
+            "strong disagreement",
+            "fast response"
+          ]
+        },
+        {
+          "id": "9a2615cc-5744-49a1-bdf0-c2564d9b6e25",
+          "position": 16,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Consequently, some organisations now train staff...\" — \"consequently\" signals:",
+          "options": [
+            "a cause",
+            "a result",
+            "a similarity"
+          ]
+        },
+        {
+          "id": "b3d30926-ce44-40a2-bb49-337c35d77a62",
+          "position": 17,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence best captures the main idea of the text?",
+          "options": [
+            "Remote work has eliminated the need for meetings.",
+            "Remote work has changed internal communication and created a need for clearer writing skills.",
+            "Companies no longer allow phone calls."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Extract from a hospital policy: managing patient falls",
+      "cefr_level": "B2",
+      "passage_text": "Falls remain one of the most frequently reported incidents in hospital wards, particularly among older patients and those recovering from surgery. Staff should complete a falls-risk assessment within four hours of admission and repeat it whenever a patient's condition changes significantly.\n\nWhere a patient is identified as high risk, a coloured wristband must be applied and a note placed above the bed to alert all staff, including those from other departments. Environmental factors, such as poor lighting, loose rugs, or cluttered walkways, should also be addressed promptly, since removing these hazards is often more effective than relying on supervision alone.",
+      "questions": [
+        {
+          "id": "ff8020af-b992-4df1-b69a-19ca257480ad",
+          "position": 18,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Hazards\" most likely means:",
+          "options": [
+            "benefits",
+            "dangers or risks",
+            "instructions"
+          ]
+        },
+        {
+          "id": "5e1ee938-15e2-43fc-baf2-90213d979d10",
+          "position": 19,
+          "answer_format": "multiple_choice",
+          "question_text": "According to the text, a coloured wristband is used to:",
+          "options": [
+            "record a patient's blood type",
+            "alert staff that a patient is at high risk of falling",
+            "show that a patient has recovered from surgery"
+          ]
+        },
+        {
+          "id": "7c6c0337-ce28-4de2-8495-080fc54985ff",
+          "position": 20,
+          "answer_format": "multiple_choice",
+          "question_text": "What is this extract mainly advising staff to do?",
+          "options": [
+            "Rely only on close supervision to prevent falls.",
+            "Assess risk early, mark high-risk patients clearly, and remove physical hazards.",
+            "Avoid admitting elderly patients to the ward."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "The Limits of Self-Reported Data",
+      "cefr_level": "C1",
+      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains indispensable in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
+      "questions": [
+        {
+          "id": "423875f9-a65d-41ec-9d6e-b2b28861f5d9",
+          "position": 21,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Indispensable\" means:",
+          "options": [
+            "unreliable",
+            "absolutely necessary",
+            "rarely used"
+          ]
+        },
+        {
+          "id": "9123fb90-bb0c-48d9-88f6-729a007ff225",
+          "position": 22,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best paraphrases: \"Rather than abandoning self-report methods altogether, most researchers now combine them with objective measures\"?",
+          "options": [
+            "Most researchers have stopped using self-reported data completely.",
+            "Most researchers now use self-reported data alongside other, more objective sources.",
+            "Objective measures have proven unreliable compared to self-reports."
+          ]
+        },
+        {
+          "id": "b7f8d544-d176-458b-bc9b-f31279200012",
+          "position": 23,
+          "answer_format": "multiple_choice",
+          "question_text": "Which title best fits this passage?",
+          "options": [
+            "Why Self-Reported Data Should Be Banned from Research",
+            "Understanding and Managing the Limitations of Self-Reported Data",
+            "A Brief History of Data Collection Methods"
+          ]
+        },
+        {
+          "id": "f65b64c2-4702-4330-a6ff-e72db1e8e6fc",
+          "position": 24,
+          "answer_format": "multiple_choice",
+          "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
+          "options": [
+            "They believe it should be avoided whenever objective measures are available.",
+            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses.",
+            "They believe the biases described make self-reported data unusable for medical research."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Extract from clinical guidelines: discharge planning",
+      "cefr_level": "C1",
+      "passage_text": "Effective discharge planning should begin as early as possible in a patient's admission, rather than being treated as a task reserved for the final day of a hospital stay. Delays are frequently caused not by clinical factors but by administrative ones, such as awaiting transport, medication reconciliation, or confirmation of a home care package.\n\nClinicians are therefore encouraged to identify likely discharge barriers at the point of admission and to communicate these to the multidisciplinary team without delay. Where a patient is likely to require ongoing support, referral to community services should be initiated well in advance, since these services often have their own waiting periods that are entirely independent of the patient's readiness to leave hospital.",
+      "questions": [
+        {
+          "id": "788f0a5e-40d6-4cd4-9d47-382cd5593b62",
+          "position": 25,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Reconciliation\" (as in \"medication reconciliation\") most likely refers to:",
+          "options": [
+            "reducing the dose of a medication",
+            "checking and confirming that a patient's medication list is accurate and complete",
+            "prescribing a completely new medication"
+          ]
+        },
+        {
+          "id": "082126cf-61d2-4dbc-ab84-375515c60199",
+          "position": 26,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...rather than being treated as a task reserved for the final day\" — this phrase signals:",
+          "options": [
+            "similarity between two ideas",
+            "a contrast with common practice",
+            "a cause-and-effect relationship"
+          ]
+        },
+        {
+          "id": "4bbced0a-d126-45df-b53c-b32c3484098b",
+          "position": 27,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best summarises the text?",
+          "options": [
+            "Discharge planning should start early because delays are often administrative, not clinical.",
+            "Discharge planning is the sole responsibility of doctors.",
+            "Patients are usually ready to leave hospital before community services are available."
+          ]
+        },
+        {
+          "id": "1571ed84-993e-4d07-aaf9-b2a5fca5f09f",
+          "position": 28,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...these services often have their own waiting periods that are entirely independent of the patient's readiness to leave hospital\" most nearly means:",
+          "options": [
+            "Community services can only start once the patient is ready to leave.",
+            "The time community services take is unrelated to how ready the patient is.",
+            "Patients must wait in hospital until community services are no longer busy."
+          ]
+        }
+      ]
+    }
+  ]
+}
