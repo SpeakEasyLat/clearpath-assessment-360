@@ -17,7 +17,30 @@
 //
 // Cuando la respuesta guardada completa todas las preguntas del modulo para este
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
-// y recalcula el desbloqueo de OET / STEPS 2 / Speaking Assessment.
+// y recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH).
+//
+// v9 (05/08/2026): decision de Diana -- "nunca decision manual, si es inconsistente
+// debe quedar un registro en el resultado del assessment 360". Se agrega
+// detectPatternInconsistency() y se persiste sub_scores.band_detail (jsonb, columna
+// nueva via migracion sub_scores_band_detail) con el detalle por banda y un booleano
+// pattern_inconsistent. Esto es SOLO diagnostico: el ceiling asignado y la ruta
+// (OET/STEPS2/ENGLISH) se siguen calculando automaticamente, sin bloqueo, exactamente
+// igual que antes -- nada queda esperando revision manual.
+//
+// v7 (05/08/2026, tarea 1.3): agrega "reading" a MODULE_TO_SKILL (modulo
+// nivel1_reading) y reescribe la decision de ruta como las TRES ramas de
+// claude/flujo-objetivo.md en vez de la regla binaria vieja (oetUnlocked ?
+// 'OET' : 'English'). La decision de ruta (assignedRoute) solo se calcula y
+// se guarda cuando existen los CUATRO sub_scores del Nivel 1 (grammar,
+// listening, writing, reading) -- mientras falte alguno, queda en null
+// ("pendiente"), igual que en js/scoring.js (deben mantenerse sincronizados,
+// ver ese archivo para el razonamiento completo de la regla). Tambien marca
+// attempts.status = 'completed' apenas se asigna la ruta (tarea 1.8).
+//
+// OJO: esta misma logica de recalculo de ruta (deciderAndPersistRoute) esta
+// DUPLICADA en submit-writing, porque el sub_score de writing se calcula ahi
+// (con IA) y no aca. Cualquier cambio a la regla debe aplicarse en los dos
+// lugares. Mantenerlos sincronizados.
 //
 // Corre con el service_role key (inyectado automaticamente por Supabase).
 
@@ -43,11 +66,12 @@ const PERCENT_THRESHOLD = 70;
 const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
 
-// module (question_bank) -> skill (sub_scores). oet_listening/oet_reading todavia
-// no tienen skill propio en el esquema actual, asi que no generan sub_score por ahora.
+// module (question_bank) -> skill (sub_scores). oet_listening/oet_reading/oet_writing
+// todavia no tienen pantalla propia (Fase 4), asi que no generan sub_score por ahora.
 const MODULE_TO_SKILL = {
 nivel1_grammar: "grammar",
 nivel1_listening: "listening",
+nivel1_reading: "reading",
 steps2: "steps2_reading",
 };
 
@@ -71,9 +95,28 @@ break;
 return ceilingLevel;
 }
 
+// Decision de Diana (05/08/2026): "nunca decision manual, si es inconsistente debe
+// quedar un registro en el resultado del assessment 360". El ceiling YA se asigna
+// siempre en forma automatica (nunca bloquea), pero un patron con "huecos" -- ej.
+// aprueba B2 pero falla B1, o falla A1 pero aprueba A2+ -- merece quedar trazado
+// para que Diana pueda auditarlo despues sin que nadie tenga que intervenir para
+// que el estudiante avance. True cuando alguna banda POR ENCIMA del ceiling
+// calculado (la banda donde se corto la racha, o cualquiera despues) en realidad
+// supero el umbral.
+function detectPatternInconsistency(perBand, ceilingLevel) {
+const ceilingIdx = ceilingLevel ? CEFR_ORDER.indexOf(ceilingLevel) : -1;
+for (let i = ceilingIdx + 1; i < CEFR_ORDER.length; i++) {
+const band = perBand[CEFR_ORDER[i]];
+if (band && band.total > 0 && band.percent >= PERCENT_THRESHOLD) {
+return true;
+}
+}
+return false;
+}
+
 // Normaliza para comparar respuestas de forma insensible a mayusculas/espacios
 // (ej. " Four " === "four", "38.5" === "38.5 "). No toca acentos porque las
-// respuestas de Listening son en ingles.
+// respuestas de Listening/Reading son en ingles.
 function normalizeAnswer(value) {
 return typeof value === "string" ? value.trim().toLowerCase().replace(/\s+/g, " ") : "";
 }
@@ -92,6 +135,96 @@ return variants.some((variant) => normalizeAnswer(variant) === normalizedSelecte
 
 // multiple_choice (default)
 return normalizedSelected === normalizeAnswer(question.correct_answer);
+}
+
+// Recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH) con TODOS los sub_scores
+// disponibles hasta ahora, y la persiste en unlock_state + attempts.status. Devuelve
+// el resultado por si el llamador lo necesita (no se usa hoy, pero deja la funcion
+// reutilizable). Debe mantenerse identica a la version en submit-writing.
+async function recomputeRouteAndPersist(supabase, attemptId) {
+const { data: allSubScores, error: allSubScoresError } = await supabase
+.from("sub_scores")
+.select("skill, cefr_estimate")
+.eq("attempt_id", attemptId);
+
+if (allSubScoresError) {
+console.error("submit-response: error leyendo sub_scores", allSubScoresError);
+return { error: "Error interno. Intenta de nuevo en un momento." };
+}
+
+// OJO: un sub_score puede existir con cefr_estimate = null (el estudiante no superó
+// ni la banda A1 -- eso es un resultado legítimo, no "todavía no rindió"). Por eso
+// "completo" se determina por la PRESENCIA de la fila en sub_scores (skillsPresent),
+// nunca por si cefr_estimate es truthy. Confundir esto fue un bug real: un estudiante
+// con reading por debajo de A1 se quedaba con assignedRoute = null para siempre.
+const bySkill = Object.fromEntries(allSubScores.map((s) => [s.skill, s.cefr_estimate]));
+const skillsPresent = new Set(allSubScores.map((s) => s.skill));
+const grammarLevel = bySkill.grammar ?? null;
+const listeningLevel = bySkill.listening ?? null;
+const writingLevel = bySkill.writing ?? null;
+const readingLevel = bySkill.reading ?? null;
+
+const nivel1Complete =
+skillsPresent.has("grammar") && skillsPresent.has("listening") && skillsPresent.has("writing") && skillsPresent.has("reading");
+
+let assignedRoute = null;
+let oetUnlocked = false;
+let steps2Unlocked = false;
+let speakingAssessmentType = null;
+
+if (nivel1Complete) {
+const allFourOk =
+meetsLevel(grammarLevel, MIN_LEVEL_FOR_OET) &&
+meetsLevel(listeningLevel, MIN_LEVEL_FOR_OET) &&
+meetsLevel(writingLevel, MIN_LEVEL_FOR_OET) &&
+meetsLevel(readingLevel, MIN_LEVEL_FOR_OET);
+const readingOk = meetsLevel(readingLevel, MIN_LEVEL_FOR_STEPS2);
+
+// Regla de Diana (claude/flujo-objetivo.md): los 4 >= B2 -> OET; si no, "el
+// reading es la llave de STEPS 2" -- si reading >= B2 -> STEPS2; si no -> ENGLISH.
+assignedRoute = allFourOk ? "OET" : (readingOk ? "STEPS2" : "ENGLISH");
+oetUnlocked = assignedRoute === "OET";
+steps2Unlocked = assignedRoute === "STEPS2";
+// El modulo STEPS 2 (Fase 3) todavia no existe: mientras tanto, tanto la ruta
+// STEPS2 como la ruta ENGLISH agendan el mismo Speaking Assessment breve tipo
+// 'English' (ver diagrama en flujo-objetivo.md: STEPS 2 -> Link English Speaking).
+speakingAssessmentType = assignedRoute === "OET" ? "OET" : "English";
+}
+
+const { error: unlockError } = await supabase
+.from("unlock_state")
+.upsert(
+{
+attempt_id: attemptId,
+steps2_unlocked: steps2Unlocked,
+oet_unlocked: oetUnlocked,
+speaking_assessment_type: speakingAssessmentType,
+assigned_route: assignedRoute,
+updated_at: new Date().toISOString(),
+},
+{ onConflict: "attempt_id" },
+);
+
+if (unlockError) {
+console.error("submit-response: error actualizando unlock_state", unlockError);
+return { error: "Error interno. Intenta de nuevo en un momento." };
+}
+
+if (nivel1Complete) {
+const { error: attemptError } = await supabase
+.from("attempts")
+.update({ status: "completed", completed_at: new Date().toISOString() })
+.eq("id", attemptId)
+.neq("status", "completed");
+
+if (attemptError) {
+console.error("submit-response: error marcando attempt completed", attemptError);
+// No cortamos la respuesta por esto -- la ruta ya quedo guardada, que es lo que
+// necesita el router. Se puede reintentar/corregir a mano si hace falta.
+}
+}
+
+return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
 }
 
 Deno.serve(async (req) => {
@@ -233,6 +366,7 @@ const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
 perBand[level] = { correct, total, percent };
 }
 const ceilingLevel = computeCeiling(perBand);
+const patternInconsistent = detectPatternInconsistency(perBand, ceilingLevel);
 const totalCorrect = responses.filter((r) => r.is_correct === true).length;
 
 const skill = MODULE_TO_SKILL[question.module];
@@ -247,6 +381,9 @@ raw_score: totalCorrect,
 max_score: moduleQuestionIds.length,
 cefr_estimate: ceilingLevel,
 computed_at: new Date().toISOString(),
+// Solo diagnostico -- nunca cambia ceilingLevel ni bloquea la ruta. Ver
+// detectPatternInconsistency() y la migracion sub_scores_band_detail.
+band_detail: { perBand, pattern_inconsistent: patternInconsistent },
 },
 { onConflict: "attempt_id,skill" },
 );
@@ -256,44 +393,10 @@ console.error("submit-response: error guardando sub_score", subScoreError);
 return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
 }
 
-// 6. Recalcular desbloqueos con todos los sub_scores disponibles hasta ahora.
-const { data: allSubScores, error: allSubScoresError } = await supabase
-.from("sub_scores")
-.select("skill, cefr_estimate")
-.eq("attempt_id", attemptId);
-
-if (allSubScoresError) {
-console.error("submit-response: error leyendo sub_scores", allSubScoresError);
-return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
-}
-
-const bySkill = Object.fromEntries(allSubScores.map((s) => [s.skill, s.cefr_estimate]));
-const grammarOk = meetsLevel(bySkill.grammar, MIN_LEVEL_FOR_OET);
-const listeningOk = meetsLevel(bySkill.listening, MIN_LEVEL_FOR_OET);
-const writingOk = meetsLevel(bySkill.writing, MIN_LEVEL_FOR_OET);
-const oetUnlocked = grammarOk && listeningOk && writingOk;
-
-// Ruta binaria (decisión de Diana): si desbloquea OET -> Speaking OET;
-// en cualquier otro caso (se queda en nivel CEFR) -> Speaking CEFR English.
-// El estudiante no elige: la ruta depende solo del resultado.
-const speakingAssessmentType = oetUnlocked ? "OET" : "English";
-
-const { error: unlockError } = await supabase
-.from("unlock_state")
-.upsert(
-{
-attempt_id: attemptId,
-steps2_unlocked: true,
-oet_unlocked: oetUnlocked,
-speaking_assessment_type: speakingAssessmentType,
-updated_at: new Date().toISOString(),
-},
-{ onConflict: "attempt_id" },
-);
-
-if (unlockError) {
-console.error("submit-response: error actualizando unlock_state", unlockError);
-return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
+// 6. Recalcular la ruta del Nivel 1 con todos los sub_scores disponibles hasta ahora.
+const routeResult = await recomputeRouteAndPersist(supabase, attemptId);
+if (routeResult && routeResult.error) {
+return json({ error: routeResult.error }, 500);
 }
 }
 
