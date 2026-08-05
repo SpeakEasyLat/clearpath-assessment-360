@@ -1,17 +1,9 @@
 {
   "_meta": {
-    "source": "ASSESSMENT.pdf (banco propio de Speak Easy / ClearPath) — seleccion de 20 preguntas marcadoras de banda",
-    "version": "2.0 — 3 de agosto de 2026",
-    "cambio": "De 44 preguntas a 20 (4 por banda CEFR), decidido por Diana el 3/08/2026 por tiempo: ~10 minutos en vez de ~22.",
-    "seleccion": "Las 20 preguntas son las que marcan el paso de una banda a la siguiente, no las mas dificiles. Criterio completo en el doc de proyecto claude/grammar-seleccion-final-20.md",
-    "correccionNiveles": "Cuatro preguntas estaban mal ubicadas respecto del Marco de Calificacion CEFR de Diana y se corrigieron en Supabase el 3/08/2026: las viejas 11 y 12 pasaron de A2 a B1, la vieja 22 de B1 a A2, y la vieja 31 de B2 a C1.",
-    "renumeracion": "Las posiciones se renumeraron 1-20 para que las bandas queden contiguas. Equivalencia con la numeracion vieja de 44: 1=1, 2=2, 3=3, 4=5, 5=7, 6=8, 7=9, 8=22, 9=12, 10=15, 11=19, 12=23, 13=27, 14=30, 15=34, 16=35, 17=36, 18=38, 19=39, 20=40.",
-    "archivo": "Las 24 preguntas no seleccionadas NO se borraron: viven en question_bank con module='nivel1_grammar_archivo' y conservan su numeracion vieja. Se pueden reactivar cuando se quiera.",
+    "module": "nivel1_grammar",
+    "version": 2,
     "totalQuestions": 20,
-    "completionRule": "El estudiante debe responder las 20 preguntas completas. Sin regla de corte por preguntas sin responder.",
-    "timeLimitMinutes": 10,
-    "securityNote": "Las respuestas correctas viven exclusivamente en Supabase (tabla question_bank), nunca en este archivo publico.",
-    "scoringNote": "Metodo de calificacion CONFIRMADO por Diana el 3/08/2026: techo por banda (ceiling), no puntaje total. El estudiante sube de A1 hacia arriba mientras cada banda supere el 70% de acierto, y se detiene en la primera que falle. Con 4 preguntas por banda, el 70% significa acertar 3 de 4. El calculo es 100% server-side en submit-response; cefrRanges aqui abajo es solo referencia informativa."
+    "timeLimitMinutes": 10
   },
   "cefrRanges": [
     {
