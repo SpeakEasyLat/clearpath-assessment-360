@@ -48,7 +48,7 @@ if (prompts.length === 0) {
 quizArea.innerHTML = '<p class="note">No hay consignas configuradas.</p>';
 return;
 }
-remainingSeconds = writingData.timeLimitSeconds || 2400;
+remainingSeconds = writingData.timeLimitSeconds || 1200;
 startTimer();
 renderTask();
 }
