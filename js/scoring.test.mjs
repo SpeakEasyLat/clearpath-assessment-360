@@ -52,70 +52,96 @@ function allCorrectUpTo(maxId) {
   console.log('Caso 3 OK: ceiling =', result.ceilingLevel, '(correctamente se corta en el hueco de B1)');
 }
 
-// Caso 4: decideUnlocks -- los 3 sub-scores llegan a B2 -> OET se desbloquea y el
-// Speaking Assessment queda tipo 'OET' (agendar el roleplay)
+// Caso 4: decideUnlocks -- los 4 sub-scores del Nivel 1 (grammar/listening/writing/
+// reading) llegan a B2 -> ruta OET, y el Speaking Assessment queda tipo 'OET'
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
     listening: { ceilingLevel: 'B2' },
     writing: { cefrEstimate: 'B2' },
+    reading: { ceilingLevel: 'B2' },
   };
   const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.assignedRoute, 'OET');
   assert.equal(unlocks.oetUnlocked, true);
   assert.equal(unlocks.speakingAssessmentType, 'OET');
   assert.equal(unlocks.speakingAssessmentUnlocked, true);
-  assert.equal(unlocks.steps2Unlocked, true);
-  console.log("Caso 4 OK: OET desbloqueado y Speaking Assessment tipo 'OET' cuando los 3 sub-scores llegan a B2");
+  assert.equal(unlocks.steps2Unlocked, false, 'la ruta OET no es la ruta STEPS2');
+  console.log("Caso 4 OK: ruta OET cuando los 4 sub-scores del Nivel 1 llegan a B2");
 }
 
 // Caso 5a: grammar y listening en B2 pero writing se queda en B1 -> OET NO se desbloquea.
-// STEPS 2 (reading + vocab médico) SÍ llega a B2 -> sigue en STEPS 2, sin sesión en vivo.
+// Reading (la llave de STEPS 2) SÍ llega a B2 -> ruta STEPS2.
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
     listening: { ceilingLevel: 'B2' },
     writing: { cefrEstimate: 'B1' },
-    steps2: { ceilingLevel: 'B2' },
+    reading: { ceilingLevel: 'B2' },
   };
   const unlocks = decideUnlocks(subScores);
-  assert.equal(unlocks.oetUnlocked, false, 'writing en B1 (no llega a B1 alto) debe bloquear OET');
+  assert.equal(unlocks.oetUnlocked, false, 'writing en B1 debe bloquear OET aunque los otros tres estén bien');
+  assert.equal(unlocks.assignedRoute, 'STEPS2');
   assert.equal(unlocks.steps2Ok, true);
-  assert.equal(unlocks.speakingAssessmentType, null, 'si STEPS 2 sí alcanza, no corresponde Speaking Assessment todavía');
-  assert.equal(unlocks.steps2Unlocked, true, 'STEPS 2 siempre debe quedar disponible');
-  console.log('Caso 5a OK: writing insuficiente bloquea OET, pero STEPS 2 alcanza -> sigue en STEPS 2 sin sesión en vivo');
+  assert.equal(unlocks.steps2Unlocked, true);
+  assert.equal(unlocks.speakingAssessmentType, 'English', 'mientras STEPS 2 no exista como módulo, agenda el Speaking Assessment breve English');
+  console.log('Caso 5a OK: writing insuficiente bloquea OET, pero reading alcanza B2 -> ruta STEPS2');
 }
 
-// Caso 5b: igual que 5a, pero el ceiling de STEPS 2 (reading + vocab médico) tampoco
-// llega a B2 -> el estudiante queda en English Level -> Speaking Assessment tipo 'English'
+// Caso 5b: igual que 5a, pero reading tampoco llega a B2 -> ruta ENGLISH
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
     listening: { ceilingLevel: 'B2' },
     writing: { cefrEstimate: 'B1' },
-    steps2: { ceilingLevel: 'A2' },
+    reading: { ceilingLevel: 'A2' },
   };
   const unlocks = decideUnlocks(subScores);
   assert.equal(unlocks.oetUnlocked, false);
+  assert.equal(unlocks.assignedRoute, 'ENGLISH');
   assert.equal(unlocks.steps2Ok, false);
-  assert.equal(unlocks.speakingAssessmentType, 'English', 'si ni OET ni STEPS 2 se alcanzan, corresponde el Speaking Assessment breve (English)');
+  assert.equal(unlocks.steps2Unlocked, false);
+  assert.equal(unlocks.speakingAssessmentType, 'English', 'ni OET ni STEPS2 -> Speaking Assessment breve (English)');
   assert.equal(unlocks.speakingAssessmentUnlocked, true);
-  console.log("Caso 5b OK: ni OET ni STEPS 2 se alcanzan -> Speaking Assessment tipo 'English' desbloqueado");
+  console.log("Caso 5b OK: reading tampoco alcanza B2 -> ruta ENGLISH, Speaking Assessment tipo 'English'");
 }
 
-// Caso 6: STEPS 2 todavía no existe como módulo (subScores.steps2 llega null) -> no se
-// debe inventar un resultado; steps2Ok y speakingAssessmentType quedan en null ("pendiente")
+// Caso 6: todavía faltan sub-scores del Nivel 1 (reading no existe) -> no se debe
+// inventar un resultado; assignedRoute, steps2Ok y speakingAssessmentType quedan en
+// null ("pendiente") hasta que existan los cuatro sub-scores
 {
   const subScores = {
     grammar: { ceilingLevel: 'B1' },
     listening: null,
     writing: null,
-    steps2: null,
+    reading: null,
   };
   const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.assignedRoute, null, 'con el Nivel 1 incompleto no se puede asignar ruta todavía');
   assert.equal(unlocks.oetUnlocked, false);
-  assert.equal(unlocks.steps2Ok, null, 'sin datos de STEPS 2 no se puede afirmar que sí ni que no');
+  assert.equal(unlocks.steps2Ok, null, 'sin los 4 sub-scores no se puede afirmar que sí ni que no');
   assert.equal(unlocks.speakingAssessmentType, null, 'no se debe simular un Speaking Assessment sin datos reales');
-  console.log('Caso 6 OK: sin sub-score de STEPS 2 todavía, el resultado queda pendiente (null) en vez de simulado');
+  console.log('Caso 6 OK: con el Nivel 1 incompleto, el resultado queda pendiente (null) en vez de simulado');
+}
+
+// Caso 7: los 4 módulos están COMPLETOS pero reading no superó ni la banda A1 -- el
+// ceiling real es null (no "todavía no rindió"). Este es exactamente el bug encontrado
+// en la prueba end-to-end del 05/08/2026: antes, un ceiling null se confundía con
+// "módulo no completado" y assignedRoute se quedaba en null para siempre. Debe asignar
+// ENGLISH igual que si reading hubiera dado A2 (Caso 5b).
+{
+  const subScores = {
+    grammar: { ceilingLevel: 'B2' },
+    listening: { ceilingLevel: 'B2' },
+    writing: { cefrEstimate: 'B2' },
+    reading: { ceilingLevel: null },
+  };
+  const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.assignedRoute, 'ENGLISH', 'reading con ceiling null (completo, pero por debajo de A1) debe rutear a ENGLISH, no quedar pendiente');
+  assert.equal(unlocks.oetUnlocked, false);
+  assert.equal(unlocks.steps2Ok, false);
+  assert.equal(unlocks.speakingAssessmentType, 'English');
+  console.log('Caso 7 OK: reading completo con ceiling null (por debajo de A1) rutea a ENGLISH en vez de quedar pendiente');
 }
 
 console.log('\nTodos los casos de prueba pasaron.');
