@@ -265,3 +265,21 @@ outline: none;
 border-color: var(--teal);
 box-shadow: 0 0 0 3px var(--teal-light);
 }
+.passage-title {
+font-family: var(--font-heading);
+font-weight: 700;
+font-size: 1.02rem;
+margin-bottom: 10px;
+}
+.passage-box {
+background: var(--teal-light);
+border: 1px solid var(--gray-300);
+border-radius: var(--radius);
+padding: 16px 18px;
+margin-bottom: 18px;
+font-size: 0.98rem;
+line-height: 1.7;
+max-height: 340px;
+overflow-y: auto;
+white-space: pre-line;
+}
