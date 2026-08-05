@@ -223,6 +223,10 @@ if (progressLabel) progressLabel.textContent = 'Writing completado';
 renderDone(timedOut);
 }
 
+// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing -> Reading -> router.
+// Antes Writing era el último módulo y mandaba directo a speaking.html. Ahora sigue
+// Reading (tarea 1.7), así que manda a siguiente.html, que le pregunta al backend
+// (get-unlock-state, tarea 1.6) cuál es el próximo paso real del estudiante.
 function renderDone(timedOut) {
 if (timerBox) timerBox.style.display = 'none';
 quizArea.style.display = 'none';
@@ -232,12 +236,13 @@ resultArea.innerHTML = `
 <h2>Writing completado</h2>
 <p>${timedOut ? 'Se terminó el tiempo. ' : ''}Tus respuestas quedaron guardadas.</p>
 <p class="note">Tu writing se revisa después; no se muestran resultados en esta pantalla.</p>
+<p>Sigue el módulo de <strong>Reading</strong>. Puedes continuar ahora.</p>
 `;
 }
 
   var __spk = document.createElement('a');
-  __spk.href = 'speaking.html';
-  __spk.textContent = 'Agendar tu Speaking Assessment';
+  __spk.href = 'siguiente.html';
+  __spk.textContent = 'Continuar a Reading';
   __spk.style.cssText = 'display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;font-weight:600;padding:0.9rem 1rem;border-radius:8px;margin:1.2rem 0 0;background:#2a6f97;color:#fff;';
   resultArea.appendChild(__spk);
 }
