@@ -34,7 +34,7 @@ let saving = false;
 async function init() {
 const sessionToken = sessionTokenOrRedirect();
 if (!sessionToken) return;
-const res = await fetch('data/nivel1-listening.json');
+const res = await fetch('data/nivel1-listening.json?v=2');
 listeningData = await res.json();
 renderAudioGroup();
 }
