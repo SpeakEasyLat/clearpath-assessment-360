@@ -23,12 +23,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const TIME_LIMIT_SECONDS = 10 * 60; // 10 minutos para las 20 preguntas (recorte decidido por Diana el 3/08/2026)
 const IDK_LABEL = "I don't know the answer.";
 
-// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing.
-// Por ahora el siguiente módulo está fijo acá. Cuando exista la pantalla router
-// (siguiente.html, tarea 1.5), basta con cambiar estas dos constantes por
-// 'siguiente.html' y el backend decide a dónde mandar al estudiante.
-const NEXT_MODULE_URL = 'nivel1-listening.html';
-const NEXT_MODULE_LABEL = 'Continuar a Listening';
+// Encadenamiento del Nivel 1: Grammar -> Listening -> Writing -> Reading -> router.
+// Ya no hay una URL fija acá (tarea 1.7): al terminar, todos los módulos del Nivel 1
+// mandan a siguiente.html, que le pregunta al backend (get-unlock-state, tarea 1.6)
+// cuál es el próximo paso real del estudiante.
+const NEXT_MODULE_URL = 'siguiente.html';
+const NEXT_MODULE_LABEL = 'Continuar';
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -238,7 +238,7 @@ function renderDone(timedOut) {
   resultArea.innerHTML = `
     <div class="card">
       <h3>${timedOut ? 'Se acabó el tiempo — guardamos lo que respondiste' : 'Nivel 1 — Grammar completado'}</h3>
-      <p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- Diana revisa los resultados completos más adelante.</p>
+      <p>Guardamos todas tus respuestas. Como en el resto de Nivel 1, no te mostramos aciertos ni puntaje en vivo -- nuestro equipo revisa los resultados completos más adelante.</p>
       <p>Sigue el módulo de <strong>Listening</strong>. Puedes continuar ahora.</p>
       <button class="primary" id="nextModuleBtn" type="button">${NEXT_MODULE_LABEL}</button>
     </div>
