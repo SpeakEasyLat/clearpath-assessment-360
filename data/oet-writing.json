@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "module": "oet_writing",
+    "totalPrompts": 1
+  },
+  "timeLimitSeconds": 1020,
+  "readingTimeSeconds": 120,
+  "prompts": [
+    {
+      "id": "3fa3b029-6637-461e-8f1f-59eb9411b439",
+      "position": 1,
+      "title": "OET Writing — Referral letter for Ms Betty Johnson",
+      "case_notes": "Patient: Ms Betty Johnson (81-year-old woman). Address: 12 Merry Street, Stillwater. Marital status: Widowed. 4 children.\nPast medical history: Aortic valve replacement & pacemaker 2010. Osteoarthritis since 2011 — pain & immobility increasing over the past 3 years.\nRegular medication (25/02/15): Paracetamol 665mg 2 tabs tds. Warfarin 3mg mane — ceased 5 days preoperatively, started Clexane (enoxaparin sodium).\n\n25/02/15 11:30am — Right total knee replacement (R.TKR). Returned to ward. Vital signs: BP 115/70, P 82, R 16, T 36.9°C. Circulation good, knee elevated on pillow. Hb 80g/l → IV transfusion. IV cephalothin 1g qid. PCA — morphine, effective. Wound: nil ooze.\n\n26/02/15 — Wound good, sponged. Restart warfarin 5mg today. Subcutaneous Clexane 80mg. Cease PCA, start oxycodone 5–10mg prn. Pathology results checked, Hb 100g/l → commence Feratab 300mg mane.\n\n28/02/15 — Crutches, short walks. Wound good, afebrile. Subcutaneous Clexane 80mg given.\n\n02/03/15 — X-rays, bloods checked, INR 3.0, Hb 111g/l, ECG — no abnormalities. Managing with minimal assistance. Cease Clexane.\n\n06/03/15 — Remove remaining clips. Pathology checked. Transfer to rehabilitation today.\n\n14/03/15 — Pathology checked, INR 3.8. Reduce warfarin to 4mg nocte. Hb 112g/l. Reduce Feratab to 150mg mane.\n\n21/03/15 (Discharge) — No cardiac issues. Discharged with home nursing assistance (personal hygiene, home care). Wound exposed, shower with minimal assistance. Stick/frame as needed. Discharge medications: warfarin 4mg nocte, Feratab 150mg mane, paracetamol 1g qds, oxycodone 5–10mg prn. Rehabilitation appointment in 2 weeks. Advised GP review in 1 week — suggest repeat FBE, INR.",
+      "prompt_text": "Using the information in the case notes, write a letter of referral to Ms Johnson's local doctor, Dr Tony Jones, to update him on her condition following her discharge from rehabilitation. Address the letter to Dr Tony Jones, Private Practice, 12 New Street, Stillwater.\n\nIn your answer:\n- Expand the relevant notes into complete sentences.\n- Do not use note form.\n- Use letter format.\n- The body of the letter should be approximately 100–120 words.",
+      "guidance": "Reading time: 2 minutes. Writing time: 15 minutes. Use a professional register appropriate for a letter between healthcare colleagues. You will not see a score right after submitting — your response is saved and reviewed afterwards.",
+      "min_words": 100,
+      "max_words": 120
+    }
+  ]
+}
