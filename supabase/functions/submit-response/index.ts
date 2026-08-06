@@ -19,6 +19,15 @@
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
 // y recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH).
 //
+// v11 (06/08/2026): agrega OET Listening y OET Reading (Fase 4, module ===
+// 'oet_listening' | 'oet_reading'). Decision de Diana: estos dos modulos son SOLO
+// puntaje informativo -- los estudiantes que llegan aca ya calificaron para OET en el
+// Nivel 1 (los 4 skills >= B2), asi que no hay banda CEFR ni aprobar/reprobar, solo
+// raw_score/max_score para que Diana los revise. Rama nueva, analoga a steps2 pero sin
+// threshold/passed. Tampoco llama a recomputeRouteAndPersist (la ruta del Nivel 1 ya
+// quedo fija; estos sub_scores solo le sirven a get-unlock-state para encadenar las
+// pantallas de OET).
+//
 // v10 (05/08/2026): agrega el modulo STEP CK 2 (module === 'steps2'). A diferencia de
 // Grammar/Listening/Reading, sus preguntas tienen cefr_level = null (no hay bandas --
 // decision de Diana: "en steps no hay banda, tiene que sacar al menos el 75% correcto
@@ -82,13 +91,14 @@ const MIN_LEVEL_FOR_STEPS2 = "B2";
 // ">=75% correcto para aprobar". Con 8 preguntas eso es exactamente 6/8 (75.0%).
 const STEPS2_PASS_THRESHOLD = 75;
 
-// module (question_bank) -> skill (sub_scores). oet_listening/oet_reading/oet_writing
-// todavia no tienen pantalla propia (Fase 4), asi que no generan sub_score por ahora.
+// module (question_bank) -> skill (sub_scores).
 const MODULE_TO_SKILL = {
 nivel1_grammar: "grammar",
 nivel1_listening: "listening",
 nivel1_reading: "reading",
 steps2: "steps2_reading",
+oet_listening: "oet_listening",
+oet_reading: "oet_reading",
 };
 
 function meetsLevel(level, minLevel) {
@@ -413,6 +423,37 @@ return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
 // No se llama a recomputeRouteAndPersist aca -- la ruta del Nivel 1 no depende de
 // steps2_reading (ver comentario v10 arriba). get-unlock-state usa la presencia de
 // este sub_score para saber que STEP CK 2 ya se rindio y mandar a speaking.html.
+} else if (skill && (question.module === "oet_listening" || question.module === "oet_reading")) {
+const totalQuestions = moduleQuestionIds.length;
+const percent = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+const { error: subScoreError } = await supabase
+.from("sub_scores")
+.upsert(
+{
+attempt_id: attemptId,
+skill,
+raw_score: totalCorrect,
+max_score: totalQuestions,
+cefr_estimate: null,
+computed_at: new Date().toISOString(),
+band_detail: {
+type: "informational",
+correct: totalCorrect,
+total: totalQuestions,
+percent,
+},
+},
+{ onConflict: "attempt_id,skill" },
+);
+
+if (subScoreError) {
+console.error(`submit-response: error guardando sub_score de ${question.module}`, subScoreError);
+return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
+}
+// No se llama a recomputeRouteAndPersist aca -- la ruta del Nivel 1 ya quedo fija
+// antes de llegar al modulo OET; este sub_score solo le sirve a get-unlock-state
+// para saber que esta parte de OET ya se rindio y encadenar a la siguiente pantalla.
 } else if (skill) {
 const correctByQuestion = new Map(responses.map((r) => [r.question_id, r.is_correct === true]));
 const perBand = {};
