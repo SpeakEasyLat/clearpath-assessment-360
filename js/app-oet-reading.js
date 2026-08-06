@@ -13,6 +13,16 @@
 //
 // Puntaje: informativo únicamente (raw_score/max_score, sin banda CEFR ni
 // aprobar/reprobar) -- ver rama nueva en submit-response para module 'oet_reading'.
+//
+// Cada parte muestra el/los texto(s) arriba y las preguntas debajo, en la MISMA
+// vista (sin pestañas ni colapsables) -- el estudiante puede volver a leer el texto
+// mientras elige sus respuestas, desplazándose dentro de la misma parte.
+//
+// Sin botón "Previous" entre partes (decisión de Diana, 06/08/2026): a diferencia de
+// Nivel 1 Reading, en OET nunca se puede volver atrás a cambiar una respuesta después
+// de pasar de parte -- una vez confirmado "Save and continue", esa parte queda
+// cerrada. Dentro de la parte actual sí se puede cambiar de opción libremente antes
+// de confirmar.
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
@@ -113,20 +123,14 @@ function renderStep() {
 
   quizArea.innerHTML = `
     <div class="card question-card" id="stepContainer"></div>
+    <p class="note">Once you continue, you cannot go back to change your answers for this part.</p>
     <div class="nav-row">
-      <button class="secondary" id="prevBtn" type="button" ${currentStepIndex === 0 ? 'disabled' : ''}>Previous</button>
       <button class="primary" id="nextBtn" type="button">${currentStepIndex === total - 1 ? 'Finish' : 'Save and continue'}</button>
     </div>
     <p class="note" id="readingError" style="color:#c62828; display:none;"></p>
   `;
   step.render(document.getElementById('stepContainer'));
 
-  document.getElementById('prevBtn').addEventListener('click', () => {
-    if (currentStepIndex > 0) {
-      currentStepIndex--;
-      renderStep();
-    }
-  });
   document.getElementById('nextBtn').addEventListener('click', handleNext);
 }
 
