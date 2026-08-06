@@ -9,20 +9,11 @@
 </head>
 <body>
 <div class="wrap">
-<div class="brand">Speak Easy · ClearPath</div>
+<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
 <div class="subtitle">Un momento...</div>
 <div class="card">
 <div id="content"><p class="note">Buscando tu siguiente paso...</p></div>
 </div>
-<!--
-  NOTA DE DESARROLLO (para Diana, no visible en pantalla): esta pantalla es el router
-  (tarea 1.5). Le pregunta al backend (Edge Function get-unlock-state, extendida con
-  next_step_url en la tarea 1.6) a qué módulo mandar al estudiante, en vez de que cada
-  pantalla tenga la URL del siguiente módulo escrita a mano. Grammar, Listening, Writing
-  y Reading ya redirigen todas acá al terminar (tarea 1.7) en vez de saltar directo al
-  siguiente archivo .html -- así, si mañana se agrega o se reordena un módulo, alcanza
-  con cambiar esta Edge Function, sin tocar las 4 pantallas.
--->
 </div>
 <script src="js/fetch-retry.js"></script>
 <script>
