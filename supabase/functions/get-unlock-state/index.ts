@@ -6,6 +6,15 @@
 // al estudiante despues de cada modulo. No expone puntajes, aciertos ni respuestas --
 // solo la ruta / el siguiente paso.
 //
+// v5 (06/08/2026): agrega el modulo OET (Fase 4). Antes, la ruta OET iba SIEMPRE
+// directo a speaking.html apenas se completaba el Nivel 1. Ahora, si
+// assigned_route === 'OET', el estudiante debe rendir tambien OET Listening, OET
+// Reading y OET Writing (en ese orden, ver OET_SEQUENCE) antes de speaking.html --
+// next_step_url va devolviendo oet-listening.html / oet-reading.html / oet-writing.html
+// segun cuales sub_scores (oet_listening / oet_reading / oet_writing) todavia falten.
+// La ruta STEPS2 sigue igual (steps2.html). La ruta ENGLISH sigue yendo directo a
+// speaking.html (no tiene modulos adicionales).
+//
 // v4 (05/08/2026): agrega STEP CK 2. Antes, una vez completo el Nivel 1 (los 4
 // sub_scores), next_step_url era SIEMPRE speaking.html, sin importar la ruta asignada.
 // Ahora, si assigned_route === 'STEPS2' y el estudiante todavia no tiene el sub_score
@@ -46,6 +55,15 @@ const NIVEL1_SEQUENCE = [
 { skill: "listening", url: "nivel1-listening.html" },
 { skill: "writing", url: "nivel1-writing.html" },
 { skill: "reading", url: "nivel1-reading.html" },
+];
+
+// Modulo OET (Fase 4): solo para estudiantes con assigned_route === 'OET'. El Speaking
+// (roleplay clinico en vivo) no se automatiza -- sigue siendo el link de reserva en
+// speaking.html, sin cambios.
+const OET_SEQUENCE = [
+{ skill: "oet_listening", url: "oet-listening.html" },
+{ skill: "oet_reading", url: "oet-reading.html" },
+{ skill: "oet_writing", url: "oet-writing.html" },
 ];
 
 Deno.serve(async (req) => {
@@ -131,6 +149,21 @@ if (nivel1Complete) {
 if (assignedRoute === "STEPS2" && !completedSkills.has("steps2_reading")) {
 nextStepUrl = "steps2.html";
 nextStepSkill = "steps2_reading";
+} else if (assignedRoute === "OET") {
+let oetStep = null;
+for (const step of OET_SEQUENCE) {
+if (!completedSkills.has(step.skill)) {
+oetStep = step;
+break;
+}
+}
+if (oetStep) {
+nextStepUrl = oetStep.url;
+nextStepSkill = oetStep.skill;
+} else {
+nextStepUrl = "speaking.html";
+nextStepSkill = null;
+}
 } else {
 nextStepUrl = "speaking.html";
 nextStepSkill = null;
