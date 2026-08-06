@@ -1,11 +1,12 @@
 {
   "_meta": {
-    "module": "oet_reading"
+    "module": "oet_reading",
+    "timingNote": "time_limit_seconds ahora es por parte (A/B/C), no un total del módulo -- 6+8+8=22 min, pedido de Diana el 06/08/2026. Ver claude/estado-sesion-6-agosto-oet-cerrado.md."
   },
-  "time_limit_seconds": 1500,
   "partA": {
     "part_label": "Part A",
-    "instructions": "You have 8 minutes to complete the questions below. Questions 1–5: for each question, decide which text (A or B) the information comes from. Questions 6–8: answer with a word or short phrase from one of the texts.",
+    "time_limit_seconds": 360,
+    "instructions": "You have 6 minutes to complete the questions below. Questions 1–5: for each question, decide which text (A or B) the information comes from. Questions 6–8: answer with a word or short phrase from one of the texts.",
     "texts": [
       {
         "label": "Text A",
@@ -33,6 +34,7 @@
   },
   "partB": {
     "part_label": "Part B",
+    "time_limit_seconds": 480,
     "instructions": "You have 8 minutes to read the questions about each text below and select one answer.",
     "items": [
       {
@@ -67,7 +69,8 @@
   },
   "partC": {
     "part_label": "Part C",
-    "instructions": "You have about 15 minutes to read the text below and answer the questions.",
+    "time_limit_seconds": 480,
+    "instructions": "You have 8 minutes to read the text below and answer the questions.",
     "title": "Continuous Glucose Monitoring in Type 2 Diabetes",
     "passage_text": "For decades, people living with type 2 diabetes have managed their condition through a combination of periodic finger-prick blood tests and quarterly HbA1c readings taken at a clinic. This snapshot approach, while informative, has always had a blind spot: it tells a clinician what a patient's blood glucose was at a single moment, not how it behaved across the hours in between. Continuous glucose monitoring (CGM) — a small sensor worn on the skin that tracks interstitial glucose levels every few minutes and relays the data to a smartphone or reader — was developed initially for people with type 1 diabetes, whose insulin dosing requires tight, moment-to-moment feedback. Over the past five years, however, uptake among type 2 patients, including many who do not use insulin at all, has grown sharply, and a number of health systems are now debating how far that trend should be encouraged.\n\nAdvocates point first to the sheer density of information CGM provides. A single device can generate several hundred readings a day, producing a continuous curve rather than a handful of isolated dots. This makes it possible to see patterns that routine testing simply cannot capture: a spike after a particular meal, a slow overnight drift, or the delayed effect of a stressful day at work. Proponents argue that this granularity does more than satisfy clinical curiosity — it changes behaviour. A widely cited pilot programme run across several primary care clinics in the Midwest gave CGM devices to a group of patients with poorly controlled type 2 diabetes who had never used insulin. None of the patients received any additional dietary counselling beyond what they already had access to; the sensors alone were the intervention. The programme's coordinators included this detail specifically to isolate the effect of the feedback itself, rather than any accompanying education, and reported that average HbA1c fell measurably within four months, driven, patients said, by an ability to correlate specific foods and habits with visible glucose swings in something close to real time.\n\nSceptics do not dispute that CGM technology is accurate or that the data it produces is genuinely useful. Their concern lies elsewhere: with equity of access and the opportunity cost of funding it. CGM sensors remain considerably more expensive than conventional test strips, and in most public health systems the difference is only partly offset by manufacturers' claims of downstream savings from fewer complications. A recurring argument in the clinical literature is that subsidising CGM broadly for a population where only a minority use insulin risks diverting funds from interventions with a more firmly established evidence base — structured group education programmes, for instance, which are considerably cheaper per patient and have decades of outcome data behind them. Some clinicians go further, suggesting that the psychological burden of constant glucose data, arriving as a stream of alerts and warning colours, may increase anxiety in a subset of patients without insulin needs, for whom the same information carries fewer immediate treatment implications than it does for someone titrating insulin several times a day. This last point remains contested, and the handful of small studies addressing it directly have produced mixed findings.\n\nWhat most parties agree on is that CGM's role in type 2 diabetes is still being defined, rather than settled. Guidance bodies have moved cautiously, recommending CGM for defined groups — those on multiple daily insulin injections, or with a history of severe hypoglycaemia — while stopping short of endorsing universal rollout. For the much larger group of type 2 patients managed with oral medication or lifestyle measures alone, the technology's place is likely to be decided less by any single trial than by the slower accumulation of real-world cost and outcome data over the next several years.",
     "questions": [
