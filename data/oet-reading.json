@@ -1,0 +1,96 @@
+{
+  "_meta": {
+    "module": "oet_reading"
+  },
+  "time_limit_seconds": 1500,
+  "partA": {
+    "part_label": "Part A",
+    "instructions": "You have 8 minutes to complete the questions below. Questions 1–5: for each question, decide which text (A or B) the information comes from. Questions 6–8: answer with a word or short phrase from one of the texts.",
+    "texts": [
+      {
+        "label": "Text A",
+        "title": "Paediatric nasogastric tube use",
+        "passage_text": "Nasogastric is the most common route for enteral feeding. It is particularly useful in the short term, and when it is necessary to avoid a surgical procedure to insert a gastrostomy device. However, in the long term, gastrostomy feeding may be more suitable.\n\nIssues associated with paediatric nasogastric tube feeding include:\n- The procedure for inserting the tube is traumatic for the majority of children.\n- The tube is very noticeable.\n- Patients are likely to pull out the tube making regular re-insertion necessary.\n- Aspiration, if the tube is incorrectly placed.\n- Increased risk of gastro-oesophageal reflux with prolonged use.\n- Damage to the skin on the face."
+      },
+      {
+        "label": "Text B",
+        "title": "Inserting the nasogastric tube",
+        "passage_text": "All tubes must be radio opaque throughout their length and have externally visible markings.\n\n1. Wide bore: for short-term use only. Should be changed every seven days. Range of sizes for paediatric use is 6 Fr to 10 Fr.\n2. Fine bore: for long-term use. Should be changed every 30 days.\n\nIn general, tube sizes of 6Fr are used for standard feeds, and 7-10 Fr for higher density and fibre feeds. Tubes come in a range of lengths, usually 55cm, 75cm or 85cm.\n\nWash and dry hands thoroughly. Place all the equipment needed on a clean tray.\n- Find the most appropriate position for the child, depending on age and/or ability to co-operate. Older children may be able to sit upright with head support. Younger children may sit on a parent's lap. Infants may be wrapped in a sheet or blanket.\n- Check the tube is intact then stretch it to remove any shape retained from being packaged.\n- Measure from the tip of the nose to the bottom of the ear lobe, then from the ear lobe to xiphisternum. The length of tube can be marked with indelible pen or a note taken of the measurement marks on the tube (for neonates: measure from the nose to ear and then to the halfway point between xiphisternum and umbilicus).\n- Lubricate the end of the tube using a water-based lubricant.\n- Gently pass the tube into the child's nostril, advancing it along the floor of the nasopharynx to the oropharynx. Ask the child to swallow a little water, or offer a younger child their soother, to assist passage of the tube down the oesophagus. Never advance the tube against resistance.\n- If the child shows signs of breathlessness or severe coughing, remove the tube immediately.\n- Lightly secure the tube with tape until the position has been checked."
+      }
+    ],
+    "matchingQuestions": [
+      { "id": "9ea3ceb2-b73d-4e08-a669-0b23764e893c", "question_text": "the risks of feeding a child via a nasogastric tube?" },
+      { "id": "2c01e2c4-fe7b-4346-b196-2fcd02be8328", "question_text": "calculating the length of tube that will be required for a patient?" },
+      { "id": "72115677-6991-4cd2-b6f8-022ef983a8bd", "question_text": "when alternative forms of feeding may be more appropriate than nasogastric?" },
+      { "id": "8d6178a6-12d6-4372-a8ee-f8f681031209", "question_text": "the outward appearance of the tubes?" },
+      { "id": "40479995-52d7-4fb4-9143-b572a31d0a3d", "question_text": "how regularly different kinds of tube need replacing?" }
+    ],
+    "shortAnswerQuestions": [
+      { "id": "27df61dd-455b-4f30-bb37-d4f3da705a35", "question_text": "What type of tube should you use for patients who need nasogastric feeding for an extended period?" },
+      { "id": "553779c7-e266-4188-a64a-52751afde63a", "question_text": "What should you apply to a feeding tube to make it easier to insert?" },
+      { "id": "50aef293-d3e6-4f0b-936d-040b589315f5", "question_text": "What should you use to keep the tube in place temporarily?" }
+    ]
+  },
+  "partB": {
+    "part_label": "Part B",
+    "instructions": "You have 8 minutes to read the questions about each text below and select one answer.",
+    "items": [
+      {
+        "id": "49f2cef8-33bf-4b03-963c-c9b2202527c0",
+        "passage_title": "Instruction Manual: Digital Automatic Blood Pressure Monitor — Electromagnetic Compatibility (EMC)",
+        "passage_text": "With the increased use of portable electronic devices, medical equipment may be susceptible to Electromagnetic interference. This may result in incorrect operation of the medical device and create a potentially unsafe situation. In order to regulate the requirements for EMC, with the aim of preventing unsafe product situations, the EN60601-1-2 standard defines the levels of immunity to Electromagnetic interferences as well as maximum levels of Electromagnetic emissions for medical devices. This medical device conforms to EN60601-1-2:2001 for both immunity and emissions. Nevertheless, care should be taken to avoid the use of the monitor within 7 metres of cellphones or other devices generating strong electrical or Electromagnetic fields.",
+        "question_text": "The manual informs us that the Blood Pressure Monitor",
+        "options": ["is likely to interfere with the operation of other medical equipment.", "may not work correctly in close proximity to some other devices.", "should be considered safe to use in all hospital environments."]
+      },
+      {
+        "id": "1e78c2f3-fec2-4bc8-81c9-ccd9f684c701",
+        "passage_title": "NG feeding tubes",
+        "passage_text": "Displacement of nasogastric (NG) feeding tubes can have serious implications if undetected. Incorrectly positioned tubes leave patients vulnerable to the risks of regurgitation and respiratory aspiration. It is crucial to differentiate between gastric and respiratory placement on initial insertion to prevent potentially fatal pulmonary complications. Insertion and care of an NG tube should therefore only be carried out by a registered doctor or nurse who has undergone theoretical and practical training and is deemed competent or is supervised by someone competent. Assistant practitioners and other unregistered staff must never insert NG tubes or be involved in the initial confirmation of safe NG tube position.",
+        "question_text": "The notice is giving information about",
+        "options": ["ways of checking that an NG tube has been placed correctly.", "how the use of NG feeding tubes is authorised.", "which staff should perform NG tube placement."]
+      },
+      {
+        "id": "e8fb993f-7ce7-4839-bddb-774895ead472",
+        "passage_title": "'Right Patient, Right Blood' Assessments",
+        "passage_text": "The administration of blood can have significant morbidity and mortality. Following the introduction of the 'Right Patient, Right Blood' safety policy, all staff involved in the transfusion process must be competency assessed. To ensure the safe administration of blood components to the intended patient, all staff must be aware of their responsibilities in line with professional standards.\n\nStaff must ensure that if they take any part in the transfusion process, their competency assessment is updated every three years. All staff are responsible for ensuring that they attend the mandatory training identified for their roles. Relevant training courses are clearly identified in Appendix 1 of the Mandatory Training Matrix.",
+        "question_text": "What must all staff involved in the transfusion process do?",
+        "options": ["check that their existing training is still valid", "attend a course to learn about new procedures", "read a document that explains changes in policy"]
+      },
+      {
+        "id": "897feca4-cbf1-4271-b838-b732d00bdaf1",
+        "passage_title": "Extract from 'Chaperones: Guidelines for Good Practice'",
+        "passage_text": "A patient may specifically request a chaperone or in certain circumstances may nominate one, but it will not always be the case that a chaperone is required. It is often a question of using professional judgement to assess an individual situation. If a chaperone is offered and declined, this must be clearly documented in the patient's record, along with any relevant discussion. The chaperone should only be present for the physical examination and should be in a position to see what the healthcare professional undertaking the examination/investigation is doing. The healthcare professional should wait until the chaperone has left the room/cubicle before discussion takes place on any aspect of the patient's care, unless the patient specifically requests the chaperone to remain.",
+        "question_text": "The guidelines establish that the healthcare professional should",
+        "options": ["aim to make patients fully aware of their right to a chaperone.", "evaluate the need for a chaperone on a case-by-case basis.", "respect the wishes of the patient above all else."]
+      }
+    ]
+  },
+  "partC": {
+    "part_label": "Part C",
+    "instructions": "You have about 15 minutes to read the text below and answer the questions.",
+    "title": "Continuous Glucose Monitoring in Type 2 Diabetes",
+    "passage_text": "For decades, people living with type 2 diabetes have managed their condition through a combination of periodic finger-prick blood tests and quarterly HbA1c readings taken at a clinic. This snapshot approach, while informative, has always had a blind spot: it tells a clinician what a patient's blood glucose was at a single moment, not how it behaved across the hours in between. Continuous glucose monitoring (CGM) — a small sensor worn on the skin that tracks interstitial glucose levels every few minutes and relays the data to a smartphone or reader — was developed initially for people with type 1 diabetes, whose insulin dosing requires tight, moment-to-moment feedback. Over the past five years, however, uptake among type 2 patients, including many who do not use insulin at all, has grown sharply, and a number of health systems are now debating how far that trend should be encouraged.\n\nAdvocates point first to the sheer density of information CGM provides. A single device can generate several hundred readings a day, producing a continuous curve rather than a handful of isolated dots. This makes it possible to see patterns that routine testing simply cannot capture: a spike after a particular meal, a slow overnight drift, or the delayed effect of a stressful day at work. Proponents argue that this granularity does more than satisfy clinical curiosity — it changes behaviour. A widely cited pilot programme run across several primary care clinics in the Midwest gave CGM devices to a group of patients with poorly controlled type 2 diabetes who had never used insulin. None of the patients received any additional dietary counselling beyond what they already had access to; the sensors alone were the intervention. The programme's coordinators included this detail specifically to isolate the effect of the feedback itself, rather than any accompanying education, and reported that average HbA1c fell measurably within four months, driven, patients said, by an ability to correlate specific foods and habits with visible glucose swings in something close to real time.\n\nSceptics do not dispute that CGM technology is accurate or that the data it produces is genuinely useful. Their concern lies elsewhere: with equity of access and the opportunity cost of funding it. CGM sensors remain considerably more expensive than conventional test strips, and in most public health systems the difference is only partly offset by manufacturers' claims of downstream savings from fewer complications. A recurring argument in the clinical literature is that subsidising CGM broadly for a population where only a minority use insulin risks diverting funds from interventions with a more firmly established evidence base — structured group education programmes, for instance, which are considerably cheaper per patient and have decades of outcome data behind them. Some clinicians go further, suggesting that the psychological burden of constant glucose data, arriving as a stream of alerts and warning colours, may increase anxiety in a subset of patients without insulin needs, for whom the same information carries fewer immediate treatment implications than it does for someone titrating insulin several times a day. This last point remains contested, and the handful of small studies addressing it directly have produced mixed findings.\n\nWhat most parties agree on is that CGM's role in type 2 diabetes is still being defined, rather than settled. Guidance bodies have moved cautiously, recommending CGM for defined groups — those on multiple daily insulin injections, or with a history of severe hypoglycaemia — while stopping short of endorsing universal rollout. For the much larger group of type 2 patients managed with oral medication or lifestyle measures alone, the technology's place is likely to be decided less by any single trial than by the slower accumulation of real-world cost and outcome data over the next several years.",
+    "questions": [
+      {
+        "id": "75894478-7f74-44a1-bcc9-328ecbe9758a",
+        "question_text": "The writer's main purpose in the first paragraph is to",
+        "options": ["argue that finger-prick testing should be phased out.", "explain why CGM was first developed for type 1 diabetes.", "contrast periodic testing with the fuller picture CGM offers.", "describe the technical mechanism by which CGM sensors work."]
+      },
+      {
+        "id": "34e80f64-be47-4b0e-8c37-f4350e725ffb",
+        "question_text": "In the second paragraph, the writer refers to the Midwest pilot programme mainly to",
+        "options": ["prove that CGM works better than insulin for most patients.", "show that improved outcomes came from feedback alone, not added education.", "demonstrate that CGM is now standard practice in primary care.", "compare the cost of CGM with that of conventional test strips."]
+      },
+      {
+        "id": "2face125-3576-4227-91c9-e311e6092def",
+        "question_text": "In the third paragraph, what does the phrase \"opportunity cost\" (as used by the writer) mean in this context?",
+        "options": ["the price a patient pays out of pocket for a CGM sensor.", "the risk that CGM data may be misread by an untrained patient.", "the value of alternative programmes that funding could support instead.", "the delay between purchasing a sensor and receiving it."]
+      },
+      {
+        "id": "0d5292b8-fdc0-4729-958e-225aac0bab3a",
+        "question_text": "According to the text, sceptics and advocates of CGM in type 2 diabetes",
+        "options": ["disagree about whether the sensor technology is accurate.", "disagree mainly about how funding priorities should be set.", "agree that CGM should not be used for anyone without insulin needs.", "agree that anxiety linked to constant data is now well documented."]
+      }
+    ]
+  }
+}
