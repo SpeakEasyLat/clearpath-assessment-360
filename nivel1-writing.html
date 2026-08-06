@@ -25,7 +25,7 @@
 </head>
 <body>
 <div class="wrap">
-<div class="brand">Speak Easy - ClearPath</div>
+<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
 <div class="subtitle">Nivel 1 — Writing</div>
 <div class="card">
 <div class="timer-box" id="timerBox">Tiempo restante: <span id="timerLabel">20:00</span></div>
@@ -34,13 +34,6 @@
 <div id="quizArea"></div>
 <div id="resultArea" style="display:none;"></div>
 </div>
-<!--
-  NOTA DE DESARROLLO (para Diana, no visible en pantalla): esta pantalla presenta las 2
-  tareas de Writing y guarda cada texto vía el Edge Function submit-writing. La
-  corrección la hace la IA del lado del servidor (rúbrica de placement 0-10 combinada
-  con CEFR); el navegador nunca ve la rúbrica ni el resultado, y no se muestra puntaje
-  ni nivel en vivo. El CEFR promediado de las 2 tareas alimenta el desbloqueo de OET.
--->
 </div>
 <script src="js/fetch-retry.js"></script>
 <script src="js/app-nivel1-writing.js"></script>
