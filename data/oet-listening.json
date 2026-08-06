@@ -1,12 +1,13 @@
 {
   "_meta": {
-    "module": "oet_listening"
+    "module": "oet_listening",
+    "timingNote": "time_limit_seconds ahora es por parte (A/B/C), no un total del módulo -- cada uno se calculó a partir de la duración real del track subido (A 4:17, B 5:31, C 7:10) más un margen para leer/terminar de responder. Ver claude/estado-sesion-6-agosto-oet-cerrado.md."
   },
-  "time_limit_seconds": 1800,
   "audios": [
     {
       "audio_asset_id": "b4c56f18-0d94-4c5e-ac4c-1bcc4fbff5b6",
       "part_label": "Part A",
+      "time_limit_seconds": 360,
       "title": "You hear an obstetrician talking to a patient called Melissa Gordon. For questions 1-12, complete the notes with a word or short phrase. You now have 30 seconds to look at the notes before the audio starts.",
       "case_notes_heading": "PATIENT NOTES — Melissa Gordon",
       "max_plays": 1,
@@ -28,7 +29,8 @@
     {
       "audio_asset_id": "f27ac4e3-1f63-4477-9055-f9fcfd17e310",
       "part_label": "Part B",
-      "title": "For questions 25-28, choose the answer (A, B or C) which fits best according to what you hear. You'll have time to read each question before you listen.",
+      "time_limit_seconds": 420,
+      "title": "For questions 13-16, choose the answer (A, B or C) which fits best according to what you hear. You'll have time to read each question before you listen.",
       "max_plays": 1,
       "questions": [
         {
@@ -60,7 +62,8 @@
     {
       "audio_asset_id": "36f5588d-6c7b-4803-baf4-003e602db987",
       "part_label": "Part C",
-      "title": "You hear a clinician called Jonathan Cross giving a presentation to a group of healthcare providers. You now have 90 seconds to read the questions before the audio starts.",
+      "time_limit_seconds": 540,
+      "title": "You hear a clinician called Jonathan Cross giving a presentation to a group of healthcare providers. For questions 17-22, you now have 90 seconds to read the questions before the audio starts.",
       "max_plays": 1,
       "questions": [
         {
