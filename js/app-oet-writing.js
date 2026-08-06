@@ -4,8 +4,9 @@
 //   1) Reading time (2 min): se muestran las notas del caso, todavía no se puede
 //      escribir. El estudiante puede pasar antes si ya terminó de leer.
 //   2) Writing time (15 min): aparece la consigna + el textarea; las notas del caso
-//      quedan visibles como referencia colapsable (igual que en el examen real, donde
-//      el candidato puede volver a mirarlas).
+//      quedan SIEMPRE VISIBLES arriba, sin colapsar (decisión de Diana, 06/08/2026:
+//      el estudiante debe poder ver el texto de case notes mientras escribe, sin
+//      necesidad de hacer click en nada).
 // Si se acaba el tiempo de escritura, se guarda lo que haya en el textarea (igual que
 // Nivel 1 Writing) y se cierra la pantalla.
 //
@@ -134,10 +135,8 @@ function renderWritingPhase() {
 
   quizArea.innerHTML = `
     <h2 class="writing-title">${escapeHtml(prompt.title)}</h2>
-    <details style="margin:0 0 1rem;">
-      <summary style="cursor:pointer; font-weight:600;">Case notes (reference)</summary>
-      <div class="case-notes-box">${escapeHtml(prompt.case_notes || '')}</div>
-    </details>
+    <h3 class="case-notes-heading" style="margin:0 0 0.4rem; font-size:0.95rem;">Case notes (reference)</h3>
+    <div class="case-notes-box">${escapeHtml(prompt.case_notes || '')}</div>
     <p class="writing-prompt">${promptHtml}</p>
     ${guidanceHtml}
     <label for="writingText" class="writing-label">Your letter (in English):</label>
