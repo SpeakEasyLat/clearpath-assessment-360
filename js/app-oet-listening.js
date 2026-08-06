@@ -3,10 +3,20 @@
 // arquitectura: primero se muestran las preguntas, después se reproduce el audio como
 // máximo max_plays veces, controlado server-side por get-audio-url).
 //
+// Corrección (06/08/2026, pedido de Diana): el audio en sí ya incluye el tiempo de
+// lectura antes de que arranque la grabación (formato real de OET) -- el estudiante
+// debe apretar "Play audio" enseguida, no esperar a terminar de leer. Se sacó el
+// texto que decía "Read the questions before playing it" para no confundir.
+//
 // A diferencia de Nivel 1 Listening, este módulo SÍ tiene límite de tiempo (decisión de
-// Diana, 06/08/2026): un timer visible que, al llegar a cero, guarda lo que haya
-// quedado pendiente (igual que STEP CK2 / Nivel 1 Reading) y cierra la pantalla,
-// pasando al siguiente paso (OET Reading).
+// Diana, 06/08/2026). Actualización 06/08/2026: el límite ahora es POR PARTE (A/B/C),
+// no un total de 30 min para todo el módulo -- cada parte tiene su propio presupuesto,
+// calculado a partir de la duración real del track de audio subido más un margen para
+// terminar de responder (ver time_limit_seconds en cada audio de
+// data/oet-listening.json). Si se acaba el tiempo de una parte, se guarda lo que haya
+// quedado pendiente de ESA parte (igual que STEP CK2 / Nivel 1 Reading) y pasa
+// automáticamente a la parte siguiente con un timer nuevo, en vez de cerrar todo el
+// módulo -- solo cierra el módulo si la parte que se queda sin tiempo es la última (C).
 //
 // Puntaje: informativo únicamente (raw_score/max_score, sin banda CEFR ni
 // aprobar/reprobar) -- estos estudiantes ya calificaron para OET en Nivel 1. Ver rama
@@ -23,7 +33,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // manda a oet-reading.html.
 const NEXT_MODULE_URL = 'siguiente.html';
 const NEXT_MODULE_LABEL = 'Continue';
-const DEFAULT_TIME_LIMIT_SECONDS = 30 * 60;
+const DEFAULT_PART_TIME_LIMIT_SECONDS = 8 * 60; // fallback si a una parte le falta time_limit_seconds en el JSON
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -40,15 +50,13 @@ const playsUsed = {}; // audio_asset_id -> número de reproducciones ya usadas, 
 let saving = false;
 let finished = false;
 let timerHandle = null;
-let timeRemaining = DEFAULT_TIME_LIMIT_SECONDS;
+let timeRemaining = DEFAULT_PART_TIME_LIMIT_SECONDS;
 
 async function init() {
   const sessionToken = sessionTokenOrRedirect();
   if (!sessionToken) return;
   const res = await fetch('data/oet-listening.json');
   listeningData = await res.json();
-  timeRemaining = Number(listeningData.time_limit_seconds) > 0 ? Number(listeningData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
-  startTimer();
   renderAudioGroup();
 }
 
@@ -61,7 +69,14 @@ function sessionTokenOrRedirect() {
   return token;
 }
 
-function startTimer() {
+function startTimerForCurrentGroup() {
+  const group = listeningData.audios[currentAudioIndex];
+  timeRemaining = Number(group.time_limit_seconds) > 0 ? Number(group.time_limit_seconds) : DEFAULT_PART_TIME_LIMIT_SECONDS;
+  if (timerBox) timerBox.classList.remove('warning');
+  if (timerHandle) {
+    clearInterval(timerHandle);
+    timerHandle = null;
+  }
   updateTimerLabel();
   timerHandle = setInterval(() => {
     timeRemaining--;
@@ -70,7 +85,7 @@ function startTimer() {
     if (timeRemaining <= 0) {
       clearInterval(timerHandle);
       timerHandle = null;
-      finishListening(true);
+      handlePartTimeout();
     }
   }, 1000);
 }
@@ -91,23 +106,26 @@ function renderAudioGroup() {
   const used = playsUsed[group.audio_asset_id] || 0;
   const remaining = group.max_plays - used;
   const isCaseNotes = group.questions[0] && group.questions[0].answer_format === 'note_completion';
+  let numberOffset = 0;
+  for (let i = 0; i < currentAudioIndex; i++) numberOffset += listeningData.audios[i].questions.length;
   quizArea.innerHTML = `
     <div class="card question-card">
       <div class="q-text">${escapeHtml(group.title)}</div>
-      <p class="note">You will hear this audio a maximum of ${group.max_plays} time(s) in total. Read the questions before playing it.</p>
+      <p class="note">Click "Play audio" now — the recording itself gives you time to read the questions before it starts. You will hear it a maximum of ${group.max_plays} time(s) in total.</p>
       <audio class="player" id="audioPlayer"></audio>
       <div class="audio-controls">
         <button class="audio-play" id="playBtn" type="button" ${remaining <= 0 ? 'disabled' : ''}>${remaining <= 0 ? 'No plays remaining' : 'Play audio'}</button>
         <span class="plays-remaining" id="playsRemaining">Plays used: ${used} / ${group.max_plays}</span>
       </div>
       <p class="note" id="audioError" style="color:#c62828; display:none;"></p>
-      ${isCaseNotes ? renderCaseNotes(group) : renderMultipleChoice(group)}
+      ${isCaseNotes ? renderCaseNotes(group, numberOffset) : renderMultipleChoice(group, numberOffset)}
       <p class="note">Once you continue, you cannot go back to change your answers for this part.</p>
       <div class="nav-row">
         <button class="primary" id="nextBtn" type="button">${currentAudioIndex === totalAudios - 1 ? 'Finish' : 'Save and continue'}</button>
       </div>
     </div>
   `;
+  startTimerForCurrentGroup();
   document.getElementById('playBtn').addEventListener('click', () => playAudio(group));
   if (isCaseNotes) {
     group.questions.forEach((q) => {
@@ -139,21 +157,36 @@ function renderAudioGroup() {
   document.getElementById('nextBtn').addEventListener('click', handleNext);
 }
 
-function renderMultipleChoice(group) {
-  return group.questions.map((q) => `
+function renderMultipleChoice(group, numberOffset) {
+  return group.questions.map((q, idx) => `
     <div class="question-card" style="margin-top:20px;">
-      <div class="q-text">${escapeHtml(q.question_text)}</div>
+      <div class="q-text"><strong>${numberOffset + idx + 1}.</strong> ${escapeHtml(q.question_text)}</div>
       <div id="options_${q.id}"></div>
     </div>
   `).join('');
 }
 
-function renderCaseNotes(group) {
-  const rows = group.questions.map((q) => {
+// Cada question_text de note_completion puede traer un subtítulo de sección como
+// primera línea (ej. "Medical history\nhas occasional ___") -- eso separa las notas
+// en bloques (Medical history / Baby's father / Points raised), igual que el examen
+// real. Pedido de Diana (06/08/2026): esos subtítulos deben verse en negrita para
+// distinguirse claramente del texto de la pregunta, y TODAS las preguntas (incluidas
+// las de esta parte) deben mostrar su número.
+function renderCaseNotes(group, numberOffset) {
+  const rows = group.questions.map((q, idx) => {
+    const num = numberOffset + idx + 1;
     const parts = q.question_text.split('___');
-    const before = escapeHtml(parts[0] || '').replace(/\n/g, '<br>');
+    const rawBefore = parts[0] || '';
     const after = escapeHtml(parts[1] || '').replace(/\n/g, '<br>');
-    return `<div class="note-row">${before}<input type="text" class="blank-input" id="blank_${q.id}" autocomplete="off" />${after}</div>`;
+    const lines = rawBefore.split('\n');
+    let subtitleHtml = '';
+    let beforeText = rawBefore;
+    if (lines.length > 1) {
+      subtitleHtml = `<div class="note-subtitle">${escapeHtml(lines[0])}</div>`;
+      beforeText = lines.slice(1).join('\n');
+    }
+    const before = escapeHtml(beforeText).replace(/\n/g, '<br>');
+    return `${subtitleHtml}<div class="note-row"><strong>${num}.</strong> ${before}<input type="text" class="blank-input" id="blank_${q.id}" autocomplete="off" />${after}</div>`;
   }).join('');
   return `
     <div class="case-notes-heading">${escapeHtml(group.case_notes_heading || 'PATIENT NOTES')}</div>
@@ -284,31 +317,37 @@ async function saveAnswer(sessionToken, questionId, selected) {
   }
 }
 
-async function finishListening(timedOut) {
+// Se llama cuando el timer de LA PARTE ACTUAL llega a cero (no el módulo entero).
+// Guarda lo que haya quedado pendiente de esta parte y pasa a la siguiente con un
+// timer nuevo -- solo termina el módulo si la parte que se quedó sin tiempo era la
+// última (Part C).
+async function handlePartTimeout() {
+  if (finished) return;
+  const sessionToken = sessionStorage.getItem('cp360_session_token');
+  const group = listeningData.audios[currentAudioIndex];
+  const totalAudios = listeningData.audios.length;
+  if (sessionToken) {
+    for (const q of group.questions) {
+      const selected = currentAnswers[q.id];
+      const result = await saveAnswer(sessionToken, q.id, selected);
+      if (result === 'unauthorized') return;
+    }
+  }
+  savedAnswersByGroup[currentAudioIndex] = { ...currentAnswers };
+  if (currentAudioIndex < totalAudios - 1) {
+    currentAudioIndex++;
+    renderAudioGroup();
+  } else {
+    finishListening(true);
+  }
+}
+
+function finishListening(timedOut) {
   if (finished) return;
   finished = true;
   if (timerHandle) {
     clearInterval(timerHandle);
     timerHandle = null;
-  }
-  if (timedOut) {
-    const sessionToken = sessionStorage.getItem('cp360_session_token');
-    if (sessionToken) {
-      // Igual que en Nivel 1 Reading / STEP CK2: si se acaba el tiempo, guardamos lo que
-      // haya quedado pendiente desde el audio actual en adelante (lo que el estudiante
-      // había elegido sin confirmar, y lo que nunca llegó a ver, como "sin respuesta").
-      for (let g = currentAudioIndex; g < listeningData.audios.length; g++) {
-        const group = listeningData.audios[g];
-        const answersForGroup = g === currentAudioIndex ? currentAnswers : {};
-        const alreadySaved = savedAnswersByGroup[g] || {};
-        for (const q of group.questions) {
-          if (Object.prototype.hasOwnProperty.call(alreadySaved, q.id)) continue;
-          const selected = answersForGroup[q.id];
-          const result = await saveAnswer(sessionToken, q.id, selected);
-          if (result === 'unauthorized') return;
-        }
-      }
-    }
   }
   renderDone(timedOut);
 }
