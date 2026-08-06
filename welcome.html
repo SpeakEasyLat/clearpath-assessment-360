@@ -48,6 +48,31 @@
 }
 .callout-orange p { margin: 0; }
 
+.callout-charcoal {
+  background: #fff;
+  border: 1px solid var(--gray-300);
+  border-left: 4px solid var(--charcoal-dark);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.callout-charcoal .callout-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--charcoal-dark);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+.callout-charcoal p { margin: 0 0 8px; }
+.callout-charcoal p:last-child { margin-bottom: 0; }
+
 .step-list { list-style: none; margin: 0 0 12px; padding: 0; }
 .step-list:last-child { margin-bottom: 0; }
 .step-list li {
@@ -80,7 +105,7 @@
 
 <div class="callout callout-teal">
 <p id="welcomeGreeting" style="font-weight:700;">¡Hola!</p>
-<p>El objetivo de este assessment es conocer tu nivel real de inglés para integrarlo a tu programa estratégico de <strong>Fast Track de RadPathway Solutions</strong>.</p>
+<p>El objetivo de este assessment es conocer tu nivel real de inglés para integrarlo a tu programa estratégico de <strong>Fast Track de Rad Pathway Solutions</strong>.</p>
 <p>Sabemos lo importante que es este paso para ti, y queremos que sepas algo: en Speak Easy somos tus aliados. Estamos aquí para ayudarte a cumplir tu sueño de ejercer en Estados Unidos, y si te preparaste para esto, ¡tú puedes lograrlo! Vamos paso a paso, juntos.</p>
 </div>
 
@@ -110,6 +135,16 @@
 </ul>
 </div>
 
+<div class="callout callout-charcoal">
+<div class="callout-icon">!</div>
+<div>
+<p><strong>Una petición importante: hazlo tú mismo/a, sin ayuda externa.</strong></p>
+<p>Por favor, responde todo con tu propio conocimiento, sin usar traductores como Google Translate, sin buscadores, sin inteligencia artificial como ChatGPT y sin pedirle ayuda a otra persona.</p>
+<p>Sabemos que puede ser tentador querer "quedar bien"; pero este assessment no es un examen que se aprueba o se reprueba, es la foto de tu punto de partida real para armar tu ruta de preparación. Si usas ayuda externa, el resultado deja de reflejar tu nivel verdadero, y eso juega en tu contra: podrías quedar ubicado en un programa que no es el adecuado para ti, lo que hace tu camino más difícil en lugar de más fácil.</p>
+<p>Seas cual sea tu nivel real hoy, está bien; para eso estamos aquí. Confía en el proceso y responde con honestidad.</p>
+</div>
+</div>
+
 <div class="card welcome-card">
 <h2 class="welcome-h2">Antes de arrancar, te recomendamos</h2>
 <ul class="welcome-list">
@@ -123,14 +158,6 @@
 <div class="card">
 <button class="primary" id="continueBtn" type="button">Comenzar</button>
 </div>
-<!--
-NOTA DE DESARROLLO (para Diana): esta pantalla es solo informativa, no llama a ningún
-Edge Function ni guarda nada -- únicamente lee el nombre del estudiante de
-sessionStorage (guardado en el login) para el saludo, y al hacer clic en "Comenzar"
-manda a intake.html. Si en algún momento el estudiante llega acá sin haber logueado,
-lo manda de vuelta a index.html. El texto (tono, RadPathway, promesa de 72 horas) es
-el que pediste ajustar el 06/08/2026 -- si querés retocar algo más, decime.
--->
 </div>
 <script>
 const studentName = sessionStorage.getItem('cp360_student_name');
