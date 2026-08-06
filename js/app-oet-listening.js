@@ -11,6 +11,11 @@
 // Puntaje: informativo únicamente (raw_score/max_score, sin banda CEFR ni
 // aprobar/reprobar) -- estos estudiantes ya calificaron para OET en Nivel 1. Ver rama
 // nueva en submit-response para module 'oet_listening'.
+//
+// Sin botón "Previous" (decisión de Diana, 06/08/2026): a diferencia de Nivel 1
+// Listening, en OET nunca se puede volver atrás a cambiar una respuesta después de
+// pasar de audio -- una vez que el estudiante confirma "Save and continue" en un
+// audio, esas respuestas quedan cerradas y no se vuelven a mostrar.
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
@@ -97,8 +102,8 @@ function renderAudioGroup() {
       </div>
       <p class="note" id="audioError" style="color:#c62828; display:none;"></p>
       ${isCaseNotes ? renderCaseNotes(group) : renderMultipleChoice(group)}
+      <p class="note">Once you continue, you cannot go back to change your answers for this part.</p>
       <div class="nav-row">
-        <button class="secondary" id="prevBtn" type="button" ${currentAudioIndex === 0 ? 'disabled' : ''}>Previous</button>
         <button class="primary" id="nextBtn" type="button">${currentAudioIndex === totalAudios - 1 ? 'Finish' : 'Save and continue'}</button>
       </div>
     </div>
@@ -131,12 +136,6 @@ function renderAudioGroup() {
       });
     });
   }
-  document.getElementById('prevBtn').addEventListener('click', () => {
-    if (currentAudioIndex > 0) {
-      currentAudioIndex--;
-      renderAudioGroup();
-    }
-  });
   document.getElementById('nextBtn').addEventListener('click', handleNext);
 }
 
