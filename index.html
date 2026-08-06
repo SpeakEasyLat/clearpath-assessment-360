@@ -15,20 +15,13 @@
 <p>Ingresa con el código de acceso que recibiste después de confirmar tu inscripción.</p>
 <label for="fullName">Nombre completo</label>
 <input type="text" id="fullName" placeholder="Ej: María Fernanda Gómez" />
+<label for="studentEmail">Correo electrónico</label>
+<input type="email" id="studentEmail" placeholder="Ej: maria.gomez@correo.com" />
 <label for="accessCode">Código de acceso</label>
 <input type="text" id="accessCode" placeholder="Ej: CP-2026-XXXX" />
 <button class="primary" id="startBtn">Continuar</button>
 <p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
 </div>
-<p class="note">
-NOTA DE DESARROLLO (para Diana): esta pantalla ya valida el código contra Supabase de
-verdad (Edge Function <code>login</code>). Después del login vas a un formulario corto
-sin calificar (nivel autopercibido, disponibilidad horaria) y recién ahí arranca Nivel
-1. Grammar (nivel1.html) ya guarda cada respuesta vía el Edge Function
-<code>submit-response</code>, igual que Listening -- la corrección, el ceiling CEFR y
-el desbloqueo de OET/STEPS2 se calculan 100% server-side, y esta pantalla nunca ve
-aciertos ni puntaje en vivo.
-</p>
 </div>
 <script src="js/fetch-retry.js"></script>
 <script>
@@ -42,10 +35,11 @@ errorMsg.style.display = 'block';
 }
 startBtn.addEventListener('click', async () => {
 const fullName = document.getElementById('fullName').value.trim();
+const studentEmail = document.getElementById('studentEmail').value.trim();
 const accessCode = document.getElementById('accessCode').value.trim();
 errorMsg.style.display = 'none';
-if (!fullName || !accessCode) {
-showError('Completa tu nombre y el código de acceso para continuar.');
+if (!fullName || !studentEmail || !accessCode) {
+showError('Completa tu nombre, correo y código de acceso para continuar.');
 return;
 }
 startBtn.disabled = true;
@@ -58,18 +52,18 @@ headers: {
 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
 'apikey': SUPABASE_ANON_KEY,
 },
-body: JSON.stringify({ access_code: accessCode }),
+body: JSON.stringify({ access_code: accessCode, full_name: fullName, email: studentEmail }),
 });
 const data = await res.json();
 if (!res.ok) {
-showError(data.error || 'No pudimos validar tu código. Intenta de nuevo.');
+showError(data.error || 'No pudimos validar tus datos. Intenta de nuevo.');
 startBtn.disabled = false;
 startBtn.textContent = 'Continuar';
 return;
 }
 sessionStorage.setItem('cp360_session_token', data.session_token);
 sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
-window.location.href = 'intake.html';
+window.location.href = 'welcome.html';
 } catch (err) {
 showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
 startBtn.disabled = false;
