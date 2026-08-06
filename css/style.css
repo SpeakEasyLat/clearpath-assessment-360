@@ -31,8 +31,9 @@ padding: 40px 20px 80px;
 }
 .logo {
 display: block;
-height: 52px;
-margin-bottom: 8px;
+height: 64px;
+width: auto;
+margin-bottom: 10px;
 }
 .brand {
 font-family: var(--font-heading);
