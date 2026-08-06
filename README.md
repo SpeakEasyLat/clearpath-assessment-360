@@ -8,7 +8,7 @@ Lo que ya funciona:
 
 - **Login** (`index.html` + Edge Function `login`): valida solo el código de acceso contra la tabla `students` precargada por Diana en Supabase. Nombre completo y correo se piden en la misma pantalla, pero son informativos/estéticos (solo se usan para personalizar el saludo en `welcome.html`, no se comparan contra lo precargado). Emite un `session_token` de 4 horas que el frontend usa en el resto de las llamadas en vez del código de acceso.
 - **Welcome page** (`welcome.html`): pantalla informativa entre el login y el intake, con el objetivo del assessment, cómo está organizado, duración estimada, reglas del examen, recomendaciones antes de empezar y un pedido explícito de honestidad académica (sin traductores, sin IA, sin ayuda de terceros).
-- **Intake** (`intake.html`): formulario previo no calificado (nivel autopercibido, experiencia, disponibilidad horaria) para armar horarios y reportes.
+- **Intake** (`intake.html`): formulario previo no calificado (nivel autopercibido, experiencia previa, frecuencia de uso del idioma) para dar contexto sobre el estudiante.
 - **Nivel 1 — English Level** (~1 hora en total): las 4 destrezas completas.
   - Grammar: 20 preguntas (`data/nivel1-grammar.json`), timer de 10 minutos, cálculo de nivel CEFR por "ceiling".
   - Listening: 5 audios (uno por banda A1-C1), 20 preguntas de opción múltiple, una sola reproducción por audio con URL firmada (sin timer explícito, pensado para ~10-11 minutos).
@@ -20,24 +20,24 @@ Lo que ya funciona:
   - Si reading tampoco llega → ruta **English** → Speaking Assessment tipo English directo, sin STEPS 2 ni OET.
   
   El router `siguiente.html` le pregunta a la Edge Function `get-unlock-state` a qué pantalla mandar al estudiante después de cada módulo, en vez de que cada pantalla tenga la siguiente URL escrita a mano.
-- **STEP 2 CK — Clinical Knowledge** (`steps2.html`, `data/steps2.json`, `js/app-steps2.js`): en construcción, 8 preguntas, timer de 15 minutos.
+- **STEP 2 CK — Clinical Knowledge** (`steps2.html`, `data/steps2.json`, `js/app-steps2.js`): completo. 8 preguntas originales (caso clínico + 5 opciones, formato USMLE/Step 2 CK), timer de 15 minutos, se aprueba con 75% (6/8) — pass/fail, sin banda CEFR. Solo lo rinde la ruta STEPS2, entre Reading y el Speaking Assessment.
 - **OET Skills** — completo (~1 hora en total):
   - Listening: 3 partes (A/B/C), audio de reproducción única, timer independiente por parte calculado a partir de la duración real de cada track — 6/7/9 minutos (`data/oet-listening.json`), preguntas numeradas de punta a punta, subtítulos del "case note completion" de la Parte A en negrita.
   - Reading: 3 partes con timer propio cada una — 6/8/8 minutos, preguntas numeradas de punta a punta.
   - Writing: timer de 17 minutos (2 de lectura + 15 de escritura), caso clínico siempre visible (sin colapsar), consigna + calificación por IA.
 - **Speaking Assessment** (`speaking.html`): pantalla de agenda que muestra el link correcto de Google Calendar (roleplay OET o conversación CEFR English) según el resultado del estudiante, sin que el estudiante elija.
-- **Identidad visual**: logo real de Speak Easy · ClearPath integrado en las 13 pantallas; paleta de colores y tipografía ya alineadas con el logo.
-- **Edge Functions desplegadas**: `login`, `submit-response`, `submit-writing`, `get-unlock-state`, `get-audio-url` (URLs firmadas de corta duración + límite de reproducciones por audio, controlado 100% del lado del servidor).
+- **Identidad visual**: logo real de Speak Easy · ClearPath integrado en todas las pantallas; paleta de colores y tipografía ya alineadas con el logo.
+- **Registro automático de estudiantes (RPS)**: el formulario "ASSESSMENT 360 - STUDENT INTAKE" (Google Forms) está conectado vía Google Apps Script a la Edge Function `register-student`, que crea el estudiante en Supabase con un código de acceso único (`CP-XXXXXX`) y le envía un correo automático con ese código (con copia para Speak Easy). Pensado para que RPS lo complete cada vez que se vende un Assessment 360, después de confirmar el pago.
+- **Edge Functions desplegadas**: `login`, `submit-intake`, `submit-response`, `submit-writing`, `get-unlock-state`, `get-audio-url` (URLs firmadas de corta duración + límite de reproducciones por audio, controlado 100% del lado del servidor), `register-student`.
 - **Esquema de base de datos para Supabase** (`supabase/migrations/0001_init_schema.sql`), pensado para que el frontend público nunca pueda leer las respuestas correctas ni las reglas de desbloqueo directamente.
 
 Lo que falta (backlog):
 
-- Cerrar y calibrar el banco de preguntas de STEP 2 CK.
 - Persistir el progreso del estudiante dentro de un módulo (parte actual, tiempo restante y reproducciones de audio ya usadas). Hoy ese progreso vive solo en memoria del navegador: si el estudiante recarga la página o cierra la pestaña a mitad de un módulo, vuelve a la primera parte de ese módulo con un timer nuevo, y si esa primera parte ya usó su única reproducción de audio, no puede volver a escucharla.
 - Reporte final para el estudiante (hay una skill de reporte OET instalada que puede servir de base).
 - Panel de resultados para Diana (hoy los resultados se revisan por consulta SQL directa).
 - Resolver el HTTPS/DNS del dominio propio (`assessment.speakeasy.lat`) vía GitHub Pages, para que no salga "conexión no segura".
-- Cargar el campo `email` a todos los estudiantes existentes en Supabase (requisito nuevo del login; sin esto, el login de esos estudiantes falla).
+- Definir si un estudiante puede reintentar el assessment completo (hoy no existe ningún mecanismo de reintento).
 
 ## ⚠️ Nota de seguridad importante
 
