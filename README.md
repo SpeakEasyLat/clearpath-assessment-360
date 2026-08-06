@@ -1,21 +1,38 @@
 # ClearPath Assessment 360
 
-Assessment 360 online para Speak Easy: **English Level → STEPS 2 → OET Skills → Speaking Assessment (en vivo)**, con desbloqueo adaptativo por nivel y audios de reproducción limitada (imitando el formato OET).
+Assessment 360 online para Speak Easy: **Welcome → Intake → English Level → STEPS 2 → OET Skills → Speaking Assessment (en vivo)**, con desbloqueo adaptativo por nivel y audios de reproducción limitada (imitando el formato OET).
 
-## Estado actual (en construcción)
+## Estado actual
 
 Lo que ya funciona:
-- **Nivel 1 — English Level (Grammar)**: las 44 preguntas reales del banco de Diana, digitalizadas en `data/nivel1-grammar.json`, con timer de 20 minutos, cálculo de nivel CEFR por "ceiling" (sube de A1 a C1 mientras cada banda supere el umbral) y pantalla de resultados.
-- Lógica de desbloqueo (`js/scoring.js`): STEPS 2 obligatorio y secuencial para todos. OET se desbloquea solo si grammar + listening + writing del Nivel 1 superan el umbral de "B1 alto". El Speaking Assessment en vivo queda en una de tres ramas: (1) si se desbloquea OET, se agenda el roleplay completo tipo OET; (2) si no se desbloquea OET pero el ceiling de reading + vocabulario médico de STEPS 2 sí llega a B2, el estudiante simplemente sigue en STEPS 2 sin sesión en vivo por ahora; (3) si no llega a ninguno de los dos, queda en English Level y se agenda un Speaking Assessment breve tipo English en su lugar — probado con 7 casos en `js/scoring.test.mjs`.
-- Esquema de base de datos para Supabase (`supabase/migrations/0001_init_schema.sql`), pensado para que el frontend público nunca pueda leer las respuestas correctas ni las reglas de desbloqueo directamente — eso vive del lado del servidor (Edge Functions + Row Level Security).
+
+- **Login** (`index.html` + Edge Function `login`): valida nombre completo, correo y código de acceso contra la tabla `students` precargada por Diana en Supabase (comparación insensible a mayúsculas/espacios). Emite un `session_token` de 4 horas que el frontend usa en el resto de las llamadas en vez del código de acceso. Requiere que cada estudiante tenga `email` cargado de antemano en Supabase.
+- **Welcome page** (`welcome.html`): pantalla informativa entre el login y el intake, con el objetivo del assessment, cómo está organizado, duración estimada, reglas del examen, recomendaciones antes de empezar y un pedido explícito de honestidad académica (sin traductores, sin IA, sin ayuda de terceros).
+- **Intake** (`intake.html`): formulario previo no calificado (nivel autopercibido, experiencia, disponibilidad horaria) para armar horarios y reportes.
+- **Nivel 1 — English Level**: las 4 destrezas completas.
+  - Grammar: 44 preguntas reales del banco de Diana (`data/nivel1-grammar.json`), timer de 20 minutos, cálculo de nivel CEFR por "ceiling".
+  - Listening: 8 audios, 34 preguntas, formato "note completion" tipo OET, reproducción limitada a 2 veces con URL firmada.
+  - Reading.
+  - Writing: 2 tareas (general + médica tipo OET), calificación por IA con rúbrica de placement 0-10 combinada con CEFR.
+- **Lógica de desbloqueo** (`js/scoring.js`): STEPS 2 obligatorio y secuencial para todos. OET se desbloquea solo si grammar + listening + writing del Nivel 1 superan el umbral configurado. El router `siguiente.html` le pregunta a la Edge Function `get-unlock-state` a qué pantalla mandar al estudiante después de cada módulo, en vez de que cada pantalla tenga la siguiente URL escrita a mano.
+- **STEP 2 CK — Clinical Knowledge** (`steps2.html`, `data/steps2.json`, `js/app-steps2.js`): en construcción.
+- **OET Skills** — completo:
+  - Listening: 3 partes (A/B/C), audio de reproducción única, timer independiente por parte calculado a partir de la duración real de cada track (`data/oet-listening.json`), preguntas numeradas de punta a punta, subtítulos del "case note completion" de la Parte A en negrita.
+  - Reading: 3 partes con timer propio cada una (6/8/8 minutos), preguntas numeradas de punta a punta.
+  - Writing: caso clínico siempre visible (sin colapsar), consigna + calificación por IA.
+- **Speaking Assessment** (`speaking.html`): pantalla de agenda que muestra el link correcto de Google Calendar (roleplay OET o conversación CEFR English) según el resultado del estudiante, sin que el estudiante elija.
+- **Identidad visual**: logo real de Speak Easy · ClearPath integrado en las 13 pantallas; paleta de colores y tipografía ya alineadas con el logo.
+- **Edge Functions desplegadas**: `login`, `submit-response`, `submit-writing`, `get-unlock-state`, `get-audio-url` (URLs firmadas de corta duración + límite de reproducciones por audio, controlado 100% del lado del servidor).
+- **Esquema de base de datos para Supabase** (`supabase/migrations/0001_init_schema.sql`), pensado para que el frontend público nunca pueda leer las respuestas correctas ni las reglas de desbloqueo directamente.
 
 Lo que falta (backlog):
-- Nivel 1 — Listening y Writing (guiones, audios vía ElevenLabs, consigna + rúbrica de writing).
-- Módulo STEPS 2 (lectura clínica + vocabulario médico + razonamiento diagnóstico).
-- Módulo OET Skills (Listening con audio de una sola reproducción, Reading).
-- Speaking Assessment (en vivo): sistema de agenda para la sesión, tanto tipo OET como tipo English.
-- Conectar todo a Supabase real (Auth por código de acceso, Storage privado para audios con URLs firmadas, Edge Functions de scoring).
-- Dominio propio (`assessment.speakeasy.lat`) vía GitHub Pages.
+
+- Cerrar y calibrar el banco de preguntas de STEP 2 CK.
+- Persistir el progreso del estudiante dentro de un módulo (parte actual, tiempo restante y reproducciones de audio ya usadas). Hoy ese progreso vive solo en memoria del navegador: si el estudiante recarga la página o cierra la pestaña a mitad de un módulo, vuelve a la primera parte de ese módulo con un timer nuevo, y si esa primera parte ya usó su única reproducción de audio, no puede volver a escucharla.
+- Reporte final para el estudiante (hay una skill de reporte OET instalada que puede servir de base).
+- Panel de resultados para Diana (hoy los resultados se revisan por consulta SQL directa).
+- Resolver el HTTPS/DNS del dominio propio (`assessment.speakeasy.lat`) vía GitHub Pages, para que no salga "conexión no segura".
+- Cargar el campo `email` a todos los estudiantes existentes en Supabase (requisito nuevo del login; sin esto, el login de esos estudiantes falla).
 
 ## ⚠️ Nota de seguridad importante
 
