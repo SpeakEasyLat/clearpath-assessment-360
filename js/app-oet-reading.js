@@ -8,8 +8,12 @@
 //           reescrito desde cero (el original que subió Diana era de un banco externo
 //           -- confirmado por ella, ver claude/... -- decisión: reescribir, no usar).
 //
-// Timer visible (decisión de Diana, 06/08/2026): al llegar a cero, guarda lo que haya
-// quedado pendiente en la parte actual y cierra la pantalla, pasando a OET Writing.
+// Timer visible (decisión de Diana, 06/08/2026), actualizado el mismo día: el límite es
+// POR PARTE (A: 6 min, B: 8 min, C: 8 min -- ver time_limit_seconds en cada parte de
+// data/oet-reading.json), no un total de 25 min para todo el módulo. Si se acaba el
+// tiempo de una parte, se guarda lo que haya quedado pendiente de ESA parte y pasa
+// automáticamente a la parte siguiente con un timer nuevo; solo cierra el módulo si la
+// parte que se queda sin tiempo es la última (C).
 //
 // Puntaje: informativo únicamente (raw_score/max_score, sin banda CEFR ni
 // aprobar/reprobar) -- ver rama nueva en submit-response para module 'oet_reading'.
@@ -28,7 +32,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const NEXT_MODULE_URL = 'siguiente.html';
 const NEXT_MODULE_LABEL = 'Continue';
-const DEFAULT_TIME_LIMIT_SECONDS = 25 * 60;
+const DEFAULT_STEP_TIME_LIMIT_SECONDS = 8 * 60; // fallback si a una parte le falta time_limit_seconds en el JSON
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -45,16 +49,14 @@ const savedAnswersByStep = {}; // stepIndex -> { questionId: string }
 let saving = false;
 let finished = false;
 let timerHandle = null;
-let timeRemaining = DEFAULT_TIME_LIMIT_SECONDS;
+let timeRemaining = DEFAULT_STEP_TIME_LIMIT_SECONDS;
 
 async function init() {
   const sessionToken = sessionTokenOrRedirect();
   if (!sessionToken) return;
   const res = await fetch('data/oet-reading.json');
   readingData = await res.json();
-  timeRemaining = Number(readingData.time_limit_seconds) > 0 ? Number(readingData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
   steps = buildSteps(readingData);
-  startTimer();
   renderStep();
 }
 
@@ -75,25 +77,35 @@ function buildSteps(data) {
     {
       key: 'partA',
       label: partA.part_label,
+      timeLimitSeconds: partA.time_limit_seconds,
       questionIds: [...partA.matchingQuestions.map((q) => q.id), ...partA.shortAnswerQuestions.map((q) => q.id)],
       render: renderPartA,
     },
     {
       key: 'partB',
       label: partB.part_label,
+      timeLimitSeconds: partB.time_limit_seconds,
       questionIds: partB.items.map((q) => q.id),
       render: renderPartB,
     },
     {
       key: 'partC',
       label: partC.part_label,
+      timeLimitSeconds: partC.time_limit_seconds,
       questionIds: partC.questions.map((q) => q.id),
       render: renderPartC,
     },
   ];
 }
 
-function startTimer() {
+function startTimerForCurrentStep() {
+  const step = steps[currentStepIndex];
+  timeRemaining = Number(step.timeLimitSeconds) > 0 ? Number(step.timeLimitSeconds) : DEFAULT_STEP_TIME_LIMIT_SECONDS;
+  if (timerBox) timerBox.classList.remove('warning');
+  if (timerHandle) {
+    clearInterval(timerHandle);
+    timerHandle = null;
+  }
   updateTimerLabel();
   timerHandle = setInterval(() => {
     timeRemaining--;
@@ -102,7 +114,7 @@ function startTimer() {
     if (timeRemaining <= 0) {
       clearInterval(timerHandle);
       timerHandle = null;
-      finishReading(true);
+      handleStepTimeout();
     }
   }, 1000);
 }
@@ -132,6 +144,7 @@ function renderStep() {
   step.render(document.getElementById('stepContainer'));
 
   document.getElementById('nextBtn').addEventListener('click', handleNext);
+  startTimerForCurrentStep();
 }
 
 function renderPartA(container) {
@@ -143,16 +156,17 @@ function renderPartA(container) {
     </div>
   `).join('');
 
-  const matchingHtml = part.matchingQuestions.map((q) => `
+  const matchingHtml = part.matchingQuestions.map((q, idx) => `
     <div class="question-card" style="margin-top:16px;">
-      <div class="q-text">${escapeHtml(q.question_text)}</div>
+      <div class="q-text"><strong>${idx + 1}.</strong> ${escapeHtml(q.question_text)}</div>
       <div id="options_${q.id}"></div>
     </div>
   `).join('');
 
-  const shortAnswerHtml = part.shortAnswerQuestions.map((q) => `
+  const shortAnswerOffset = part.matchingQuestions.length;
+  const shortAnswerHtml = part.shortAnswerQuestions.map((q, idx) => `
     <div class="question-card" style="margin-top:16px;">
-      <div class="q-text">${escapeHtml(q.question_text)}</div>
+      <div class="q-text"><strong>${shortAnswerOffset + idx + 1}.</strong> ${escapeHtml(q.question_text)}</div>
       <input type="text" class="blank-input" id="blank_${q.id}" autocomplete="off" style="margin-top:8px;" />
     </div>
   `).join('');
@@ -192,15 +206,16 @@ function renderPartA(container) {
 
 function renderPartB(container) {
   const part = readingData.partB;
+  const numberOffset = readingData.partA.matchingQuestions.length + readingData.partA.shortAnswerQuestions.length;
   container.innerHTML = `
     <p class="note">${escapeHtml(part.instructions)}</p>
-    ${part.items.map((item) => `
+    ${part.items.map((item, idx) => `
       <div class="passage-box" style="margin-bottom:10px;">
         <div class="passage-title">${escapeHtml(item.passage_title)}</div>
         <div style="white-space:pre-wrap;">${escapeHtml(item.passage_text)}</div>
       </div>
       <div class="question-card" style="margin-bottom:24px;">
-        <div class="q-text">${escapeHtml(item.question_text)}</div>
+        <div class="q-text"><strong>${numberOffset + idx + 1}.</strong> ${escapeHtml(item.question_text)}</div>
         <div id="options_${item.id}"></div>
       </div>
     `).join('')}
@@ -224,15 +239,16 @@ function renderPartB(container) {
 
 function renderPartC(container) {
   const part = readingData.partC;
+  const numberOffset = readingData.partA.matchingQuestions.length + readingData.partA.shortAnswerQuestions.length + readingData.partB.items.length;
   container.innerHTML = `
     <p class="note">${escapeHtml(part.instructions)}</p>
     <div class="passage-box">
       <div class="passage-title">${escapeHtml(part.title)}</div>
       <div style="white-space:pre-wrap;">${escapeHtml(part.passage_text)}</div>
     </div>
-    ${part.questions.map((q) => `
+    ${part.questions.map((q, idx) => `
       <div class="question-card" style="margin-top:16px;">
-        <div class="q-text">${escapeHtml(q.question_text)}</div>
+        <div class="q-text"><strong>${numberOffset + idx + 1}.</strong> ${escapeHtml(q.question_text)}</div>
         <div id="options_${q.id}"></div>
       </div>
     `).join('')}
@@ -320,28 +336,36 @@ async function saveAnswer(sessionToken, questionId, selected) {
   }
 }
 
-async function finishReading(timedOut) {
+// Se llama cuando el timer de LA PARTE ACTUAL llega a cero (no el módulo entero).
+// Guarda lo que haya quedado pendiente de esta parte y pasa a la siguiente con un
+// timer nuevo -- solo termina el módulo si la parte que se quedó sin tiempo era la
+// última (Part C).
+async function handleStepTimeout() {
+  if (finished) return;
+  const sessionToken = sessionStorage.getItem('cp360_session_token');
+  const step = steps[currentStepIndex];
+  if (sessionToken) {
+    for (const qid of step.questionIds) {
+      const selected = currentAnswers[qid];
+      const result = await saveAnswer(sessionToken, qid, selected);
+      if (result === 'unauthorized') return;
+    }
+  }
+  savedAnswersByStep[currentStepIndex] = { ...currentAnswers };
+  if (currentStepIndex < steps.length - 1) {
+    currentStepIndex++;
+    renderStep();
+  } else {
+    finishReading(true);
+  }
+}
+
+function finishReading(timedOut) {
   if (finished) return;
   finished = true;
   if (timerHandle) {
     clearInterval(timerHandle);
     timerHandle = null;
-  }
-  if (timedOut) {
-    const sessionToken = sessionStorage.getItem('cp360_session_token');
-    if (sessionToken) {
-      for (let s = currentStepIndex; s < steps.length; s++) {
-        const step = steps[s];
-        const answersForStep = s === currentStepIndex ? currentAnswers : {};
-        const alreadySaved = savedAnswersByStep[s] || {};
-        for (const qid of step.questionIds) {
-          if (Object.prototype.hasOwnProperty.call(alreadySaved, qid)) continue;
-          const selected = answersForStep[qid];
-          const result = await saveAnswer(sessionToken, qid, selected);
-          if (result === 'unauthorized') return;
-        }
-      }
-    }
   }
   renderDone(timedOut);
 }
