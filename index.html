@@ -1,75 +1,152 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Speak Easy - Assessment 360</title>
-<link rel="stylesheet" href="css/style.css" />
-<link rel="icon" href="data:,">
-</head>
-<body>
-<div class="wrap">
-<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
-<div class="subtitle">Assessment 360 -- English Level - STEPS 2 - OET Skills</div>
-<div class="card">
-<p>Ingresa con el código de acceso que recibiste después de confirmar tu inscripción.</p>
-<label for="fullName">Nombre completo</label>
-<input type="text" id="fullName" placeholder="Ej: María Fernanda Gómez" />
-<label for="studentEmail">Correo electrónico</label>
-<input type="email" id="studentEmail" placeholder="Ej: maria.gomez@correo.com" />
-<label for="accessCode">Código de acceso</label>
-<input type="text" id="accessCode" placeholder="Ej: CP-2026-XXXX" />
-<button class="primary" id="startBtn">Continuar</button>
-<p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
-</div>
-</div>
-<script src="js/fetch-retry.js"></script>
-<script>
-const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
-const startBtn = document.getElementById('startBtn');
-const errorMsg = document.getElementById('errorMsg');
-function showError(msg) {
-errorMsg.textContent = msg;
-errorMsg.style.display = 'block';
+// Edge Function: login
+//
+// Recibe el access_code que Diana le da al estudiante (generado a mano tras confirmar
+// el pago) y, si es válido, crea o retoma su "attempt" y le devuelve un session_token
+// de corta duración (4 horas) que el frontend usa en todas las llamadas posteriores
+// (enviar respuesta, pedir audio, etc.) en vez del access_code.
+//
+// Corre con el service_role key (inyectado automáticamente por Supabase en runtime),
+// así que puede leer/escribir todo. Nunca se expone ese key al navegador: el frontend
+// solo manda el anon/publishable key en el header Authorization (requerido por
+// verify_jwt) más el access_code en el body.
+//
+// Actualización (06/08/2026, pedido de Diana): el frontend también pide nombre
+// completo y correo en la pantalla de login, pero son solo informativos/estéticos
+// (para personalizar el saludo en welcome.html) -- el login SOLO valida el
+// access_code contra la tabla `students`. No se comparan nombre ni correo contra lo
+// precargado, así que un estudiante sin `email` cargado en Supabase puede loguearse
+// sin problema.
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
 }
-startBtn.addEventListener('click', async () => {
-const fullName = document.getElementById('fullName').value.trim();
-const studentEmail = document.getElementById('studentEmail').value.trim();
-const accessCode = document.getElementById('accessCode').value.trim();
-errorMsg.style.display = 'none';
-if (!fullName || !studentEmail || !accessCode) {
-showError('Completa tu nombre, correo y código de acceso para continuar.');
-return;
-}
-startBtn.disabled = true;
-startBtn.textContent = 'Verificando...';
-try {
-const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/login`, {
-method: 'POST',
-headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-'apikey': SUPABASE_ANON_KEY,
-},
-body: JSON.stringify({ access_code: accessCode, full_name: fullName, email: studentEmail }),
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Método no permitido." }, 405);
+  }
+
+  let body: { access_code?: unknown; full_name?: unknown; email?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Body inválido." }, 400);
+  }
+
+  const accessCode = typeof body.access_code === "string" ? body.access_code.trim() : "";
+  const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+
+  if (!accessCode) {
+    return json({ error: "Ingresa tu código de acceso." }, 400);
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // 1. Validar el código contra la tabla students (precargada por Diana).
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("id, full_name, email")
+    .eq("access_code", accessCode)
+    .maybeSingle();
+
+  if (studentError) {
+    console.error("login: error buscando student", studentError);
+    return json({ error: "Error interno. Intentá de nuevo en un momento." }, 500);
+  }
+
+  if (!student) {
+    return json({ error: "Código de acceso no válido. Revísalo e intenta de nuevo." }, 401);
+  }
+
+  // 2. Retomar el attempt en progreso más reciente, o crear uno nuevo.
+  const { data: existingAttempt, error: attemptLookupError } = await supabase
+    .from("attempts")
+    .select("id, status, started_at")
+    .eq("student_id", student.id)
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (attemptLookupError) {
+    console.error("login: error buscando attempt", attemptLookupError);
+    return json({ error: "Error interno. Intentá de nuevo en un momento." }, 500);
+  }
+
+  let attempt = existingAttempt;
+  if (!attempt || attempt.status !== "in_progress") {
+    const { data: newAttempt, error: createAttemptError } = await supabase
+      .from("attempts")
+      .insert({ student_id: student.id })
+      .select("id, status, started_at")
+      .single();
+
+    if (createAttemptError) {
+      console.error("login: error creando attempt", createAttemptError);
+      return json({ error: "Error interno. Intentá de nuevo en un momento." }, 500);
+    }
+    attempt = newAttempt;
+  }
+
+  // 3. Asegurar que exista unlock_state para este attempt (defaults de la migración 0001).
+  const { data: unlockState, error: unlockLookupError } = await supabase
+    .from("unlock_state")
+    .select("steps2_unlocked, oet_unlocked, speaking_assessment_type")
+    .eq("attempt_id", attempt.id)
+    .maybeSingle();
+
+  let unlock = unlockState;
+  if (!unlock) {
+    const { data: newUnlock, error: createUnlockError } = await supabase
+      .from("unlock_state")
+      .insert({ attempt_id: attempt.id })
+      .select("steps2_unlocked, oet_unlocked, speaking_assessment_type")
+      .single();
+
+    if (createUnlockError) {
+      console.error("login: error creando unlock_state", createUnlockError);
+      return json({ error: "Error interno. Intentá de nuevo en un momento." }, 500);
+    }
+    unlock = newUnlock;
+  }
+  if (unlockLookupError) {
+    console.error("login: error buscando unlock_state", unlockLookupError);
+  }
+
+  // 4. Emitir un session_token nuevo para esta sesión de navegador.
+  const { data: session, error: sessionError } = await supabase
+    .from("attempt_sessions")
+    .insert({ attempt_id: attempt.id })
+    .select("token, expires_at")
+    .single();
+
+  if (sessionError) {
+    console.error("login: error creando session", sessionError);
+    return json({ error: "Error interno. Intentá de nuevo en un momento." }, 500);
+  }
+
+  return json({
+    session_token: session.token,
+    expires_at: session.expires_at,
+    attempt: { id: attempt.id, status: attempt.status, started_at: attempt.started_at },
+    student: { full_name: student.full_name || fullName },
+    unlock_state: unlock,
+  });
 });
-const data = await res.json();
-if (!res.ok) {
-showError(data.error || 'No pudimos validar tus datos. Intenta de nuevo.');
-startBtn.disabled = false;
-startBtn.textContent = 'Continuar';
-return;
-}
-sessionStorage.setItem('cp360_session_token', data.session_token);
-sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
-window.location.href = 'welcome.html';
-} catch (err) {
-showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
-startBtn.disabled = false;
-startBtn.textContent = 'Continuar';
-}
-});
-</script>
-</body>
-</html>
