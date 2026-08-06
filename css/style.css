@@ -252,6 +252,13 @@ font-size: 1rem;
 line-height: 2.1;
 margin-bottom: 4px;
 }
+.note-subtitle {
+font-weight: 700;
+font-family: var(--font-heading);
+margin-top: 16px;
+margin-bottom: 2px;
+color: var(--charcoal-dark);
+}
 input.blank-input {
 width: 150px;
 padding: 6px 10px;
