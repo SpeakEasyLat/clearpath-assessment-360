@@ -1,7 +1,8 @@
 {
   "_meta": {
     "module": "nivel1_reading",
-    "version": 2
+    "version": 3,
+    "revisionNote": "v3 (06/08/2026): se reordenaron las opciones de las 28 preguntas para que la respuesta correcta no quede casi siempre en la posición B (antes 21/28 eran B, 0/28 eran C), y se reescribieron los distractores demasiado cortos para que ya no delaten la respuesta correcta por ser la opción más larga. El texto exacto de cada correct_answer en Supabase no cambió, solo su posición dentro de options y el texto de los distractores incorrectos."
   },
   "time_limit_seconds": 1200,
   "texts": [
@@ -16,9 +17,9 @@
           "answer_format": "multiple_choice",
           "question_text": "In this text, \"closed\" means:",
           "options": [
-            "not open",
             "very busy",
-            "far away"
+            "far away",
+            "not open"
           ]
         },
         {
@@ -27,8 +28,8 @@
           "answer_format": "multiple_choice",
           "question_text": "Is the clinic open on Sundays?",
           "options": [
-            "Yes, from 8 a.m. to 5 p.m.",
             "No, it is closed.",
+            "Yes, from 8 a.m. to 5 p.m.",
             "Only in an emergency."
           ]
         },
@@ -49,9 +50,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is this notice mainly about?",
           "options": [
-            "The clinic's phone number only",
-            "The clinic's opening times and what to do on weekends",
-            "How to make an appointment online"
+            "The clinic's emergency phone number only",
+            "The process for booking an appointment online",
+            "The clinic's opening times and what to do on weekends"
           ]
         }
       ]
@@ -68,8 +69,8 @@
           "question_text": "\"Reminder\" means:",
           "options": [
             "a message that helps you remember something",
-            "a type of medicine",
-            "a form to complete"
+            "a type of medicine you take every day",
+            "a form you must complete before you leave"
           ]
         },
         {
@@ -79,8 +80,8 @@
           "question_text": "What time is the appointment?",
           "options": [
             "10:15 a.m.",
-            "10:30 a.m.",
-            "3:00 p.m."
+            "3:00 p.m.",
+            "10:30 a.m."
           ]
         },
         {
@@ -89,8 +90,8 @@
           "answer_format": "multiple_choice",
           "question_text": "\"If you cannot come to this appointment, please call us...\" — this sentence describes:",
           "options": [
-            "a condition and an action",
             "two things happening at the same time",
+            "a condition and an action",
             "a cause with no solution"
           ]
         },
@@ -102,7 +103,7 @@
           "options": [
             "Come to the clinic a quarter of an hour before your appointment.",
             "Come to the clinic 15 minutes after your appointment.",
-            "You may arrive at any time you like."
+            "You are free to arrive whenever you like, with no fixed time."
           ]
         },
         {
@@ -111,9 +112,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is the main purpose of this message?",
           "options": [
-            "To cancel an appointment",
-            "To remind the patient of an appointment and give instructions",
-            "To ask the patient for payment"
+            "To cancel the patient's upcoming appointment",
+            "To ask the patient to pay for a previous visit",
+            "To remind the patient of an appointment and give instructions"
           ]
         }
       ]
@@ -129,9 +130,9 @@
           "answer_format": "multiple_choice",
           "question_text": "\"Underestimate\" means:",
           "options": [
+            "to spend far more time studying than is actually necessary",
             "to think something is less important or serious than it really is",
-            "to study for too many hours",
-            "to sleep for a very short time"
+            "to sleep for a much shorter time than your body actually needs"
           ]
         },
         {
@@ -140,9 +141,9 @@
           "answer_format": "multiple_choice",
           "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
           "options": [
-            "a contrast",
             "a consequence",
-            "an example"
+            "a surprising contrast",
+            "a supporting example"
           ]
         },
         {
@@ -152,8 +153,8 @@
           "question_text": "Choose the best word: \"Experts recommend seven hours of sleep, ___ this can vary depending on age.\"",
           "options": [
             "because",
-            "although",
-            "so"
+            "so",
+            "although"
           ]
         },
         {
@@ -173,9 +174,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which sentence best summarises the text?",
           "options": [
-            "Sleep has no real effect on studying.",
             "Deep sleep helps the brain store new information, so rest matters as much as study time.",
-            "Naps are always more effective than a full night's sleep."
+            "Sleep has little real effect on how well students perform in exams.",
+            "A short nap is always more effective for memory than a full night's sleep."
           ]
         }
       ]
@@ -191,9 +192,9 @@
           "answer_format": "multiple_choice",
           "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
           "options": [
-            "unclear meaning",
             "strong disagreement",
-            "fast response"
+            "fast response",
+            "unclear meaning"
           ]
         },
         {
@@ -213,9 +214,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
-            "Remote work has eliminated the need for meetings.",
             "Remote work has changed internal communication and created a need for clearer writing skills.",
-            "Companies no longer allow phone calls."
+            "Remote work has made face-to-face meetings completely unnecessary for every team.",
+            "Companies have decided to stop allowing employees to make phone calls at work."
           ]
         }
       ]
@@ -232,8 +233,8 @@
           "question_text": "\"Hazards\" most likely means:",
           "options": [
             "benefits",
-            "dangers or risks",
-            "instructions"
+            "instructions",
+            "dangers or risks"
           ]
         },
         {
@@ -242,7 +243,7 @@
           "answer_format": "multiple_choice",
           "question_text": "According to the text, a coloured wristband is used to:",
           "options": [
-            "record a patient's blood type",
+            "record which blood type a patient has been given",
             "alert staff that a patient is at high risk of falling",
             "show that a patient has recovered from surgery"
           ]
@@ -253,9 +254,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is this extract mainly advising staff to do?",
           "options": [
-            "Rely only on close supervision to prevent falls.",
             "Assess risk early, mark high-risk patients clearly, and remove physical hazards.",
-            "Avoid admitting elderly patients to the ward."
+            "Rely mainly on close supervision, without changing anything else on the ward.",
+            "Avoid admitting elderly or post-surgical patients to the ward altogether."
           ]
         }
       ]
@@ -272,8 +273,8 @@
           "question_text": "\"Indispensable\" means:",
           "options": [
             "unreliable",
-            "absolutely necessary",
-            "rarely used"
+            "rarely used",
+            "absolutely necessary"
           ]
         },
         {
@@ -293,9 +294,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which title best fits this passage?",
           "options": [
-            "Why Self-Reported Data Should Be Banned from Research",
             "Understanding and Managing the Limitations of Self-Reported Data",
-            "A Brief History of Data Collection Methods"
+            "Why Self-Reported Data Should Be Banned from Research",
+            "A Brief History of Data Collection Methods in Social Science"
           ]
         },
         {
@@ -305,8 +306,8 @@
           "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
           "options": [
             "They believe it should be avoided whenever objective measures are available.",
-            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses.",
-            "They believe the biases described make self-reported data unusable for medical research."
+            "They believe the biases described make self-reported data unusable for medical research.",
+            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses."
           ]
         }
       ]
@@ -322,9 +323,9 @@
           "answer_format": "multiple_choice",
           "question_text": "\"Reconciliation\" (as in \"medication reconciliation\") most likely refers to:",
           "options": [
-            "reducing the dose of a medication",
+            "gradually reducing the dose of a medication over several weeks",
             "checking and confirming that a patient's medication list is accurate and complete",
-            "prescribing a completely new medication"
+            "prescribing a completely new medication to replace the old one"
           ]
         },
         {
@@ -333,8 +334,8 @@
           "answer_format": "multiple_choice",
           "question_text": "\"...rather than being treated as a task reserved for the final day\" — this phrase signals:",
           "options": [
-            "similarity between two ideas",
             "a contrast with common practice",
+            "similarity between two ideas",
             "a cause-and-effect relationship"
           ]
         },
@@ -344,9 +345,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which statement best summarises the text?",
           "options": [
-            "Discharge planning should start early because delays are often administrative, not clinical.",
-            "Discharge planning is the sole responsibility of doctors.",
-            "Patients are usually ready to leave hospital before community services are available."
+            "Discharge planning is solely the responsibility of doctors, not the rest of the team.",
+            "Patients are usually ready to leave hospital before community services are available.",
+            "Discharge planning should start early because delays are often administrative, not clinical."
           ]
         },
         {
