@@ -3,6 +3,26 @@
 // Califica con IA una tarea de writing anclando el juicio a los descriptores del CEFR.
 // NUNCA le devuelve al estudiante puntaje ni nivel en vivo.
 //
+// v15 (06/08/2026): agrega OET Writing (Fase 4, module === 'oet_writing' en
+// writing_prompts). BUG REAL encontrado y corregido: sub_scores.skill se escribia
+// SIEMPRE como el literal "writing", sin importar que modulo se acababa de completar.
+// Si se agregaba oet_writing sin arreglar esto, terminar OET Writing pisaba (mismo
+// onConflict attempt_id,skill) el sub_score de Writing de Nivel 1. Ahora hay un mapa
+// MODULE_TO_SKILL (nivel1_writing -> "writing", oet_writing -> "oet_writing"). Ademas,
+// recomputeRouteAndPersist ahora SOLO se llama cuando el modulo es nivel1_writing -- la
+// ruta del Nivel 1 (OET/STEPS2/ENGLISH) ya quedo fija para cuando el estudiante llega a
+// OET Writing, e igual que steps2/oet_listening/oet_reading en submit-response, este
+// sub_score es diagnostico y solo le sirve a get-unlock-state para encadenar pantallas.
+//
+// v14 (05/08/2026): decision de Diana -- el word count sugerido en la consigna
+// ("Write between X and Y words") NO es un criterio de calificacion. Si el estudiante
+// escribe menos de lo pedido, eso no se penaliza como tal: se califica el nivel de
+// idioma de lo que efectivamente escribio, usando el mismo framework de siempre.
+// Se agrego una seccion explicita al prompt de la IA para que quede a prueba de
+// interpretacion (antes no estaba prohibido, pero tampoco estaba dicho -- y el
+// prompt_text de la consigna sí menciona el rango de palabras, asi que la IA lo tenia
+// disponible como para, sin querer, tratarlo como un requisito a cumplir).
+//
 // v13 (05/08/2026): FIX de un bug real encontrado en la prueba end-to-end -- un
 // sub_score puede existir con cefr_estimate = null (el estudiante no supero ni la
 // banda A1; un resultado legitimo, no "todavia no lo rindio"). v12 confundia esto con
@@ -60,6 +80,13 @@ const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
 const PLACEMENT_MAX = 10;
 const MAX_OUTPUT_TOKENS = 4096;
+
+// module (writing_prompts) -> skill (sub_scores). Ver nota v15 arriba -- antes de esto
+// el skill quedaba hardcodeado a "writing" sin importar el modulo.
+const MODULE_TO_SKILL = {
+  nivel1_writing: "writing",
+  oet_writing: "oet_writing",
+};
 
 function meetsLevel(level, minLevel) {
   if (!level) return false;
@@ -238,6 +265,21 @@ minor flaws in sentence structure MAY STILL OCCUR" at B2. Therefore:
 - "Noticeable mother tongue influence" in the B1 descriptor means influence that characterises
   the whole text, not the presence of one or two L1-flavoured expressions.
 
+=== WORD COUNT IS NOT A SCORING CRITERION ===
+
+The task below may suggest a recommended word count (for example "write between 120 and
+180 words"). This is guidance for the student, NOT something you grade. If the response is
+shorter than the suggested range, that fact must NOT by itself lower the placement band or
+the CEFR level. Grade only the language quality of what the student actually wrote, using
+the six qualities and the CEFR descriptors above.
+
+A short response naturally gives you less text to find evidence in for some qualities (for
+example topic development or range of structures) -- if there genuinely is not enough text
+to judge a quality with confidence, say so honestly in that dimension's sentence and in the
+evidence fields, rather than assuming the missing length itself indicates a lower level. Do
+not mention the word count, or the fact that it was not met, as a reason for the level in
+"cefr_justification" or "overall_comment".
+
 === CONSISTENCY CHECK - apply before answering ===
 
 If ALL THREE of these hold, the level MUST be B2 or higher:
@@ -397,7 +439,7 @@ async function gradeWithAI(promptRow, responseText, compact = false) {
       overall_comment: typeof parsed.overall_comment === "string" ? parsed.overall_comment : "",
       cefr_estimate: cefr,
       cefr_estimate_raw: typeof rawCefr === "string" ? rawCefr : null,
-      rubric_version: "cefr-anchored-v4-doubt-favours-student",
+      rubric_version: "cefr-anchored-v5-word-count-neutral",
       compact_mode: compact === true,
       stop_reason: stopReason,
       input_tokens: Number(usage.input_tokens) || null,
@@ -604,7 +646,7 @@ Deno.serve(async (req) => {
         ai_rubric_scores: {
           grading_failed: true,
           attempts: fallos,
-          rubric_version: "cefr-anchored-v4-doubt-favours-student",
+          rubric_version: "cefr-anchored-v5-word-count-neutral",
           failed_at: new Date().toISOString(),
         },
       })
@@ -666,13 +708,14 @@ Deno.serve(async (req) => {
     return sum + (Number.isFinite(b) ? b : 0);
   }, 0);
   const maxScore = modulePromptIds.length * PLACEMENT_MAX;
+  const skill = MODULE_TO_SKILL[promptRow.module] || "writing";
 
   const { error: subScoreError } = await supabase
     .from("sub_scores")
     .upsert(
       {
         attempt_id: attemptId,
-        skill: "writing",
+        skill,
         raw_score: rawScore,
         max_score: maxScore,
         cefr_estimate: moduleCefr,
@@ -686,9 +729,14 @@ Deno.serve(async (req) => {
     return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
   }
 
-  const routeResult = await recomputeRouteAndPersist(supabase, attemptId);
-  if (routeResult && routeResult.error) {
-    return json({ error: routeResult.error }, 500);
+  // Solo recalculamos la ruta del Nivel 1 (OET/STEPS2/ENGLISH) cuando el modulo
+  // completado es nivel1_writing -- para oet_writing la ruta ya quedo fija antes de
+  // llegar aca (igual que steps2/oet_listening/oet_reading en submit-response).
+  if (promptRow.module === "nivel1_writing") {
+    const routeResult = await recomputeRouteAndPersist(supabase, attemptId);
+    if (routeResult && routeResult.error) {
+      return json({ error: routeResult.error }, 500);
+    }
   }
 
   return json({ ok: true, module_complete: true, graded: true });
