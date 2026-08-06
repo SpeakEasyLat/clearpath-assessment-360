@@ -1,25 +1,30 @@
 # ClearPath Assessment 360
 
-Assessment 360 online para Speak Easy: **Welcome → Intake → English Level → STEPS 2 → OET Skills → Speaking Assessment (en vivo)**, con desbloqueo adaptativo por nivel y audios de reproducción limitada (imitando el formato OET).
+Assessment 360 online para Speak Easy: **Welcome → Intake → English Level → (STEPS 2 *o* OET Skills, según el resultado) → Speaking Assessment (en vivo)**, con desbloqueo adaptativo por nivel y audios de reproducción limitada (imitando el formato OET).
 
 ## Estado actual
 
 Lo que ya funciona:
 
-- **Login** (`index.html` + Edge Function `login`): valida nombre completo, correo y código de acceso contra la tabla `students` precargada por Diana en Supabase (comparación insensible a mayúsculas/espacios). Emite un `session_token` de 4 horas que el frontend usa en el resto de las llamadas en vez del código de acceso. Requiere que cada estudiante tenga `email` cargado de antemano en Supabase.
+- **Login** (`index.html` + Edge Function `login`): valida solo el código de acceso contra la tabla `students` precargada por Diana en Supabase. Nombre completo y correo se piden en la misma pantalla, pero son informativos/estéticos (solo se usan para personalizar el saludo en `welcome.html`, no se comparan contra lo precargado). Emite un `session_token` de 4 horas que el frontend usa en el resto de las llamadas en vez del código de acceso.
 - **Welcome page** (`welcome.html`): pantalla informativa entre el login y el intake, con el objetivo del assessment, cómo está organizado, duración estimada, reglas del examen, recomendaciones antes de empezar y un pedido explícito de honestidad académica (sin traductores, sin IA, sin ayuda de terceros).
 - **Intake** (`intake.html`): formulario previo no calificado (nivel autopercibido, experiencia, disponibilidad horaria) para armar horarios y reportes.
-- **Nivel 1 — English Level**: las 4 destrezas completas.
-  - Grammar: 44 preguntas reales del banco de Diana (`data/nivel1-grammar.json`), timer de 20 minutos, cálculo de nivel CEFR por "ceiling".
-  - Listening: 8 audios, 34 preguntas, formato "note completion" tipo OET, reproducción limitada a 2 veces con URL firmada.
-  - Reading.
-  - Writing: 2 tareas (general + médica tipo OET), calificación por IA con rúbrica de placement 0-10 combinada con CEFR.
-- **Lógica de desbloqueo** (`js/scoring.js`): STEPS 2 obligatorio y secuencial para todos. OET se desbloquea solo si grammar + listening + writing del Nivel 1 superan el umbral configurado. El router `siguiente.html` le pregunta a la Edge Function `get-unlock-state` a qué pantalla mandar al estudiante después de cada módulo, en vez de que cada pantalla tenga la siguiente URL escrita a mano.
-- **STEP 2 CK — Clinical Knowledge** (`steps2.html`, `data/steps2.json`, `js/app-steps2.js`): en construcción.
-- **OET Skills** — completo:
-  - Listening: 3 partes (A/B/C), audio de reproducción única, timer independiente por parte calculado a partir de la duración real de cada track (`data/oet-listening.json`), preguntas numeradas de punta a punta, subtítulos del "case note completion" de la Parte A en negrita.
-  - Reading: 3 partes con timer propio cada una (6/8/8 minutos), preguntas numeradas de punta a punta.
-  - Writing: caso clínico siempre visible (sin colapsar), consigna + calificación por IA.
+- **Nivel 1 — English Level** (~1 hora en total): las 4 destrezas completas.
+  - Grammar: 20 preguntas (`data/nivel1-grammar.json`), timer de 10 minutos, cálculo de nivel CEFR por "ceiling".
+  - Listening: 5 audios (uno por banda A1-C1), 20 preguntas de opción múltiple, una sola reproducción por audio con URL firmada (sin timer explícito, pensado para ~10-11 minutos).
+  - Reading: timer de 20 minutos.
+  - Writing: 1 tarea (email, 120-180 palabras), timer de 20 minutos, calificación por IA con rúbrica de placement 0-10 combinada con CEFR.
+- **Lógica de desbloqueo** (`js/scoring.js`): la decisión se toma recién cuando existen los 4 sub-scores de Nivel 1 (grammar, listening, writing, reading), y son **tres rutas mutuamente excluyentes** (nunca se combinan STEPS 2 y OET):
+  - Si los 4 llegan a B2 → ruta **OET** → módulo OET Skills → Speaking Assessment tipo OET.
+  - Si no, pero reading solo llega a B2 → ruta **STEPS 2** → Speaking Assessment tipo English.
+  - Si reading tampoco llega → ruta **English** → Speaking Assessment tipo English directo, sin STEPS 2 ni OET.
+  
+  El router `siguiente.html` le pregunta a la Edge Function `get-unlock-state` a qué pantalla mandar al estudiante después de cada módulo, en vez de que cada pantalla tenga la siguiente URL escrita a mano.
+- **STEP 2 CK — Clinical Knowledge** (`steps2.html`, `data/steps2.json`, `js/app-steps2.js`): en construcción, 8 preguntas, timer de 15 minutos.
+- **OET Skills** — completo (~1 hora en total):
+  - Listening: 3 partes (A/B/C), audio de reproducción única, timer independiente por parte calculado a partir de la duración real de cada track — 6/7/9 minutos (`data/oet-listening.json`), preguntas numeradas de punta a punta, subtítulos del "case note completion" de la Parte A en negrita.
+  - Reading: 3 partes con timer propio cada una — 6/8/8 minutos, preguntas numeradas de punta a punta.
+  - Writing: timer de 17 minutos (2 de lectura + 15 de escritura), caso clínico siempre visible (sin colapsar), consigna + calificación por IA.
 - **Speaking Assessment** (`speaking.html`): pantalla de agenda que muestra el link correcto de Google Calendar (roleplay OET o conversación CEFR English) según el resultado del estudiante, sin que el estudiante elija.
 - **Identidad visual**: logo real de Speak Easy · ClearPath integrado en las 13 pantallas; paleta de colores y tipografía ya alineadas con el logo.
 - **Edge Functions desplegadas**: `login`, `submit-response`, `submit-writing`, `get-unlock-state`, `get-audio-url` (URLs firmadas de corta duración + límite de reproducciones por audio, controlado 100% del lado del servidor).
