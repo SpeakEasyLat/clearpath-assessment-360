@@ -1,0 +1,105 @@
+{
+  "_meta": {
+    "module": "oet_listening"
+  },
+  "time_limit_seconds": 1800,
+  "audios": [
+    {
+      "audio_asset_id": "b4c56f18-0d94-4c5e-ac4c-1bcc4fbff5b6",
+      "part_label": "Part A",
+      "title": "You hear an obstetrician talking to a patient called Melissa Gordon. For questions 1-12, complete the notes with a word or short phrase. You now have 30 seconds to look at the notes before the audio starts.",
+      "case_notes_heading": "PATIENT NOTES — Melissa Gordon",
+      "max_plays": 1,
+      "questions": [
+        { "id": "134e2574-76d7-48c8-a50d-8320d9e2fa92", "answer_format": "note_completion", "question_text": "works as a ___" },
+        { "id": "264b8ccf-30a4-42d8-b169-17293e29fbbe", "answer_format": "note_completion", "question_text": "Medical history\nhas occasional ___" },
+        { "id": "33462b85-9248-4583-9e9b-21df6e3883cf", "answer_format": "note_completion", "question_text": "is allergic to ___" },
+        { "id": "07b918c9-be18-431f-a6a3-71b17e697a71", "answer_format": "note_completion", "question_text": "has a ___ diet" },
+        { "id": "f49192c8-08e1-46d5-b0be-150b244423ff", "answer_format": "note_completion", "question_text": "needed ___ treatment before first pregnancy" },
+        { "id": "9ca27c9a-a02f-4ca0-b67c-ddaefd1fa632", "answer_format": "note_completion", "question_text": "first baby presented as ___" },
+        { "id": "390255b6-4ca3-46a1-b84b-f575419c99c6", "answer_format": "note_completion", "question_text": "___ required during intervention" },
+        { "id": "b7c21096-a405-4543-85aa-70ce3fcaab14", "answer_format": "note_completion", "question_text": "after giving birth, had problems with ___" },
+        { "id": "78347f64-e0d0-4a75-962f-708d0e28db04", "answer_format": "note_completion", "question_text": "Baby's father\nfamily history of ___" },
+        { "id": "5015bc66-821f-4823-9955-204f3a5e0d09", "answer_format": "note_completion", "question_text": "child from previous marriage has ___" },
+        { "id": "3a652c40-9e4f-4307-8dc8-7f64c938ea01", "answer_format": "note_completion", "question_text": "Points raised\nenquired about the possibility of ___ testing" },
+        { "id": "a4792ee4-c26c-4c40-8080-07b7d2996de3", "answer_format": "note_completion", "question_text": "provided her with a leaflet on preparing ___ for new baby" }
+      ]
+    },
+    {
+      "audio_asset_id": "f27ac4e3-1f63-4477-9055-f9fcfd17e310",
+      "part_label": "Part B",
+      "title": "For questions 25-28, choose the answer (A, B or C) which fits best according to what you hear. You'll have time to read each question before you listen.",
+      "max_plays": 1,
+      "questions": [
+        {
+          "id": "d5ec6577-13c9-4030-b1c4-eb1c4ea9a19b",
+          "answer_format": "multiple_choice",
+          "question_text": "You hear a nurse briefing her colleague about a patient. What does she warn her colleague about?",
+          "options": ["The patient is allergic to some types of antibiotics.", "Care must be taken to prevent the patient from falling.", "Oxygen may be needed if the patient becomes breathless."]
+        },
+        {
+          "id": "1559f2b8-d2b4-44a9-ac7d-c10fdedbd54d",
+          "answer_format": "multiple_choice",
+          "question_text": "You hear the manager of a care home for the elderly talking to the nursing staff. He says that errors in dispensing medication to patients usually result from",
+          "options": ["interruptions while calculating dosages.", "a failure to check for patients' allergies.", "administering drugs late in the day."]
+        },
+        {
+          "id": "460490c5-89f9-4aa9-aee7-c2477930ff6a",
+          "answer_format": "multiple_choice",
+          "question_text": "You hear part of a morning briefing on a hospital ward. What is the plan for the patient today?",
+          "options": ["Her emotional state will be carefully observed.", "She will be transferred to a more specialised unit.", "A social worker will come to see what help she needs."]
+        },
+        {
+          "id": "9d02c7a3-9b49-49ca-8488-a95810ce89f6",
+          "answer_format": "multiple_choice",
+          "question_text": "You hear part of an ante-natal consultation at a GP practice. What does the patient want to know about?",
+          "options": ["the advisability of a home birth", "ways of avoiding post-natal depression", "what painkillers might be available during labour"]
+        }
+      ]
+    },
+    {
+      "audio_asset_id": "36f5588d-6c7b-4803-baf4-003e602db987",
+      "part_label": "Part C",
+      "title": "You hear a clinician called Jonathan Cross giving a presentation to a group of healthcare providers. You now have 90 seconds to read the questions before the audio starts.",
+      "max_plays": 1,
+      "questions": [
+        {
+          "id": "833acfed-8152-46dc-8340-6cd8ecbe3793",
+          "answer_format": "multiple_choice",
+          "question_text": "Jonathan says that when considering a policy of open visiting hours, clinicians are",
+          "options": ["generally opposed to the push for change.", "essential to its success or failure.", "beginning to see the rationale behind it."]
+        },
+        {
+          "id": "ecd36ab1-e84d-44fb-bb39-568fbfa12946",
+          "answer_format": "multiple_choice",
+          "question_text": "Jonathan believes that having family present in critical care units",
+          "options": ["will cause disharmony among healthcare professionals.", "makes little difference to the treatment given to patients.", "is potentially dangerous to both staff and patients."]
+        },
+        {
+          "id": "ce6c257c-5c33-4fd7-adc0-d1c1e5a11880",
+          "answer_format": "multiple_choice",
+          "question_text": "Jonathan uses statistical information to show that after visiting hours were opened",
+          "options": ["clinicians experienced higher levels of fatigue.", "the attitude of staff remained positive.", "nurses felt more of a strain than other staff."]
+        },
+        {
+          "id": "c292168f-3a23-4db1-83a3-43728e89ebee",
+          "answer_format": "multiple_choice",
+          "question_text": "Jonathan says that the possibility of family burnout is an important issue because",
+          "options": ["it is an area that has yet to be sufficiently studied.", "the amount of resources needed to overcome it is too great.", "it should be considered alongside the change in visiting hours."]
+        },
+        {
+          "id": "4838f772-d8b9-475b-8e74-660d65cb17cf",
+          "answer_format": "multiple_choice",
+          "question_text": "What does Jonathan say about full family presence during open visiting hours?",
+          "options": ["it provides the family a sense of fulfilment during stressful times.", "the benefits clearly outweigh any negative aspects.", "there are still times where it may be considered inappropriate."]
+        },
+        {
+          "id": "4c24be2b-fe33-4f66-b5e6-54b8280c45cf",
+          "answer_format": "multiple_choice",
+          "question_text": "Jonathan closes by outlining the facts on open visiting hours in order to",
+          "options": ["rationalise any misconceptions listeners may have.", "illustrate that its opponents are mistaken in their views.", "give advice to hospitals ready to implement the new policy."]
+        }
+      ]
+    }
+  ]
+}
