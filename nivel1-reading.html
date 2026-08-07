@@ -24,5 +24,14 @@
 
 <script src="js/fetch-retry.js"></script>
 <script type="module" src="js/app-nivel1-reading.js"></script>
+<script>
+  (function () {
+    if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
+      document.title = 'Nivel 1 · Reading — Assessment Speak Easy';
+      var brand = document.querySelector('.brand');
+      if (brand) brand.textContent = 'Assessment Speak Easy';
+    }
+  })();
+</script>
 </body>
 </html>
