@@ -37,5 +37,13 @@
 </div>
 <script src="js/fetch-retry.js"></script>
 <script src="js/app-nivel1-writing.js"></script>
+<script>
+  (function () {
+    if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
+      var logo = document.querySelector('.logo');
+      if (logo) { logo.src = 'assets/logo-speakeasy.png'; logo.alt = 'Speak Easy'; }
+    }
+  })();
+</script>
 </body>
 </html>
