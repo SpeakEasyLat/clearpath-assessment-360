@@ -38,8 +38,8 @@ const fullName = document.getElementById('fullName').value.trim();
 const studentEmail = document.getElementById('studentEmail').value.trim();
 const accessCode = document.getElementById('accessCode').value.trim();
 errorMsg.style.display = 'none';
-if (!fullName || !studentEmail || !accessCode) {
-showError('Completa tu nombre, correo y código de acceso para continuar.');
+if (!accessCode) {
+showError('Ingresa tu código de acceso para continuar.');
 return;
 }
 startBtn.disabled = true;
