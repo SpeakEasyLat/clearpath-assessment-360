@@ -36,6 +36,15 @@
 </div>
 </div>
 <script src="js/fetch-retry.js"></script>
+<script>
+  (function () {
+    if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
+      document.title = 'Antes de empezar - Assessment Speak Easy';
+      var brand = document.querySelector('.brand');
+      if (brand) brand.textContent = 'Assessment Speak Easy';
+    }
+  })();
+</script>
 <script type="module" src="js/app-intake.js"></script>
 </body>
 </html>
