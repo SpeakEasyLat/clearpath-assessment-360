@@ -1,32 +1,37 @@
-From deeef500dc5bc83cece2e5ad3c0a5d2ad05c10ca Mon Sep 17 00:00:00 2001
-From: Diana <info@speakeasy.lat>
-Date: Fri, 7 Aug 2026 18:27:31 +0000
-Subject: [PATCH] Remove development note from index-nivel1.html
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nivel 1 · Reading — Speak Easy ClearPath</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+</head>
+<body>
+<div class="wrap">
+<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
+<div class="subtitle">Nivel 1 — English Level (Reading)</div>
 
----
- index-nivel1.html | 10 ----------
- 1 file changed, 10 deletions(-)
+<div id="timerBox" class="timer">
+<span id="timerLabel">20:00</span>
+<span id="progressLabel">Texto 1 / 7</span>
+</div>
+<div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
 
-diff --git a/index-nivel1.html b/index-nivel1.html
-index 7e0dd12..2af022d 100644
---- a/index-nivel1.html
-+++ b/index-nivel1.html
-@@ -22,16 +22,6 @@
- <button class="primary" id="startBtn">Continuar</button>
- <p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
- </div>
--<p class="note">
--NOTA DE DESARROLLO (para Diana): esta es la puerta de entrada del producto "solo Nivel
--1" -- funcionalmente idéntica a index.html (mismo login, mismo código de acceso CP-XXXXXX),
--salvo que le manda a la Edge Function <code>login</code> el campo adicional
--<code>track: 'NIVEL1_ONLY'</code>, y redirige a <code>welcome-nivel1.html</code> en vez de
--<code>welcome.html</code>. A partir de ahí el estudiante recorre exactamente el mismo Nivel
--1 (intake, grammar, listening, writing, reading) -- lo único que cambia es que, al
--terminarlo, el sistema lo manda SIEMPRE a la reserva de English Speaking, sin evaluar para
--OET ni STEPS 2, sin importar el resultado.
--</p>
- </div>
- <script src="js/fetch-retry.js"></script>
- <script>
--- 
-2.43.0
+<div id="quizArea"></div>
+<div id="resultArea" style="display:none;"></div>
+</div>
+
+<script src="js/fetch-retry.js"></script>
+<script type="module" src="js/app-nivel1-reading.js"></script>
+<script>
+  (function () {
+    if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
+      document.title = 'Nivel 1 · Reading — Assessment Speak Easy';
+      var logo = document.querySelector('.logo');
+      if (logo) { logo.src = 'assets/logo-speakeasy.png'; logo.alt = 'Speak Easy'; }
+    }
+  })();
+</script>
+</body>
+</html>
