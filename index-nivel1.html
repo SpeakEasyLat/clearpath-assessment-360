@@ -3,35 +3,74 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Nivel 1 · Reading — Speak Easy ClearPath</title>
+<title>Assessment Speak Easy</title>
 <link rel="stylesheet" href="css/style.css" />
 <link rel="icon" href="data:,">
 </head>
 <body>
 <div class="wrap">
-<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
-<div class="subtitle">Nivel 1 — English Level (Reading)</div>
-
-<div id="timerBox" class="timer">
-<span id="timerLabel">20:00</span>
-<span id="progressLabel">Texto 1 / 7</span>
+<img src="assets/logo-speakeasy.png" alt="Speak Easy" class="logo">
+<div class="subtitle">Assessment Speak Easy</div>
+<div class="card">
+<p>Ingresa abajo con el código de acceso que recibiste en tu correo después de confirmar tu inscripción.</p>
+<label for="fullName">Nombre completo</label>
+<input type="text" id="fullName" placeholder="Ej: María Fernanda Gómez" />
+<label for="studentEmail">Correo electrónico</label>
+<input type="email" id="studentEmail" placeholder="Ej: maria.gomez@correo.com" />
+<label for="accessCode">Código de acceso</label>
+<input type="text" id="accessCode" placeholder="Ej: CP-2026-XXXX" />
+<button class="primary" id="startBtn">Continuar</button>
+<p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
 </div>
-<div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
-
-<div id="quizArea"></div>
-<div id="resultArea" style="display:none;"></div>
 </div>
-
 <script src="js/fetch-retry.js"></script>
-<script type="module" src="js/app-nivel1-reading.js"></script>
 <script>
-  (function () {
-    if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
-      document.title = 'Nivel 1 · Reading — Assessment Speak Easy';
-      var logo = document.querySelector('.logo');
-      if (logo) { logo.src = 'assets/logo-speakeasy.png'; logo.alt = 'Speak Easy'; }
-    }
-  })();
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+const startBtn = document.getElementById('startBtn');
+const errorMsg = document.getElementById('errorMsg');
+function showError(msg) {
+errorMsg.textContent = msg;
+errorMsg.style.display = 'block';
+}
+startBtn.addEventListener('click', async () => {
+const fullName = document.getElementById('fullName').value.trim();
+const studentEmail = document.getElementById('studentEmail').value.trim();
+const accessCode = document.getElementById('accessCode').value.trim();
+errorMsg.style.display = 'none';
+if (!accessCode) {
+showError('Ingresa tu código de acceso para continuar.');
+return;
+}
+startBtn.disabled = true;
+startBtn.textContent = 'Verificando...';
+try {
+const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/login`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+'apikey': SUPABASE_ANON_KEY,
+},
+body: JSON.stringify({ access_code: accessCode, full_name: fullName, email: studentEmail, track: 'NIVEL1_ONLY' }),
+});
+const data = await res.json();
+if (!res.ok) {
+showError(data.error || 'No pudimos validar tus datos. Intenta de nuevo.');
+startBtn.disabled = false;
+startBtn.textContent = 'Continuar';
+return;
+}
+sessionStorage.setItem('cp360_session_token', data.session_token);
+sessionStorage.setItem('cp360_track', (data.attempt && data.attempt.track) || 'NIVEL1_ONLY');
+sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
+window.location.href = 'welcome-nivel1.html';
+} catch (err) {
+showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
+startBtn.disabled = false;
+startBtn.textContent = 'Continuar';
+}
+});
 </script>
 </body>
 </html>
