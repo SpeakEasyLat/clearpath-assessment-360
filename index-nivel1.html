@@ -72,6 +72,7 @@ startBtn.textContent = 'Continuar';
 return;
 }
 sessionStorage.setItem('cp360_session_token', data.session_token);
+sessionStorage.setItem('cp360_track', (data.attempt && data.attempt.track) || 'NIVEL1_ONLY');
 sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
 window.location.href = 'welcome-nivel1.html';
 } catch (err) {
