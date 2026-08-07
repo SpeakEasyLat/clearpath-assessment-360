@@ -9,7 +9,7 @@
 </head>
 <body>
 <div class="wrap">
-<div class="brand">Speak Easy · ClearPath</div>
+<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
 <div class="subtitle">Nivel 1 — English Level (Listening)</div>
 <div id="timerBox" class="timer">
 <span id="progressLabel">Audio 1 / 8</span>
@@ -24,8 +24,8 @@
   (function () {
     if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
       document.title = 'Nivel 1 · Listening — Assessment Speak Easy';
-      var brand = document.querySelector('.brand');
-      if (brand) brand.textContent = 'Assessment Speak Easy';
+      var logo = document.querySelector('.logo');
+      if (logo) { logo.src = 'assets/logo-speakeasy.png'; logo.alt = 'Speak Easy'; }
     }
   })();
 </script>
