@@ -1,0 +1,366 @@
+{
+  "_meta": {
+    "module": "nivel1_reading_general",
+    "version": 1
+  },
+  "time_limit_seconds": 1200,
+  "texts": [
+    {
+      "title": "Notice: Library Opening Hours",
+      "cefr_level": "A1",
+      "passage_text": "The library is open from Monday to Friday, from 9 a.m. to 6 p.m. It is closed on Saturdays and Sundays.\n\nIf you need a book urgently on the weekend, you can read it online on our website.\n\nDo not enter the library without your student card.",
+      "questions": [
+        {
+          "id": "48e2ac36-1b9e-4272-b9fc-595d5340aae0",
+          "position": 1,
+          "answer_format": "multiple_choice",
+          "question_text": "In this text, \"closed\" means:",
+          "options": [
+            "very busy",
+            "not open",
+            "far away"
+          ]
+        },
+        {
+          "id": "4d0fec6f-d5f0-4d87-a3a6-c8a67bd8ff44",
+          "position": 2,
+          "answer_format": "multiple_choice",
+          "question_text": "Is the library open on Sundays?",
+          "options": [
+            "Yes, from 9 a.m. to 6 p.m.",
+            "Only in an emergency.",
+            "No, it is closed."
+          ]
+        },
+        {
+          "id": "da87e7fe-acf8-4c11-9cee-58411d9044d2",
+          "position": 3,
+          "answer_format": "multiple_choice",
+          "question_text": "What do you need to enter the library?",
+          "options": [
+            "A student card",
+            "A staff badge",
+            "A library book"
+          ]
+        },
+        {
+          "id": "84b18b48-f270-488f-8b2e-dcd8987d3fbe",
+          "position": 4,
+          "answer_format": "multiple_choice",
+          "question_text": "What is this notice mainly about?",
+          "options": [
+            "How the library decided to close on weekends",
+            "The library's opening hours and what to do on weekends",
+            "How students should renew their library cards"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Class Reminder",
+      "cefr_level": "A2",
+      "passage_text": "Dear Ms. Alvarez,\n\nThis is a reminder about your English class with Mr. Kim on Thursday, August 13, at 6:30 p.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this class, please call us at least 24 hours before, so we can give the spot to another student. Remember to bring your notebook and a pen.\n\nThank you,\nRiverside Language School",
+      "questions": [
+        {
+          "id": "d0f552c5-b590-4744-a405-3c58e5dcc199",
+          "position": 5,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Reminder\" means:",
+          "options": [
+            "a message that helps you remember something",
+            "a type of homework you do every week",
+            "a form you must complete before you leave"
+          ]
+        },
+        {
+          "id": "29a35279-d983-41d6-8baf-bded8a2ee414",
+          "position": 6,
+          "answer_format": "multiple_choice",
+          "question_text": "What time is the class?",
+          "options": [
+            "6:15 p.m.",
+            "3:00 p.m.",
+            "6:30 p.m."
+          ]
+        },
+        {
+          "id": "91c02385-9ec3-4ab1-a247-f20bb62393c6",
+          "position": 7,
+          "answer_format": "multiple_choice",
+          "question_text": "What should the student do if she cannot come to the class?",
+          "options": [
+            "Come to the next class instead",
+            "Call the school at least 24 hours before",
+            "Do nothing, since it doesn't really matter"
+          ]
+        },
+        {
+          "id": "3ac609b1-82a6-4ed9-8477-1ff9e994960e",
+          "position": 8,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
+          "options": [
+            "Come to the school a quarter of an hour before your class.",
+            "Come to the school 15 minutes after your class.",
+            "Arrive at the school whenever is convenient, with no fixed time."
+          ]
+        },
+        {
+          "id": "6e2bb1af-124d-467f-95ef-92445485873a",
+          "position": 9,
+          "answer_format": "multiple_choice",
+          "question_text": "What is the main purpose of this message?",
+          "options": [
+            "To cancel the student's next scheduled class",
+            "To ask the student to pay for a previous class",
+            "To remind the student of a class and give instructions"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "The Importance of Sleep for Learning",
+      "cefr_level": "B1",
+      "passage_text": "Getting enough sleep is essential for learning new skills, including languages. During deep sleep, the brain organizes the information gathered throughout the day and stores it in long-term memory. However, many students underestimate how much rest they need, especially before an exam or an important class. As a result, they may study for hours but remember very little the next day.\n\nExperts recommend at least seven hours of sleep per night for adults, although this can vary depending on age and lifestyle. Interestingly, taking a short nap after studying can also improve memory, as long as it does not replace a full night's sleep.",
+      "questions": [
+        {
+          "id": "0af86bd3-105a-40fa-ac8d-a9f3fb6cd17b",
+          "position": 10,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Underestimate\" means:",
+          "options": [
+            "to spend far more time studying than is actually necessary",
+            "to think something is less important or serious than it really is",
+            "to sleep for a much shorter time than your body actually needs"
+          ]
+        },
+        {
+          "id": "4d2f23b9-b21c-4b80-b648-e54efa171d88",
+          "position": 11,
+          "answer_format": "multiple_choice",
+          "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
+          "options": [
+            "a consequence",
+            "a surprising contrast",
+            "a supporting example"
+          ]
+        },
+        {
+          "id": "31ccb011-ca80-4e9b-b14a-8e026354588e",
+          "position": 12,
+          "answer_format": "multiple_choice",
+          "question_text": "Choose the best word: \"Experts recommend seven hours of sleep, ___ this can vary depending on age.\"",
+          "options": [
+            "because",
+            "so",
+            "although"
+          ]
+        },
+        {
+          "id": "7d49457e-9240-4938-8a72-546e8f9559f4",
+          "position": 13,
+          "answer_format": "multiple_choice",
+          "question_text": "What is this passage mainly about?",
+          "options": [
+            "Why students should avoid naps",
+            "The connection between sleep and memory",
+            "How long a university exam should last"
+          ]
+        },
+        {
+          "id": "3804cdc2-325c-4909-bdda-277a697320fb",
+          "position": 14,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence best summarises the text?",
+          "options": [
+            "Deep sleep helps the brain store new information, so rest matters as much as study time.",
+            "Sleep has little real effect on how well students perform in exams.",
+            "A short nap is always more effective for memory than a full night's sleep."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Is the open-plan office actually working?",
+      "cefr_level": "B2",
+      "passage_text": "Open-plan offices were meant to increase collaboration, yet a growing number of workers now describe them as a source of constant distraction rather than teamwork. Frequent interruptions, background noise, and the pressure to appear constantly available can make it harder, not easier, to concentrate on demanding tasks.\n\nSome companies have responded by introducing \"quiet zones\" or allowing staff to book private rooms for focused work, effectively rebuilding the walls they removed a decade earlier. Others argue that the problem is not the layout itself but a culture that treats every message as urgent, regardless of how the office is arranged. Until that culture changes, redesigning the space may only address part of the issue.",
+      "questions": [
+        {
+          "id": "d6124c9b-5a4c-46bc-9fad-db4cda6ef303",
+          "position": 15,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Layout\" in this context is closest in meaning to:",
+          "options": [
+            "the color scheme used in decoration",
+            "the total number of employees",
+            "the physical arrangement of a space"
+          ]
+        },
+        {
+          "id": "5e6bc457-6cef-462a-ba20-76440af01f41",
+          "position": 16,
+          "answer_format": "multiple_choice",
+          "question_text": "According to the text, why have some companies created \"quiet zones\"?",
+          "options": [
+            "To give staff a way to concentrate without interruptions",
+            "To reduce the total number of desks in the office",
+            "To encourage more group meetings among different teams"
+          ]
+        },
+        {
+          "id": "a08e0d3c-8a5b-4ddb-a0ca-76a3f1932418",
+          "position": 17,
+          "answer_format": "multiple_choice",
+          "question_text": "What is the writer's main point?",
+          "options": [
+            "Open-plan offices have completely failed and should be banned.",
+            "The real problem may be workplace culture, not the office layout.",
+            "Quiet zones have fully solved workplace distraction issues."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Remote Work and Communication",
+      "cefr_level": "B2",
+      "passage_text": "Since remote work became widespread, many companies have had to rethink how they communicate internally. Face-to-face conversations, once the default way to resolve misunderstandings quickly, have largely been replaced by written messages and video calls. While this shift has given employees greater flexibility, it has also introduced new challenges.\n\nWritten communication, for instance, can easily be misread, since tone and body language are absent. Consequently, some organisations now train staff specifically in written communication skills, encouraging them to be clear, concise, and mindful of how a message might be interpreted by someone who cannot see their face. Others have adopted stricter rules about which topics should be discussed by call rather than by chat, precisely to avoid this kind of ambiguity.",
+      "questions": [
+        {
+          "id": "e8342dd7-9d35-4b9f-9211-8aba1a56a825",
+          "position": 18,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
+          "options": [
+            "strong disagreement",
+            "fast response",
+            "unclear meaning"
+          ]
+        },
+        {
+          "id": "b94c874c-92a2-465d-a834-5928429b9a78",
+          "position": 19,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Consequently, some organisations now train staff...\" — \"consequently\" signals:",
+          "options": [
+            "a cause",
+            "a result",
+            "a similarity"
+          ]
+        },
+        {
+          "id": "245e0816-0a6e-4693-85c0-2ff3c86277b7",
+          "position": 20,
+          "answer_format": "multiple_choice",
+          "question_text": "Which sentence best captures the main idea of the text?",
+          "options": [
+            "Remote work has changed internal communication and created a need for clearer writing skills.",
+            "Remote work has made face-to-face meetings completely unnecessary for every team.",
+            "Companies have decided to stop allowing employees to make phone calls at work."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "The Limits of Self-Reported Data",
+      "cefr_level": "C1",
+      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains indispensable in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
+      "questions": [
+        {
+          "id": "e3c0ade5-68ea-4f94-9086-e507e9d234bb",
+          "position": 21,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Indispensable\" means:",
+          "options": [
+            "unreliable",
+            "rarely used",
+            "absolutely necessary"
+          ]
+        },
+        {
+          "id": "1a54a107-33d3-4965-88e6-b66738de63bf",
+          "position": 22,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best paraphrases: \"Rather than abandoning self-report methods altogether, most researchers now combine them with objective measures\"?",
+          "options": [
+            "Most researchers have stopped using self-reported data completely.",
+            "Most researchers now use self-reported data alongside other, more objective sources.",
+            "Objective measures have proven unreliable compared to self-reports."
+          ]
+        },
+        {
+          "id": "a588b5cc-0e7a-4677-9c17-8caaec2c88bc",
+          "position": 23,
+          "answer_format": "multiple_choice",
+          "question_text": "Which title best fits this passage?",
+          "options": [
+            "Understanding and Managing the Limitations of Self-Reported Data",
+            "Why Self-Reported Data Should Be Banned from Research",
+            "A Brief History of Data Collection Methods in Social Science"
+          ]
+        },
+        {
+          "id": "482f7fd6-f61a-4a2d-8777-d45a9d38b22d",
+          "position": 24,
+          "answer_format": "multiple_choice",
+          "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
+          "options": [
+            "They believe it should be avoided whenever objective measures are available.",
+            "They believe the biases described make self-reported data unusable for medical research.",
+            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Extract from an HR policy: offboarding planning",
+      "cefr_level": "C1",
+      "passage_text": "Effective offboarding planning should begin as early as possible once an employee has given notice, rather than being treated as a task reserved for their final day. Delays are frequently caused not by the departing employee but by administrative factors, such as returning equipment, revoking system access, or confirming final pay calculations.\n\nManagers are therefore encouraged to identify likely offboarding tasks at the point notice is given and to communicate these to HR and IT without delay. Where a role is likely to require a handover period, briefing a colleague should be initiated well in advance, since preparing training materials often takes longer than expected and is entirely independent of the employee's departure date.",
+      "questions": [
+        {
+          "id": "8893f4aa-a173-4095-b810-ae987e76c4a8",
+          "position": 25,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Notice\" (as in \"once an employee has given notice\") most likely means:",
+          "options": [
+            "news about a company event",
+            "advance notice that someone plans to leave",
+            "a legal document confirming employment"
+          ]
+        },
+        {
+          "id": "6ad9d175-9499-4eca-866e-b8ed29872b7e",
+          "position": 26,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...rather than being treated as a task reserved for their final day\" — this phrase signals:",
+          "options": [
+            "a contrast with common practice",
+            "similarity between two ideas",
+            "a cause-and-effect relationship"
+          ]
+        },
+        {
+          "id": "128cc7ee-0fa9-4cac-ba79-a7ee7660f358",
+          "position": 27,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best summarises the text?",
+          "options": [
+            "Offboarding is solely the responsibility of the departing employee.",
+            "Offboarding should start early since most delays are administrative.",
+            "Employees are usually ready to leave before HR finishes paperwork."
+          ]
+        },
+        {
+          "id": "d64fea9a-6ab2-4784-a993-45eca4a8a561",
+          "position": 28,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...preparing training materials often takes longer than expected and is entirely independent of the employee's departure date\" most nearly means:",
+          "options": [
+            "Preparing training materials takes its own time, regardless of the departure date.",
+            "Training materials can only be prepared once the employee has left.",
+            "Employees must stay longer whenever training materials are not ready."
+          ]
+        }
+      ]
+    }
+  ]
+}
