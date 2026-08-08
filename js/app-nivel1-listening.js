@@ -37,7 +37,10 @@ let saving = false;
 async function init() {
 const sessionToken = sessionTokenOrRedirect();
 if (!sessionToken) return;
-const res = await fetch('data/nivel1-listening.json?v=2');
+const dataFile = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY'
+  ? 'data/nivel1-listening-general.json'
+  : 'data/nivel1-listening.json?v=2';
+const res = await fetch(dataFile);
 listeningData = await res.json();
 renderAudioGroup();
 }
