@@ -49,7 +49,10 @@ let saving = false;
 async function init() {
   const sessionToken = sessionTokenOrRedirect();
   if (!sessionToken) return;
-  const res = await fetch('data/nivel1-reading.json');
+  const dataFile = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY'
+    ? 'data/nivel1-reading-general.json'
+    : 'data/nivel1-reading.json';
+  const res = await fetch(dataFile);
   readingData = await res.json();
   groups = readingData.texts;
   timeRemaining = Number(readingData.time_limit_seconds) > 0 ? Number(readingData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
