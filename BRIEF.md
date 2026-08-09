@@ -1,103 +1,138 @@
 # Brief — ClearPath Assessment 360
 
-**Actualizado:** 9 de julio de 2026 (se construyó y verificó el módulo Nivel 1 — Writing con calificación por IA; ver secciones 3.3 y 4)
+**Actualizado:** 8 de agosto de 2026 (se agregó y verificó el producto "solo Nivel 1" — pista `NIVEL1_ONLY` con contenido de Listening/Reading no médico, separado de la pista `FULL_360` original; ver secciones 1, 3 y 5)
 **Preparado por:** Claude, a partir de la revisión completa del repositorio (`SpeakEasyLat/clearpath-assessment-360`), la base de datos y las Edge Functions de Supabase (proyecto `qqdxmmvhthwcqhgmvyic`), y del historial de esta conversación.
 
-> **Nota sobre el alcance de este brief:** no tengo forma de leer conversaciones de otras sesiones de chat fuera de esta. Este documento se armó revisando el estado *real* de las cosas — el código del repositorio, el historial completo de commits de git, el esquema y los datos actuales de Supabase, y las Edge Functions desplegadas — en vez de basarme solo en lo que se haya dicho en el chat. Donde encontré diferencias entre lo que el código dice que pasa y lo que realmente está pasando, las señalo explícitamente en la sección 6.
+> **Nota sobre el alcance de este brief:** no tengo forma de leer conversaciones de otras sesiones de chat fuera de esta. Este documento se armó revisando el estado *real* de las cosas — el código del repositorio, el esquema y los datos actuales de Supabase, y las Edge Functions desplegadas — en vez de basarme solo en lo que se haya dicho en el chat. Reemplaza por completo la versión del 9 de julio de 2026, que había quedado desactualizada (no mencionaba Reading, OET, STEPS 2 ni la pista `NIVEL1_ONLY`, todos construidos después).
 
 ---
 
 ## 1. Qué es el proyecto
 
-Assessment 360 es una plataforma de evaluación de inglés para Speak Easy, pensada específicamente para médicos que preparan el examen OET dentro del pathway ABR de radiología. El recorrido completo, tal como está diseñado, es:
+Assessment 360 es una plataforma de evaluación de inglés para Speak Easy. Hoy conviven **dos productos** sobre la misma base de código y el mismo backend:
 
-**English Level → STEPS 2 → OET Skills → Speaking Assessment (sesión en vivo)**
+- **`FULL_360`** (producto original, pista por defecto): pensado para médicos que preparan el examen OET dentro del pathway ABR de radiología. Recorrido completo:
 
-con desbloqueo adaptativo según el desempeño del estudiante en cada nivel, y audios de reproducción limitada imitando el formato real del examen OET.
+  **English Level (Nivel 1) → STEPS 2 *o* OET Skills, según el resultado → Speaking Assessment (sesión en vivo)**
+
+  con desbloqueo adaptativo según el desempeño del estudiante y audios de reproducción limitada imitando el formato real del examen OET.
+
+- **`NIVEL1_ONLY`** (agregado 07-08/08/2026): un segmento de estudiantes de público general que rinde **únicamente** Nivel 1 — English Level, sin pasar nunca por STEPS 2 ni OET, sin importar el resultado. Entra por una puerta separada (`index-nivel1.html`) y usa contenido de Listening/Reading no médico, ya que estos estudiantes no son necesariamente profesionales de la salud.
 
 - **Repositorio (público):** `github.com/SpeakEasyLat/clearpath-assessment-360`
-- **Sitio en vivo:** `assessment.speakeasy.lat` (GitHub Pages; usar `http://`, no `https://` — ver sección 6.4)
+- **Sitio en vivo:** `assessment.speakeasy.lat` (GitHub Pages)
 - **Backend:** Supabase, proyecto `qqdxmmvhthwcqhgmvyic`, región `sa-east-1`
 
 ---
 
 ## 2. Reglas no negociables del proyecto
 
-Estas reglas se establecieron explícitamente contigo y rigen **todo** el desarrollo, sin excepción:
+Estas reglas rigen **todo** el desarrollo, sin excepción:
 
 1. **Seguridad de contenido protegido.** Los audios y las respuestas correctas nunca deben subirse al repositorio público de GitHub. Todo el contenido protegido (audios, `correct_answer`, rúbricas de writing) vive en Supabase, detrás de Row Level Security y Edge Functions. La `service_role key` nunca se expone en el frontend/navegador.
-2. **Idioma.** Todo el texto de cara al estudiante y también el texto para desarrolladores (comentarios de código, commits, este brief) va en español latinoamericano, con "tú" (nunca voseo), y con tildes y "ñ" correctos.
-3. **Sin feedback en vivo.** El estudiante nunca ve si acertó o no una pregunta, ni ningún puntaje parcial mientras rinde el examen. Solo se le confirma que su respuesta se guardó, o que terminó el módulo. Tú revisas los resultados completos después.
+2. **Idioma.** Todo el texto de cara al estudiante y también el texto para desarrolladores (comentarios de código, commits, este brief) va en español latinoamericano, con "tú" (nunca voseo), y con tildes y "ñ" correctos. Excepción: STEP 2 CK y el contenido en inglés de Listening/Reading/Writing/OET, que son el material del examen en sí.
+3. **Sin feedback en vivo.** El estudiante nunca ve si acertó o no una pregunta, ni ningún puntaje parcial mientras rinde el examen. Solo se le confirma que su respuesta se guardó, o que terminó el módulo. Diana revisa los resultados completos después.
 
 ---
 
 ## 3. Arquitectura técnica
 
-### 3.1 Estructura del repositorio
+### 3.1 Estructura del repositorio (actual)
 
 ```
-index.html → login (código de acceso)
-intake.html → formulario previo (no calificado)
-nivel1.html → Nivel 1, Grammar
-nivel1-listening.html → Nivel 1, Listening
+index.html               → login pista FULL_360 (código de acceso)
+index-nivel1.html         → login pista NIVEL1_ONLY (branding distinto, manda track: 'NIVEL1_ONLY' a login)
+welcome.html               → bienvenida FULL_360
+welcome-nivel1.html        → bienvenida NIVEL1_ONLY
+intake.html                 → formulario previo (no calificado)
+nivel1.html                 → Nivel 1, Grammar
+nivel1-listening.html       → Nivel 1, Listening (sirve contenido médico o general según sessionStorage.cp360_track)
+nivel1-reading.html         → Nivel 1, Reading (idem)
+nivel1-writing.html         → Nivel 1, Writing
+siguiente.html              → router: pregunta a get-unlock-state a qué pantalla mandar al estudiante
+steps2.html                 → STEP 2 CK (solo ruta STEPS2)
+oet-listening.html / oet-reading.html / oet-writing.html → OET Skills (solo ruta OET)
+speaking.html                → agenda del Speaking Assessment (link de Calendar según ruta/tipo)
 css/style.css
-js/app-intake.js
-js/app-nivel1.js → lógica de Grammar (cliente; guarda cada respuesta vía submit-response, igual que Listening)
-js/app-nivel1-listening.js → lógica de Listening (cliente)
-js/scoring.js → algoritmo CEFR + reglas de desbloqueo (puro, con tests)
+js/app-intake.js, app-nivel1.js, app-nivel1-listening.js, app-nivel1-reading.js, app-nivel1-writing.js
+js/app-steps2.js, app-oet-listening.js, app-oet-reading.js, app-oet-writing.js
+js/scoring.js               → algoritmo CEFR + reglas de desbloqueo (puro, con tests) — usado como preview client-side
 js/scoring.test.mjs
-data/nivel1-grammar.json → 44 preguntas de Grammar (sin correct_answer)
-data/nivel1-listening.json → 8 audios / 34 preguntas de Listening (sin correct_answer)
-supabase/functions/ → código fuente de las Edge Functions (sincronizado con lo desplegado)
-supabase/migrations/ → 8 migraciones SQL
+js/fetch-retry.js
+data/nivel1-grammar.json, nivel1-listening.json, nivel1-reading.json, nivel1-writing.json  → contenido FULL_360 (médico)
+data/nivel1-listening-general.json, nivel1-reading-general.json                            → contenido NIVEL1_ONLY (general, no médico) — nuevo 08/08/2026
+data/oet-listening.json, oet-reading.json, oet-writing.json, steps2.json
+supabase/functions/ → código fuente de las Edge Functions (login, submit-intake, submit-response, get-audio-url, submit-writing; get-unlock-state y register-student aún no bajados al repo, ver 6.1)
+supabase/migrations/ → migraciones SQL (esquema inicial + ajustes posteriores)
 CNAME → assessment.speakeasy.lat
 ```
 
-### 3.2 Base de datos (Supabase, esquema actual en producción)
+### 3.2 Base de datos (Supabase, esquema actual en producción — filas al 08/08/2026)
 
 | Tabla | Filas hoy | Para qué sirve |
 |---|---|---|
-| `students` | 1 | Estudiantes, con `access_code` que generas a mano tras confirmar el pago |
-| `attempts` | 1 | Una corrida completa del Assessment 360 |
-| `question_bank` | 78 | Banco de preguntas (44 grammar + 34 listening; STEPS2/OET aún sin cargar). Incluye `answer_format` (`multiple_choice` / `note_completion`) y `accepted_answers` (variantes válidas) |
-| `student_responses` | 34 | Respuestas guardadas server-side, con `is_correct` calculado por Edge Function |
-| `sub_scores` | 1 | Ceiling CEFR por habilidad (grammar/listening/writing/steps2_reading) |
-| `unlock_state` | 1 | Si se desbloqueó OET, STEPS2, y qué tipo de Speaking Assessment corresponde |
-| `audio_assets` | 8 | Metadata de los audios de Listening (`storage_path`, `max_plays`) |
-| `audio_play_log` | 1 | Registro de reproducciones ya usadas, para hacer cumplir `max_plays` |
-| `writing_prompts` | 2 | Consignas de Writing (2 tareas de Nivel 1). RLS sin acceso anon; solo la Edge Function la lee. El texto visible también vive en `data/nivel1-writing.json` |
-| `writing_submissions` | 0 | Texto de cada tarea de Writing + la calificación de IA (`ai_rubric_scores`, `cefr_estimate`). La escribe `submit-writing` |
-| `speaking_assessment_bookings` | 0 | Reservada para agendar la sesión en vivo (OET o English) |
-| `attempt_sessions` | 7 | Tokens de sesión (expiran 4 h después del login) |
-| `intake_responses` | 1 | Respuestas del formulario previo (no calificado) |
+| `students` | 6 | Estudiantes, con `access_code` único que Diana genera a mano (o que emite `register-student`) tras confirmar el pago |
+| `attempts` | 2 | Una corrida completa del Assessment 360. Tiene `track` (`FULL_360` default / `NIVEL1_ONLY`), fijado al crear el attempt y conservado si se retoma uno existente. Las 2 filas actuales son ambas `NIVEL1_ONLY` (cuentas de prueba) — todavía no hay ningún estudiante real que haya iniciado sesión |
+| `question_bank` | 232 | Banco de preguntas de todos los módulos. Incluye módulos activos y algunos "archivo" (versiones viejas de Listening/Reading/Grammar que se reemplazaron pero se dejaron sin borrar — ver detalle abajo) |
+| `student_responses` | 48 | Respuestas guardadas server-side, con `is_correct` calculado por `submit-response` |
+| `sub_scores` | 2 | Ceiling CEFR (o pass/fail para STEP CK 2, o puntaje informativo para OET) por habilidad |
+| `unlock_state` | 2 | Ruta asignada (`OET`/`STEPS2`/`ENGLISH`), si se desbloqueó STEPS2/OET, y qué tipo de Speaking Assessment corresponde |
+| `audio_assets` | 13 | Metadata de los audios de Listening (`storage_path`, `max_plays`, `module`) — incluye los 5 nuevos de la pista `NIVEL1_ONLY` |
+| `audio_play_log` | 5 | Registro de reproducciones ya usadas, para hacer cumplir `max_plays` |
+| `writing_prompts` | 3 | Consignas de Writing: `nivel1_writing` tiene 2 (una general "An email about your country", una médica "A referral letter to a community nurse" — ver nota en 6.3), `oet_writing` tiene 1 |
+| `writing_submissions` | 0 | Texto de cada tarea de Writing + calificación de IA (`ai_rubric_scores`, `cefr_estimate`) |
+| `speaking_assessment_bookings` | 0 | Reservada para agendar la sesión en vivo — la tabla existe, no hay UI de agenda todavía |
+| `attempt_sessions` | 2 | Tokens de sesión (expiran 4 h después del login) |
+| `intake_responses` | 0 | Respuestas del formulario previo (no calificado) |
 
-Row Level Security está habilitado en todas las tablas. El rol `anon` (frontend público) solo puede leer la vista `student_facing_questions`, que expone las preguntas **sin** `correct_answer`. Todo lo demás pasa por Edge Functions con `service_role`.
+Desglose de `question_bank` por módulo (232 filas totales):
 
-Storage: bucket privado `audio-assets` con los 8 audios de Listening; cero políticas de acceso directo para `anon`/`authenticated` — las URLs firmadas (120 s de validez) las emite la Edge Function `get-audio-url`.
+| Módulo | Preguntas | Pista |
+|---|---|---|
+| `nivel1_grammar` | 20 | FULL_360 y NIVEL1_ONLY (compartido) |
+| `nivel1_grammar_archivo` | 24 | — versión vieja, sin usar |
+| `nivel1_listening` | 20 | FULL_360 (médico) |
+| `nivel1_listening_archivo` | 34 | — versión vieja, sin usar |
+| `nivel1_listening_general` | 20 | NIVEL1_ONLY (nuevo, no médico) |
+| `nivel1_reading` | 28 | FULL_360 (médico) |
+| `nivel1_reading_archivo_v1` | 12 | — versión vieja, sin usar |
+| `nivel1_reading_general` | 28 | NIVEL1_ONLY (nuevo, no médico) |
+| `oet_listening` | 22 | solo ruta OET |
+| `oet_reading` | 16 | solo ruta OET |
+| `steps2` | 8 | solo ruta STEPS2 |
+
+Los módulos "archivo" quedaron en la base sin borrar tras reemplazos de contenido anteriores; no los usa ningún JSON ni Edge Function activos — son candidatos a limpieza (ver backlog, sección 7).
+
+Row Level Security está habilitado en todas las tablas. El frontend público nunca lee `correct_answer` directamente; todo pasa por Edge Functions con `service_role`.
+
+Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `anon`/`authenticated` — las URLs firmadas las emite `get-audio-url`.
 
 ### 3.3 Edge Functions desplegadas
 
-| Función | Versión desplegada | Qué hace |
+| Función | Versión | Qué hace |
 |---|---|---|
-| `login` | v1 | Valida `access_code`, crea/recupera `attempt`, emite `session_token` (expira en 4 h) |
-| `submit-intake` | v2 | Guarda el formulario previo (no calificado) |
-| `submit-response` | **v3** | Corrige la respuesta server-side, la guarda, y si con eso se completa el módulo, calcula el ceiling CEFR y recalcula `unlock_state` |
-| `get-audio-url` | v1 | Valida sesión + `max_plays`, emite URL firmada (120 s), registra la reproducción |
-| `submit-writing` | **v4** | Guarda cada tarea de Writing, la califica con IA combinando la rúbrica de placement 0-10 con el CEFR, promedia las 2 tareas, escribe `sub_scores` y recalcula `unlock_state`. Sin feedback en vivo. Key de IA en el secret `ANTHROPIC_API_KEY`; modelo por defecto `claude-sonnet-4-5-20250929` (configurable con el secret `ANTHROPIC_MODEL`) |
+| `login` | v8 | Valida `access_code` contra `students`, crea/retoma `attempt` (fija `track` solo al crear uno nuevo), emite `session_token` (expira en 4 h). Acepta `track: 'NIVEL1_ONLY'` en el body (lo manda `index-nivel1.html`); default `FULL_360` |
+| `submit-intake` | v7 | Guarda el formulario previo (no calificado) |
+| `submit-response` | **v15** | Corrige la respuesta server-side (multiple_choice o note_completion), la guarda, y si con eso se completa el módulo calcula el sub_score y recalcula la ruta del Nivel 1. `MODULE_TO_SKILL` mapea `nivel1_listening_general`/`nivel1_reading_general` a los mismos skills `listening`/`reading` que sus contrapartes médicas. Si `attempt.track === 'NIVEL1_ONLY'`, la ruta queda siempre en `ENGLISH` sin evaluar los 4 sub_scores |
+| `get-audio-url` | v5 | Valida sesión + `max_plays`, emite URL firmada, registra la reproducción |
+| `submit-writing` | v18 | Guarda cada tarea de Writing, la califica con IA (rúbrica de placement 0-10 combinada con CEFR), escribe `sub_scores` y recalcula la ruta (lógica duplicada intencionalmente respecto a `submit-response` — mantener sincronizadas) |
+| `get-unlock-state` | v7 | Le dice a `siguiente.html` a qué pantalla mandar al estudiante según los sub_scores/ruta ya calculados |
+| `register-student` | v3 | Crea un estudiante nuevo con `access_code` único (`CP-XXXXXX`) a partir del formulario de intake de RPS (Google Forms → Apps Script), y le envía el código por correo |
+| `debug-anthropic` | v6 | Utilidad interna para probar la conexión con la API de Anthropic; no forma parte del flujo del estudiante |
 
-✅ Las cinco coinciden con el código fuente del repositorio (ver sección 6.2 y 6.3 — resuelto).
+### 3.4 Algoritmo de scoring y reglas de desbloqueo
 
-### 3.4 Algoritmo de scoring y reglas de desbloqueo (`js/scoring.js`)
-
-- **Ceiling CEFR por banda:** para cada módulo tipo "escalera" (grammar, y a futuro STEPS2 reading), se sube de A1 en adelante mientras cada banda CEFR supere el 70% de acierto (`PERCENT_THRESHOLD`). En cuanto una banda no llega al umbral, ahí se corta el ceiling — no se "premian" aciertos sueltos en bandas más difíciles si hay un hueco antes.
-- **Regla de desbloqueo de OET** (definida por ti): si grammar **y** listening **y** writing del Nivel 1 superan el umbral de "B1 alto" (modelado como ceiling ≥ B2 **y** ≥ 70% de acierto en la banda B1), se desbloquea el Speaking Assessment tipo OET (roleplay completo).
-- **Si no se alcanza OET:** se mira el ceiling de reading + vocabulario médico de STEPS 2 (ignorando writing, speaking y grammar general):
-- si ese ceiling ≥ B2 → el estudiante sigue en STEPS 2, sin sesión en vivo por ahora;
-- si no llega a B2 → el estudiante queda en English Level y se desbloquea un Speaking Assessment breve tipo English.
-- Esta lógica está **duplicada intencionalmente** en dos lugares: `js/scoring.js` (para el preview client-side de Grammar) y dentro de la Edge Function `submit-response` (que es la que de verdad decide `unlock_state` en la base de datos). Los umbrales (70%, B2) están hardcodeados en ambos lugares — si alguna vez los cambias, hay que tocar los dos.
-- Cubierto por 7 casos de test en `js/scoring.test.mjs` (`node js/scoring.test.mjs` para correrlos).
-
-✅ **Decisión confirmada por Diana (provisoriamente, "usemos como quedó por lo pronto, luego lo revisamos"):** "B1 alto" no es un sub-nivel oficial del CEFR (el estándar es A1/A2/B1/B2/C1/C2); se modela como ceiling ≥ B2 en cada uno de grammar/listening/writing (lo cual, por cómo funciona el algoritmo de ceiling, ya implica ≥70% de acierto en toda la banda B1 antes de llegar ahí). El split "B2-C1" del guion de Listening para los audios 5-8 queda así: B2 para audios 5-6 (opinión/dormir bien), C1 para audios 7-8 (historias clínicas con note completion, más difíciles). Diana pidió dejarlo así por ahora y revisarlo más adelante — no está cerrado de forma definitiva.
+- **Ceiling CEFR por banda** (`js/scoring.js` y replicado en `submit-response`/`submit-writing`): para cada módulo tipo "escalera" (grammar, listening, reading), se sube de A1 en adelante mientras cada banda CEFR supere el 70% de acierto. En cuanto una banda no llega al umbral, ahí se corta el ceiling.
+- **STEP CK 2**: pass/fail puro (≥75% para aprobar), sin bandas CEFR — sus preguntas tienen `cefr_level = null`.
+- **OET Listening/Reading**: puntaje informativo únicamente (raw_score/max_score), sin banda ni aprobar/reprobar — estos estudiantes ya calificaron para OET en Nivel 1.
+- **Ruta del Nivel 1** (pista `FULL_360`, tres ramas mutuamente excluyentes, se calcula recién cuando existen los 4 sub_scores de Nivel 1 — grammar, listening, writing, reading):
+  - Si los 4 llegan a B2 → ruta **OET**.
+  - Si no, pero reading llega a B2 → ruta **STEPS2**.
+  - Si reading tampoco llega → ruta **ENGLISH**.
+- **Pista `NIVEL1_ONLY`**: en cuanto están los 4 sub_scores de Nivel 1, la ruta queda **siempre** en `ENGLISH` (Speaking Assessment breve tipo English), sin evaluar los sub_scores — sin importar el resultado.
+- Esta lógica está **duplicada intencionalmente** en `js/scoring.js` (preview client-side), `submit-response` y `submit-writing`. Si se cambia algún umbral, hay que tocar los tres lugares.
+- `detectPatternInconsistency()` deja registrado en `sub_scores.band_detail` si el patrón de aciertos por banda es inconsistente (ej. falla B1 pero aprueba B2) — solo diagnóstico, nunca bloquea ni cambia el ceiling asignado.
+- Cubierto por 7 casos de test en `js/scoring.test.mjs` (`node js/scoring.test.mjs`).
 
 ---
 
@@ -105,75 +140,67 @@ Storage: bucket privado `audio-assets` con los 8 audios de Listening; cero polí
 
 | Módulo | Estado |
 |---|---|
-| **Login / sesión** | ✅ Completo y funcionando en producción |
-| **Intake (formulario previo)** | ✅ Completo. Recoge nivel autopercibido, experiencia previa, frecuencia de uso, horas disponibles, días y horarios preferidos — para que armes horarios y reportes, no afecta ningún puntaje |
-| **Nivel 1 — Grammar** | ✅ Arreglado (ver 6.1): las 44 preguntas se guardan vía `submit-response`, igual que Listening, con timer de 20 min. Falta que un estudiante real lo rinda completo en producción para confirmar el flujo de punta a punta con las 44 preguntas |
-| **Nivel 1 — Listening** | ✅ Completo y verificado en vivo hoy (ver sección 5): 8 audios, 34 preguntas, incluye el formato "note completion" tipo OET para los audios 7 y 8, reproducción limitada a 2 veces con URL firmada, calificación server-side (incluye variantes de respuesta aceptadas e insensibilidad a mayúsculas), sin feedback en vivo |
-| **Nivel 1 — Writing** | ✅ Construido y verificado end-to-end (ver 3.3): 2 tareas (una general, una médica tipo OET, carta de derivación), calificación por IA que combina la rúbrica de placement 0-10 con el CEFR y promedia las 2 tareas, sin feedback en vivo. **Destraba OET** (que antes era imposible porque faltaba el `sub_score` de writing). Pendiente menor: agregar el enlace de navegación hacia Writing desde el flujo |
-| **STEPS 2** (lectura clínica + vocabulario médico + razonamiento diagnóstico) | ❌ No construido (backlog) |
-| **OET Skills** (Listening una sola reproducción, Reading) | ❌ No construido (backlog) |
-| **Speaking Assessment (en vivo)** | ❌ No construido — la tabla `speaking_assessment_bookings` existe pero no hay UI ni flujo de agenda todavía |
+| **Login / sesión** (ambas pistas) | ✅ Completo y funcionando en producción |
+| **Intake** | ✅ Completo, no calificado |
+| **Nivel 1 — Grammar** | ✅ Completo (20 preguntas, compartidas entre ambas pistas) |
+| **Nivel 1 — Listening** | ✅ Completo en ambas pistas: `FULL_360` usa contenido médico (5 audios, 20 preguntas); `NIVEL1_ONLY` usa contenido general no médico (5 audios, 20 preguntas, nuevo 08/08/2026), servidos desde JSON y módulos separados en Supabase |
+| **Nivel 1 — Reading** | ✅ Completo en ambas pistas: `FULL_360` usa contenido médico (7 textos, 28 preguntas); `NIVEL1_ONLY` usa contenido general (7 textos, 28 preguntas — 4 reemplazados + 3 reutilizados del set médico que ya eran genéricos, nuevo 08/08/2026) |
+| **Nivel 1 — Writing** | ✅ Completo, calificación por IA. Nota: `nivel1_writing` todavía tiene 2 consignas cargadas (una general, una médica tipo carta de derivación) para ambas pistas por igual — no se filtra por track (ver 6.3, no es parte del alcance de esta actualización) |
+| **STEPS 2** (solo ruta STEPS2, pista `FULL_360`) | ✅ Completo: 8 preguntas, timer 15 min, pass/fail ≥75% |
+| **OET Skills** (solo ruta OET, pista `FULL_360`) | ✅ Completo: Listening (22 preguntas, 3 partes), Reading (16 preguntas, 3 partes), Writing con calificación por IA |
+| **Speaking Assessment** | 🟡 Pantalla de agenda (`speaking.html`) completa; la reserva en sí todavía no persiste en `speaking_assessment_bookings` (tabla vacía) |
+| **Producto "solo Nivel 1" (`NIVEL1_ONLY`)** | ✅ Wireado y verificado de punta a punta hoy (ver sección 5): entrada, branding, contenido general de Listening/Reading, scoring y ruta forzada a `ENGLISH` |
 
-### 5. Verificación en vivo de hoy (Listening)
+### 5. Trabajo de hoy (08/08/2026): pista `NIVEL1_ONLY` con contenido general
 
-Hoy completé una prueba end-to-end del módulo de Listening en producción, con la cuenta de prueba `DEMO-0001`:
+Diana pidió agregar el segmento de estudiantes que solo rinde Nivel 1 (sin STEPS2/OET), y que como no son necesariamente médicos, Listening y Reading no debían mostrarles contenido clínico. El trabajo de hoy fue:
 
-- Las 34 preguntas de los 8 audios se guardaron correctamente en `student_responses`.
-- La calificación server-side es correcta en todos los casos probados, incluyendo: respuestas correctas e incorrectas en multiple choice, una pregunta sin contestar (se guarda como `null` sin romper nada), y en note completion — insensibilidad a mayúsculas/minúsculas y coincidencia contra las variantes de `accepted_answers`.
-- El límite de reproducciones (máx. 2 por audio) se hace cumplir server-side vía URL firmada de 120 segundos; el navegador nunca ve la ruta real del archivo.
-- La navegación "Guardar y continuar" avanza correctamente entre los 8 audios (A2 → B1 → B2 → C1), el botón cambia a "Finalizar" en el último audio, y la pantalla final ("Listening completado") no muestra ningún acierto ni puntaje, tal como pediste.
-- El renderizado de "note completion" (con el espacio en blanco en medio de la oración, no solo al final) funciona correctamente en los dos formatos usados (audio 7 y audio 8).
+1. **Contenido nuevo**: 5 audios de Listening (reservar mesa en un restaurante, problema con un pedido online, check-in de hotel, cambio de turno en un call center, IA en reclutamiento — bandas A1 a C1) y 7 textos de Reading (4 nuevos: horario de biblioteca, recordatorio de clase, oficina open-plan, política de offboarding de RRHH; 3 reutilizados del set médico que ya eran de tema general: sueño y aprendizaje, trabajo remoto, límites de datos autorreportados), cargados en Supabase bajo los módulos nuevos `nivel1_listening_general` / `nivel1_reading_general` — **separados** de `nivel1_listening`/`nivel1_reading` para que el conteo de "módulo completo" de `submit-response` no mezcle las 20/28 preguntas generales con las 20/28 médicas (mismo patrón que ya separaba `oet_listening`/`oet_reading`).
+2. **Backend**: se extendió `MODULE_TO_SKILL` en `submit-response` (v13 → v15 con los ajustes intermedios) para mapear los dos módulos nuevos a los skills `listening`/`reading` de siempre, así el ceiling CEFR y la ruta funcionan igual para ambas pistas.
+3. **Frontend**: `js/app-nivel1-listening.js` y `js/app-nivel1-reading.js` ahora eligen qué JSON cargar (`-general.json` o el médico) según `sessionStorage.cp360_track`, seteado por `index-nivel1.html` en el login.
+4. **Verificación en vivo** (cuenta de prueba `CP-QA0808N1`, creada y usada solo para esta prueba): login por `index-nivel1.html` → logo de Speak Easy genérico correcto en las 4 pantallas (login, welcome, Listening, Reading) → Listening completo (5 audios, reproducción, 20 respuestas guardadas y corregidas correctamente, `sub_score.listening` = 15/20) → Reading completo (7 textos, 28 respuestas guardadas y corregidas correctamente, `sub_score.reading` = 28/28, CEFR C1) → cero errores en la consola del navegador en todo el recorrido → `attempts.track` confirmado como `NIVEL1_ONLY` en la base.
 
 ---
 
-## 6. Problemas encontrados hoy (verificados contra el código real, no supuestos)
+## 6. Pendientes conocidos (no bloqueantes)
 
-### 6.1 ✅ Grammar: la calificación no se estaba guardando (bug crítico) — RESUELTO
+### 6.1 🟡 `get-unlock-state` y `register-student` no están en el repositorio
 
-`js/app-nivel1.js` calificaba las respuestas **enteramente en el navegador**, comparando `selected === q.correct`. El problema era que `data/nivel1-grammar.json` **no tenía** el campo `correct` (se había quitado a propósito, por la regla de seguridad de la sección 2 — commit `73add5f`, "remove correct answers from public grammar JSON"). Como resultado, `q.correct` siempre era `undefined`, toda respuesta se marcaba como incorrecta, Grammar nunca llamaba a `submit-response`, y ningún estudiante podía desbloquear OET nunca (el sub-score de `grammar` jamás se calculaba del lado del servidor).
+Estas dos Edge Functions están desplegadas y activas en Supabase (v7 y v3 respectivamente) pero su código fuente no se bajó nunca a `supabase/functions/` en el repo — a diferencia de `login`, `submit-intake`, `submit-response`, `get-audio-url` y `submit-writing`, que sí están sincronizadas. El repo no es la fuente de verdad completa de lo desplegado.
 
-**Qué se hizo para arreglarlo (misma sesión):**
+### 6.2 🟡 Módulos "archivo" sin borrar en `question_bank`
 
-- `data/nivel1-grammar.json` ahora incluye el `id` real de cada pregunta en `question_bank` de Supabase (mismo patrón que `data/nivel1-listening.json`), además de `cefr_level` por pregunta.
-- `js/app-nivel1.js` se reescribió para seguir exactamente el patrón de Listening: cada respuesta se guarda vía `submit-response` (con el `id` real de Supabase), y la pantalla ya **no** muestra nivel CEFR ni porcentaje de acierto en vivo — antes lo hacía, lo cual violaba la regla de "sin feedback en vivo" de la sección 2. Ahora, igual que Listening, solo confirma que se guardó cada respuesta y que el módulo quedó completo.
-- Si se acaba el tiempo (20 min) con preguntas sin contestar, igual se guardan como "sin respuesta" (incorrectas) para que las 44 preguntas queden registradas y el módulo se pueda marcar completo del lado del servidor — si faltan filas en `student_responses`, `submit-response` nunca considera terminado el módulo y el desbloqueo de OET queda trabado, que era justamente la falla original.
-- Se actualizó también la nota de desarrollo desactualizada en `index.html`, que todavía decía que Grammar calificaba del lado del cliente.
-- **Verificado end-to-end** contra el backend real (login + submit-response con la cuenta `DEMO-0001` y una pregunta real de `question_bank`): la respuesta se guardó correctamente en `student_responses` con `is_correct` calculado server-side, sin que el navegador viera la respuesta correcta ni el resultado. El registro de prueba se borró después de verificar.
+`nivel1_grammar_archivo` (24), `nivel1_listening_archivo` (34) y `nivel1_reading_archivo_v1` (12) son versiones de contenido reemplazadas que quedaron en la tabla sin usar. No rompen nada (ningún JSON ni Edge Function las referencia), pero conviene limpiarlas en algún momento para que `question_bank` no acumule filas muertas.
 
-Pendiente: que un estudiante rinda las 44 preguntas completas en producción para confirmar que `sub_scores.grammar` y `unlock_state` se recalculan correctamente al completar el módulo (la lógica de agregación es la misma que ya funciona con Listening, pero no se probó con las 44 preguntas de Grammar de punta a punta).
+### 6.3 🟡 Writing no distingue pista `NIVEL1_ONLY` de `FULL_360`
 
-### 6.2 ✅ La Edge Function `get-audio-url` no estaba en el repositorio de GitHub — RESUELTO
+A diferencia de Listening y Reading, `nivel1_writing` sigue teniendo las mismas 2 consignas (una general, una médica tipo carta de derivación a enfermería comunitaria) para **ambas** pistas — no se filtra por `sessionStorage.cp360_track` ni por módulo separado. Si Diana quiere que `NIVEL1_ONLY` tampoco vea la consigna médica de Writing, es un trabajo pendiente con el mismo patrón que se usó hoy para Listening/Reading. No se tocó esta sesión porque no fue parte del pedido.
 
-Se había creado y desplegado directamente a Supabase (vía MCP), pero nunca se guardó como archivo fuente en el repo. Ya se bajó el código fuente real desplegado y se commiteó en `supabase/functions/get-audio-url/index.ts`, verificado carácter por carácter contra lo que corre en producción.
+### 6.4 🟡 Otros detalles menores
 
-### 6.3 ✅ El código de `submit-response` en el repositorio no coincidía con lo desplegado — RESUELTO
-
-La función desplegada estaba en **v3** (con calificación de `note_completion`, variantes de `accepted_answers`, e insensibilidad a mayúsculas/espacios), mientras el repositorio tenía la **v2** (comparación exacta únicamente). Ya se actualizó `supabase/functions/submit-response/index.ts` en el repositorio con el código real de la v3, verificado carácter por carácter contra lo que corre en producción. El repo es ahora la fuente de verdad real para las cuatro Edge Functions desplegadas.
-
-### 6.4 🟡 Detalles menores, ya conocidos
-
-- `README.md` está desactualizado: todavía dice que Listening y Writing no están construidos, y no menciona el flujo de Intake ni las tablas agregadas después de la migración inicial.
-- `https://assessment.speakeasy.lat` da error de privacidad; hay que usar `http://` por ahora — pendiente de que GitHub Pages complete la elegibilidad para "Enforce HTTPS" (se resuelve solo, no requiere acción).
-- Migración más reciente en producción: `20260708015035_listening_answer_format_and_fk` (agregó `answer_format` y `accepted_answers` a `question_bank`) — coincide con el repo.
+- `speaking_assessment_bookings` sigue vacía — la agenda del Speaking Assessment muestra el link de Calendar correcto, pero no queda registro en la base de que el estudiante reservó.
+- Ningún estudiante real (de los 6 cargados) inició sesión todavía — las únicas 2 filas en `attempts` son de cuentas de prueba (`dianapruebanivel1` y `CP-QA0808N1`).
+- `test-flow.mjs` (Playwright) solo cubre login → intake; no se actualizó para cubrir Listening/Reading ni la pista `NIVEL1_ONLY`.
 
 ---
 
 ## 7. Backlog priorizado (sugerido)
 
-1. ~~Arreglar Grammar~~ — ✅ hecho (sección 6.1).
-2. ~~Sincronizar el repo con lo desplegado~~ — ✅ hecho (secciones 6.2 y 6.3).
-3. ~~Confirmar la decisión de CEFR B2/C1~~ — ✅ Diana confirmó usar la interpretación actual por lo pronto, pendiente de revisión futura (ver sección 3.4).
-4. ~~Construir **Nivel 1 — Writing**~~ — ✅ hecho: 2 tareas (general + médica tipo OET), calificación por IA con rúbrica de placement 0-10 combinada con CEFR (ver 3.3). Pendiente menor: enlace de navegación hacia Writing en el flujo.
-5. Construir **STEPS 2** (lectura clínica + vocabulario médico + razonamiento diagnóstico).
-6. Construir **OET Skills** (Listening de una sola reproducción, Reading).
-7. Construir el flujo de **Speaking Assessment** (agenda de la sesión en vivo, tanto OET como English) — la tabla ya existe, falta la UI/flujo.
-8. Actualizar `README.md` para que refleje el estado real.
-9. Housekeeping: borrar la cuenta de prueba `DEMO-0001` de Supabase cuando termines de revisar los datos de la prueba de hoy; borrar el archivo local `nivel1-listening-audio1-cafeteria.mp3` (42 KB, roto) de tu OneDrive.
+1. Bajar el código fuente real de `get-unlock-state` y `register-student` al repo (ver 6.1), para que quede sincronizado igual que las demás.
+2. Decidir si Writing también necesita una versión sin contenido médico para `NIVEL1_ONLY` (ver 6.3).
+3. Persistir el progreso del estudiante dentro de un módulo (parte actual, tiempo restante, reproducciones de audio usadas) — hoy vive solo en memoria del navegador; si recarga la página a mitad de un módulo, vuelve al principio.
+4. Construir el flujo de reserva del Speaking Assessment (`speaking_assessment_bookings` existe pero no se escribe desde ningún lado).
+5. Reporte final para el estudiante y panel de resultados para Diana (hoy se revisa por consulta SQL directa).
+6. Limpiar los módulos "archivo" de `question_bank` (ver 6.2).
+7. Definir si un estudiante puede reintentar el assessment completo (hoy no existe mecanismo de reintento).
+8. Actualizar `test-flow.mjs` para cubrir Listening/Reading y la pista `NIVEL1_ONLY`.
 
 ---
 
 ## 8. Notas técnicas para la próxima sesión
 
-- El patrón correcto para cualquier módulo nuevo de examen es el que usa Listening: el frontend nunca calcula si algo es correcto, siempre llama a `submit-response` con `session_token` + `question_id` + `selected_answer`, y la Edge Function hace todo el trabajo (calificar, guardar, y si el módulo se completa, recalcular `sub_scores` y `unlock_state`).
-- Para editar archivos en el editor web de GitHub (CodeMirror 6) de forma confiable: usar `document.querySelector('.cm-content').cmTile.view` para acceder al `EditorView` real, y `view.state.doc.toString()` para leer el contenido completo y verdadero del documento (el `.innerText` del `.cm-content` **no** sirve para verificar — solo refleja la porción virtualizada visible, no el documento completo).
+- El patrón correcto para cualquier módulo nuevo de examen es el que usa Listening/Reading: el frontend nunca calcula si algo es correcto, siempre llama a `submit-response` con `session_token` + `question_id` + `selected_answer`, y la Edge Function hace todo el trabajo (calificar, guardar, y si el módulo se completa, recalcular `sub_scores` y la ruta).
+- Cuando se agrega contenido nuevo que debe convivir con uno existente sin mezclarse en el conteo de "módulo completo", usar un `module` (string) separado en `question_bank`/`audio_assets`, y extender `MODULE_TO_SKILL` en `submit-response` para que apunte al mismo `skill` — nunca reutilizar el mismo nombre de módulo para dos sets de contenido distintos.
+- `sessionStorage.cp360_track` decide branding y qué contenido pedir en el navegador; `attempts.track` (columna en Supabase) es la fuente de verdad server-side para decidir la ruta — hay que mantener los dos en sync desde `login`, pero son cosas distintas y no intercambiables.
 - Todas las claves usadas en el frontend (`SUPABASE_ANON_KEY`) son la clave **anon/publishable**, no la `service_role` — está bien que estén hardcodeadas en el JS público, es el diseño intencional.
+- Este repositorio (`SpeakEasyLat/clearpath-assessment-360`) permite lectura desde sesiones de Claude en la nube, pero **no** push directo — los cambios de código de una sesión en la nube hay que entregárselos a Diana como archivos para que los suba ella misma vía GitHub (editar/reemplazar archivo o "Add file → Upload files"), no asumir que un `git push` va a funcionar.
