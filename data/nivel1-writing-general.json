@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "module": "nivel1_writing_general",
+    "totalPrompts": 1
+  },
+  "timeLimitSeconds": 1800,
+  "prompts": [
+    {
+      "id": "80c719b4-b904-4366-82e3-011f7ad272a6",
+      "position": 1,
+      "title": "Task 1 — An email about your country",
+      "prompt_text": "Write an email to a friend who lives in another country and wants to learn more about where you live. Describe your country in your own words - for example, what the landscape is like, its main cities or landmarks, the local language and culture, and what the people and food are like. Finish your email by inviting your friend to visit you. Write between 120 and 180 words.",
+      "guidance": "Write in clear, well-organized paragraphs and use a friendly, natural tone. Your writing is not graded on live feedback - once you submit, your response is saved and reviewed afterwards.",
+      "min_words": 120,
+      "max_words": 180
+    }
+  ]
+}
