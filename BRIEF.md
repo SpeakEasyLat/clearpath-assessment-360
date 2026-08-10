@@ -145,7 +145,7 @@ Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `
 | **Nivel 1 — Grammar** | ✅ Completo (20 preguntas, compartidas entre ambas pistas) |
 | **Nivel 1 — Listening** | ✅ Completo en ambas pistas: `FULL_360` usa contenido médico (5 audios, 20 preguntas); `NIVEL1_ONLY` usa contenido general no médico (5 audios, 20 preguntas, nuevo 08/08/2026), servidos desde JSON y módulos separados en Supabase |
 | **Nivel 1 — Reading** | ✅ Completo en ambas pistas: `FULL_360` usa contenido médico (7 textos, 28 preguntas); `NIVEL1_ONLY` usa contenido general (7 textos, 28 preguntas — 4 reemplazados + 3 reutilizados del set médico que ya eran genéricos, nuevo 08/08/2026) |
-| **Nivel 1 — Writing** | ✅ Completo, calificación por IA. Nota: `nivel1_writing` todavía tiene 2 consignas cargadas (una general, una médica tipo carta de derivación) para ambas pistas por igual — no se filtra por track (ver 6.3, no es parte del alcance de esta actualización) |
+| **Nivel 1 — Writing** | ✅ Completo en ambas pistas (fix 10/08/2026): `FULL_360` usa `data/nivel1-writing.json` con las 2 tareas (general + médica tipo carta de derivación); `NIVEL1_ONLY` usa `data/nivel1-writing-general.json` con solo la tarea general, igual patrón que Listening/Reading (ver 6.3, resuelto) |
 | **STEPS 2** (solo ruta STEPS2, pista `FULL_360`) | ✅ Completo: 8 preguntas, timer 15 min, pass/fail ≥75% |
 | **OET Skills** (solo ruta OET, pista `FULL_360`) | ✅ Completo: Listening (22 preguntas, 3 partes), Reading (16 preguntas, 3 partes), Writing con calificación por IA |
 | **Speaking Assessment** | 🟡 Pantalla de agenda (`speaking.html`) completa; la reserva en sí todavía no persiste en `speaking_assessment_bookings` (tabla vacía) |
@@ -172,9 +172,16 @@ Estas dos Edge Functions están desplegadas y activas en Supabase (v7 y v3 respe
 
 `nivel1_grammar_archivo` (24), `nivel1_listening_archivo` (34) y `nivel1_reading_archivo_v1` (12) son versiones de contenido reemplazadas que quedaron en la tabla sin usar. No rompen nada (ningún JSON ni Edge Function las referencia), pero conviene limpiarlas en algún momento para que `question_bank` no acumule filas muertas.
 
-### 6.3 🟡 Writing no distingue pista `NIVEL1_ONLY` de `FULL_360`
+### 6.3 ✅ Writing ahora distingue pista `NIVEL1_ONLY` de `FULL_360` (resuelto 10/08/2026)
 
-A diferencia de Listening y Reading, `nivel1_writing` sigue teniendo las mismas 2 consignas (una general, una médica tipo carta de derivación a enfermería comunitaria) para **ambas** pistas — no se filtra por `sessionStorage.cp360_track` ni por módulo separado. Si Diana quiere que `NIVEL1_ONLY` tampoco vea la consigna médica de Writing, es un trabajo pendiente con el mismo patrón que se usó hoy para Listening/Reading. No se tocó esta sesión porque no fue parte del pedido.
+Se detectó primero un bug de desync: `data/nivel1-writing.json` en el repo solo tenía la tarea 1 cargada (faltaba la tarea 2, que sí existe en la tabla `writing_prompts`), causando que el módulo de Writing volviera a mostrar "Tarea 1 de 1" en blanco al terminar en vez de avanzar. Al investigar, Diana confirmó que además quería que `NIVEL1_ONLY` nunca vea la consigna médica (carta de derivación a enfermería comunitaria) — mismo criterio ya aplicado a Listening/Reading.
+
+Fix aplicado, mismo patrón que Listening/Reading:
+- `data/nivel1-writing.json` (default / `FULL_360`): las 2 tareas completas (general + médica), sincronizado con `writing_prompts`.
+- `data/nivel1-writing-general.json` (nuevo): solo la tarea 1 (email sobre tu país), para `NIVEL1_ONLY`.
+- `js/app-nivel1-writing.js` (v2): ahora elige el JSON según `sessionStorage.cp360_track`, igual que `app-nivel1-listening.js` / `app-nivel1-reading.js`.
+
+No se tocó la tabla `writing_prompts` en Supabase (sigue con las 2 filas de `nivel1_writing`, sin columna de track) — el filtro es puramente client-side vía JSON separado, igual que Listening/Reading.
 
 ### 6.4 🟡 Otros detalles menores
 
@@ -187,11 +194,10 @@ A diferencia de Listening y Reading, `nivel1_writing` sigue teniendo las mismas 
 ## 7. Backlog priorizado (sugerido)
 
 1. Bajar el código fuente real de `get-unlock-state` y `register-student` al repo (ver 6.1), para que quede sincronizado igual que las demás.
-2. Decidir si Writing también necesita una versión sin contenido médico para `NIVEL1_ONLY` (ver 6.3).
-3. Persistir el progreso del estudiante dentro de un módulo (parte actual, tiempo restante, reproducciones de audio usadas) — hoy vive solo en memoria del navegador; si recarga la página a mitad de un módulo, vuelve al principio.
-4. Construir el flujo de reserva del Speaking Assessment (`speaking_assessment_bookings` existe pero no se escribe desde ningún lado).
-5. Reporte final para el estudiante y panel de resultados para Diana (hoy se revisa por consulta SQL directa).
-6. Limpiar los módulos "archivo" de `question_bank` (ver 6.2).
+2. Persistir el progreso del estudiante dentro de un módulo (parte actual, tiempo restante, reproducciones de audio usadas) — hoy vive solo en memoria del navegador; si recarga la página a mitad de un módulo, vuelve al principio.
+3. Construir el flujo de reserva del Speaking Assessment (`speaking_assessment_bookings` existe pero no se escribe desde ningún lado).
+4. Reporte final para el estudiante y panel de resultados para Diana (hoy se revisa por consulta SQL directa).
+5. Limpiar los módulos "archivo" de `question_bank` (ver 6.2).
 7. Definir si un estudiante puede reintentar el assessment completo (hoy no existe mecanismo de reintento).
 8. Actualizar `test-flow.mjs` para cubrir Listening/Reading y la pista `NIVEL1_ONLY`.
 
