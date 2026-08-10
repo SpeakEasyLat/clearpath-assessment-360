@@ -35,6 +35,11 @@
     }
   })();
   
+// v2 (10/08/2026, pedido de Diana): al hacer clic en el botón de agendar, además de
+// abrir Google Calendar en pestaña nueva, esta pestaña navega a thankyou.html. Google
+// Calendar no le avisa a este sitio cuando el estudiante termina de reservar, así que
+// el clic en "Agendar" se toma como la señal de que el estudiante ya va a reservar.
+
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
@@ -46,8 +51,21 @@ const BOOKING_URLS = {
 
 const content = document.getElementById('content');
 
-function bookingButton(url, titulo, subtitulo) {
-  return `<a class="speaking-btn" href="${url}" target="_blank" rel="noopener noreferrer">${titulo}<span class="small">${subtitulo}</span></a>`;
+function bookingButton(url, titulo, subtitulo, id) {
+  return `<a class="speaking-btn" href="${url}" target="_blank" rel="noopener noreferrer" id="${id}">${titulo}<span class="small">${subtitulo}</span></a>`;
+}
+
+// Al hacer clic en el botón de agenda: se abre Google Calendar en pestaña nueva
+// (comportamiento normal del link) y, a la vez, esta pestaña navega a thankyou.html.
+// Google Calendar no le avisa a este sitio cuando el estudiante termina de reservar,
+// así que esto asume que el clic en "Agendar" ya expresa la intención de reservar
+// (decisión de Diana, 10/08/2026).
+function wireBookingRedirect(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('click', () => {
+    setTimeout(() => { window.location.href = 'thankyou.html'; }, 150);
+  });
 }
 
 async function init() {
@@ -83,11 +101,13 @@ async function init() {
   if (type === 'OET') {
     content.innerHTML =
       '<p class="speaking-intro">¡Felicitaciones! Completaste tu evaluación y tu siguiente paso es el <strong>OET Speaking Assessment</strong> (roleplay clínico en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.OET, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET');
+      bookingButton(BOOKING_URLS.OET, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET', 'bookBtnOet');
+    wireBookingRedirect('bookBtnOet');
   } else if (type === 'English') {
     content.innerHTML =
       '<p class="speaking-intro">¡Completaste tu evaluación! Tu siguiente paso es el <strong>CEFR English Speaking Assessment</strong> (conversación de nivel de inglés en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.CEFR, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general');
+      bookingButton(BOOKING_URLS.CEFR, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general', 'bookBtnCefr');
+    wireBookingRedirect('bookBtnCefr');
   } else {
     content.innerHTML =
       '<p class="speaking-intro">Tu Speaking Assessment todavía no está habilitado.</p>' +
