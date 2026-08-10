@@ -1,10 +1,16 @@
 // Nivel 1 - Writing (cliente)
 //
-// Presenta las 2 tareas de writing (una general más fácil, una médica tipo OET más
-// difícil), guarda cada texto vía la Edge Function submit-writing, y -- igual que
-// Grammar y Listening -- NUNCA muestra puntaje ni nivel en vivo. La corrección la hace
-// la IA del lado del servidor (rúbrica de placement 0-10 + CEFR); el navegador solo
-// sabe "guardado / módulo completo".
+// Presenta las tareas de writing, guarda cada texto vía la Edge Function
+// submit-writing, y -- igual que Grammar y Listening -- NUNCA muestra puntaje
+// ni nivel en vivo. La corrección la hace la IA del lado del servidor (rúbrica
+// de placement 0-10 + CEFR); el navegador solo sabe "guardado / módulo completo".
+//
+// v2 (10/08/2026, pedido de Diana): igual que Listening y Reading, ahora se
+// distingue por track (sessionStorage.cp360_track). FULL_360 (o sin track)
+// carga data/nivel1-writing.json con las 2 tareas (general + médica, tipo
+// carta de derivación a enfermería comunitaria). NIVEL1_ONLY carga
+// data/nivel1-writing-general.json, que tiene solo la tarea general (email
+// sobre tu país) -- este segmento nunca ve contenido médico.
 
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
@@ -37,7 +43,10 @@ async function init() {
 const sessionToken = sessionTokenOrRedirect();
 if (!sessionToken) return;
 try {
-const res = await fetch('data/nivel1-writing.json');
+const dataFile = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY'
+  ? 'data/nivel1-writing-general.json'
+  : 'data/nivel1-writing.json';
+const res = await fetch(dataFile);
 writingData = await res.json();
 } catch (err) {
 quizArea.innerHTML = '<p class="note">No pudimos cargar las consignas. Recarga la página e intenta de nuevo.</p>';
