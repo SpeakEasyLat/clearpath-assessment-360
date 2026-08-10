@@ -3,119 +3,40 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Speak Easy - Speaking Assessment</title>
+<title>Speak Easy - ¡Gracias!</title>
 <link rel="stylesheet" href="css/style.css" />
 <link rel="icon" href="data:,">
 <style>
-.speaking-intro { line-height: 1.5; margin: 0 0 1.2rem; }
-.speaking-btn {
-  display: block; width: 100%; box-sizing: border-box; text-align: center;
-  text-decoration: none; font: inherit; font-weight: 600; cursor: pointer;
-  padding: 0.9rem 1rem; border-radius: 8px; margin: 0 0 0.8rem;
-  background: #2a6f97; color: #fff; border: none;
+.thankyou-intro { line-height: 1.5; margin: 0 0 1.2rem; }
+.thankyou-intro:last-child { margin-bottom: 0; }
+.thankyou-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--teal-light, #e3f4f1);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1rem; font-size: 1.6rem;
 }
-.speaking-btn:hover { background: #235a7c; }
-.speaking-btn .small { display: block; font-weight: 400; font-size: 0.82rem; opacity: 0.9; margin-top: 0.15rem; }
 </style>
 </head>
 <body>
 <div class="wrap">
 <img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
-<div class="subtitle">Speaking Assessment — Agenda tu sesión en vivo</div>
+<div class="subtitle">¡Listo! Ya reservaste tu sesión</div>
 <div class="card">
-<div id="content"><p class="note">Cargando tu información...</p></div>
+<div class="thankyou-icon">✅</div>
+<p class="thankyou-intro"><strong>¡Gracias por completar tu ClearPath Assessment 360!</strong></p>
+<p class="thankyou-intro">Ya registramos que agendaste tu Speaking Assessment en vivo. Revisa tu correo — Google Calendar te envió la invitación con la fecha, hora y el link de la sesión.</p>
+<p class="thankyou-intro">Si necesitas cambiar el horario, puedes hacerlo directamente desde esa invitación de Calendar.</p>
+<p class="thankyou-intro">Nos vemos pronto. ¡Mucho éxito!</p>
 </div>
 </div>
-<script src="js/fetch-retry.js"></script>
 <script>
   (function () {
     if (sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY') {
+      document.title = '¡Gracias! - Assessment Speak Easy';
       var logo = document.querySelector('.logo');
       if (logo) { logo.src = 'assets/logo-speakeasy.png'; logo.alt = 'Speak Easy'; }
     }
   })();
-  
-// v2 (10/08/2026, pedido de Diana): al hacer clic en el botón de agendar, además de
-// abrir Google Calendar en pestaña nueva, esta pestaña navega a thankyou.html. Google
-// Calendar no le avisa a este sitio cuando el estudiante termina de reservar, así que
-// el clic en "Agendar" se toma como la señal de que el estudiante ya va a reservar.
-
-const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
-
-// Tus dos páginas de reserva de Google Calendar.
-const BOOKING_URLS = {
-  OET: 'https://calendar.app.google/BAN8DBoh92fHG4Vu8',
-  CEFR: 'https://calendar.app.google/KgJwgVfJgZJPHsMy6',
-};
-
-const content = document.getElementById('content');
-
-function bookingButton(url, titulo, subtitulo, id) {
-  return `<a class="speaking-btn" href="${url}" target="_blank" rel="noopener noreferrer" id="${id}">${titulo}<span class="small">${subtitulo}</span></a>`;
-}
-
-// Al hacer clic en el botón de agenda: se abre Google Calendar en pestaña nueva
-// (comportamiento normal del link) y, a la vez, esta pestaña navega a thankyou.html.
-// Google Calendar no le avisa a este sitio cuando el estudiante termina de reservar,
-// así que esto asume que el clic en "Agendar" ya expresa la intención de reservar
-// (decisión de Diana, 10/08/2026).
-function wireBookingRedirect(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('click', () => {
-    setTimeout(() => { window.location.href = 'thankyou.html'; }, 150);
-  });
-}
-
-async function init() {
-  const token = sessionStorage.getItem('cp360_session_token');
-  if (!token) {
-        window.location.href = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY' ? 'index-nivel1.html' : 'index.html';
-    return;
-  }
-  let data;
-  try {
-    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-unlock-state`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({ session_token: token }),
-    });
-    if (res.status === 401) {
-      sessionStorage.removeItem('cp360_session_token');
-          window.location.href = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY' ? 'index-nivel1.html' : 'index.html';
-      return;
-    }
-    data = await res.json();
-    if (!res.ok) throw new Error(data && data.error);
-  } catch (err) {
-    content.innerHTML = '<p class="note" style="color:#c62828;">No pudimos cargar tu información. Recarga la página e intenta de nuevo.</p>';
-    return;
-  }
-
-  const type = data.speaking_assessment_type;
-  if (type === 'OET') {
-    content.innerHTML =
-      '<p class="speaking-intro">¡Felicitaciones! Completaste tu evaluación y tu siguiente paso es el <strong>OET Speaking Assessment</strong> (roleplay clínico en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.OET, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET', 'bookBtnOet');
-    wireBookingRedirect('bookBtnOet');
-  } else if (type === 'English') {
-    content.innerHTML =
-      '<p class="speaking-intro">¡Completaste tu evaluación! Tu siguiente paso es el <strong>CEFR English Speaking Assessment</strong> (conversación de nivel de inglés en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.CEFR, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general', 'bookBtnCefr');
-    wireBookingRedirect('bookBtnCefr');
-  } else {
-    content.innerHTML =
-      '<p class="speaking-intro">Tu Speaking Assessment todavía no está habilitado.</p>' +
-      '<p class="note">Asegúrate de haber completado tu evaluación (Grammar, Listening y Writing). Si crees que es un error, escríbenos y te ayudamos.</p>';
-  }
-}
-
-init();
 </script>
 </body>
 </html>
