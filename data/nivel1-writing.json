@@ -1,7 +1,7 @@
 {
   "_meta": {
     "module": "nivel1_writing",
-    "totalPrompts": 2
+    "totalPrompts": 1
   },
   "timeLimitSeconds": 1800,
   "prompts": [
@@ -11,15 +11,6 @@
       "title": "Task 1 — An email about your country",
       "prompt_text": "Write an email to a friend, who lives in Nordland and is planning to move to your country for a year, and wants your honest advice.\n\nHere is some data comparing your friend's home country with your own real country. Use at least two of these facts to make real comparisons in your email:\n\n* Average one-bedroom apartment rent: Nordland $950/month vs. your country (estimate or describe in general terms)\n* Average cost of a meal at a mid-range restaurant: Nordland $22 vs. your country\n* World Happiness Index ranking: Nordland is ranked 6th in the world\n* Average commute time to work: Nordland 18 minutes vs. your country\n* Public holidays per year: Nordland has 9 vs. your country\n\nUsing this data and your own knowledge:\n\n1. Describe what living in your country is really like compared to Nordland. Explain what you think would surprise your friend most, and why.\n2. Give at least one piece of advice about something they should do differently if they want to adapt quickly, justifying your recommendation with reasons.\n3. Finish by telling them what you think they would enjoy most about visiting.\n4. Write between 150 and 200 words.",
       "guidance": "Go beyond simply listing the numbers: compare them, explain what they mean, and connect your ideas with linking words. Your writing is not graded on live feedback - once you submit, your response is saved and reviewed afterwards.",
-      "min_words": 150,
-      "max_words": 200
-    },
-    {
-      "id": "1f80339b-5253-48c7-9a39-6dffa850ddbe",
-      "position": 2,
-      "title": "Task 2 — A referral letter to a community nurse",
-      "prompt_text": "You are a doctor. Today you saw Mr. Alan Reyes, a 62-year-old patient who has just been diagnosed with type 2 diabetes and needs ongoing support to manage his condition at home. Write a letter to the community nurse asking them to follow up with the patient. In your letter: (1) give the reason for your referral, (2) summarise the relevant background, and (3) clearly state what you would like the nurse to do (for example, teaching the patient how to monitor blood sugar, giving diet and lifestyle advice, and arranging a follow-up visit). Use an appropriate professional tone and write between 150 and 200 words.",
-      "guidance": "Use a clear professional register suitable for a letter between healthcare colleagues. Organize the letter logically (purpose, background, request). Your writing is not graded on live feedback - once you submit, your response is saved and reviewed afterwards.",
       "min_words": 150,
       "max_words": 200
     }
