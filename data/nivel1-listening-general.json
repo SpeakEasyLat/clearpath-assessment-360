@@ -1,265 +1,364 @@
 {
   "_meta": {
-    "module": "nivel1_listening_general",
-    "version": 1
+    "module": "nivel1_reading_general",
+    "version": 2,
+    "revisionNote": "v2 (11/08/2026): revisión pedagógica completa (informe de Diana), aplicada en paralelo a nivel1-reading.json v4 — ver ese archivo para el detalle de los criterios. Se tocaron los ítems compartidos entre ambos productos (Sleep, Remote Work, Limits of Self-Reported Data) y los específicos de Speak Easy que tenían el mismo tipo de problema (Q4 longitud, Q9 longitud, Q26 opinión del autor)."
   },
-  "audios": [
+  "time_limit_seconds": 1200,
+  "texts": [
     {
-      "audio_asset_id": "3b69ab68-ca6b-41c3-b070-f228939e2153",
-      "title": "Booking a table at a restaurant",
+      "title": "Notice: Library Opening Hours",
       "cefr_level": "A1",
-      "max_plays": 1,
+      "passage_text": "The library is open from Monday to Friday, from 9 a.m. to 6 p.m. It is closed on Saturdays and Sundays.\n\nIf you need a book urgently on the weekend, you can read it online on our website.\n\nDo not enter the library without your student card.",
       "questions": [
         {
-          "id": "371c8678-aa3c-4e98-bde6-693d159aef5b",
+          "id": "48e2ac36-1b9e-4272-b9fc-595d5340aae0",
           "position": 1,
           "answer_format": "multiple_choice",
-          "question_text": "How many people is the table for?",
+          "question_text": "In this text, \"closed\" means:",
           "options": [
-            "One",
-            "Two",
-            "Four"
+            "very busy",
+            "not open",
+            "far away"
           ]
         },
         {
-          "id": "f50a0b17-c2b1-4382-9d9e-b660a157f486",
+          "id": "4d0fec6f-d5f0-4d87-a3a6-c8a67bd8ff44",
           "position": 2,
           "answer_format": "multiple_choice",
-          "question_text": "What day is the table for?",
+          "question_text": "Is the library open on Sundays?",
           "options": [
-            "Today",
-            "Next week",
-            "Tomorrow"
+            "Yes, from 9 a.m. to 6 p.m.",
+            "Only in an emergency.",
+            "No, it is closed."
           ]
         },
         {
-          "id": "7967cd4d-befc-44c4-b4aa-1635a778737a",
+          "id": "da87e7fe-acf8-4c11-9cee-58411d9044d2",
           "position": 3,
           "answer_format": "multiple_choice",
-          "question_text": "What time is the table?",
+          "question_text": "What do you need to enter the library?",
           "options": [
-            "Eight o'clock",
-            "Seven o'clock",
-            "Nine o'clock"
+            "A student card",
+            "A staff badge",
+            "A library book"
           ]
         },
         {
-          "id": "e26528da-8123-4418-a197-857fa10942b6",
+          "id": "84b18b48-f270-488f-8b2e-dcd8987d3fbe",
           "position": 4,
           "answer_format": "multiple_choice",
-          "question_text": "What is her name?",
+          "question_text": "What is this notice mainly about?",
           "options": [
-            "Bella Vista",
-            "Carla Vega",
-            "Maria Lopez"
+            "How the library decided to close on weekends",
+            "The times when the library is open and what to do outside those hours",
+            "How students can renew or replace a library card"
           ]
         }
       ]
     },
     {
-      "audio_asset_id": "98302cdb-27aa-4a01-8a39-1d5a49ccdca2",
-      "title": "A problem with an online order",
+      "title": "Class Reminder",
       "cefr_level": "A2",
-      "max_plays": 1,
+      "passage_text": "Dear Ms. Alvarez,\n\nThis is a reminder about your English class with Mr. Kim on Thursday, August 13, at 6:30 p.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this class, please call us at least 24 hours before, so we can give the spot to another student. Remember to bring your notebook and a pen.\n\nThank you,\nRiverside Language School",
       "questions": [
         {
-          "id": "949f528d-7dbb-4aa5-8a11-9c22fa33b7ce",
+          "id": "d0f552c5-b590-4744-a405-3c58e5dcc199",
           "position": 5,
           "answer_format": "multiple_choice",
-          "question_text": "What did the customer order?",
+          "question_text": "\"Reminder\" means:",
           "options": [
-            "A jacket",
-            "A phone",
-            "A pair of shoes"
+            "a message that helps you remember something",
+            "a type of homework you do every week",
+            "a form you must complete before you leave"
           ]
         },
         {
-          "id": "bdbcc04b-122f-4f7c-b56d-17d3eadb666a",
+          "id": "29a35279-d983-41d6-8baf-bded8a2ee414",
           "position": 6,
           "answer_format": "multiple_choice",
-          "question_text": "How long ago did the package leave the warehouse?",
+          "question_text": "What time is the class?",
           "options": [
-            "Three days ago",
-            "One week ago",
-            "This morning"
+            "6:15 p.m.",
+            "3:00 p.m.",
+            "6:30 p.m."
           ]
         },
         {
-          "id": "cf8261e6-8fef-4dda-bbee-e9c0b635a0bb",
+          "id": "91c02385-9ec3-4ab1-a247-f20bb62393c6",
           "position": 7,
           "answer_format": "multiple_choice",
-          "question_text": "When should the package arrive?",
+          "question_text": "What should the student do if she cannot come to the class?",
           "options": [
-            "By Monday",
-            "By Friday",
-            "Tomorrow"
+            "Come to the next class instead",
+            "Call the school at least 24 hours before",
+            "Do nothing, since it doesn't really matter"
           ]
         },
         {
-          "id": "526a5844-a0ae-4011-b48c-afcb3901819f",
+          "id": "3ac609b1-82a6-4ed9-8477-1ff9e994960e",
           "position": 8,
           "answer_format": "multiple_choice",
-          "question_text": "What did the agent promise to do if the package is late?",
+          "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
           "options": [
-            "Give a refund only",
-            "Do nothing, the customer must wait",
-            "Send a free replacement"
+            "Come to the school a quarter of an hour before your class.",
+            "Come to the school 15 minutes after your class.",
+            "Arrive at the school whenever is convenient, with no fixed time."
           ]
-        }
-      ]
-    },
-    {
-      "audio_asset_id": "762aaf7f-06b3-4e00-94a1-e83fe39d1d76",
-      "title": "Hotel check-in instructions",
-      "cefr_level": "B1",
-      "max_plays": 1,
-      "questions": [
+        },
         {
-          "id": "331e4538-399f-4bff-825e-cdc9164d2cde",
+          "id": "6e2bb1af-124d-467f-95ef-92445485873a",
           "position": 9,
           "answer_format": "multiple_choice",
-          "question_text": "What time does breakfast start?",
+          "question_text": "What is the main purpose of this message?",
           "options": [
-            "Nine o'clock",
-            "Seven o'clock",
-            "Eleven o'clock"
+            "To cancel the student's next scheduled class because of low enrollment",
+            "To remind the student about their class and explain what to bring",
+            "To request payment for a class that already took place"
           ]
-        },
+        }
+      ]
+    },
+    {
+      "title": "The Importance of Sleep for Learning",
+      "cefr_level": "B1",
+      "passage_text": "Getting enough sleep is essential for learning new skills, including languages. During deep sleep, the brain organizes the information gathered throughout the day and stores it in long-term memory. However, many students underestimate how much rest they need, especially before an exam or an important class. As a result, they may study for hours but remember very little the next day.\n\nExperts recommend at least seven hours of sleep per night for adults, although this can vary depending on age and lifestyle. Interestingly, taking a short nap after studying can also improve memory, as long as it does not replace a full night's sleep.",
+      "questions": [
         {
-          "id": "dd910a53-4cfb-4ccd-85be-9b09aea5472e",
+          "id": "0af86bd3-105a-40fa-ac8d-a9f3fb6cd17b",
           "position": 10,
           "answer_format": "multiple_choice",
-          "question_text": "When does the pool close?",
+          "question_text": "\"Underestimate\" means:",
           "options": [
-            "Nine p.m.",
-            "Ten p.m.",
-            "Midnight"
+            "to spend far more time studying than is actually necessary",
+            "to think something is less important or serious than it really is",
+            "to sleep for a much shorter time than your body actually needs"
           ]
         },
         {
-          "id": "d4f8b0c4-5c36-4bc0-92cc-e2b93e5bfea1",
+          "id": "4d2f23b9-b21c-4b80-b648-e54efa171d88",
           "position": 11,
           "answer_format": "multiple_choice",
-          "question_text": "What should the guest do to request a late check-out?",
+          "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
           "options": [
-            "Just leave later without telling anyone",
-            "Pay an automatic extra fee on the bill",
-            "Ask at the front desk the night before"
+            "a consequence",
+            "a surprising contrast",
+            "a supporting example"
           ]
         },
         {
-          "id": "3234913e-fd9f-4d74-97c7-f1c8a9eef36f",
+          "id": "31ccb011-ca80-4e9b-b14a-8e026354588e",
           "position": 12,
           "answer_format": "multiple_choice",
-          "question_text": "What does the receptionist recommend for valuables?",
+          "question_text": "Complete the sentence based on the text: \"A short nap can improve memory, ___ it should not replace a full night's sleep.\"",
           "options": [
-            "Use the safe at reception",
-            "Leave them in the room",
-            "Carry them at all times"
+            "because",
+            "so",
+            "although"
           ]
-        }
-      ]
-    },
-    {
-      "audio_asset_id": "7dc1e3d9-ef14-4e59-8c59-2e174d989634",
-      "title": "Shift handover at a call center",
-      "cefr_level": "B2",
-      "max_plays": 1,
-      "questions": [
+        },
         {
-          "id": "d719b601-56e8-4a8e-8749-807cd81e3b74",
+          "id": "7d49457e-9240-4938-8a72-546e8f9559f4",
           "position": 13,
           "answer_format": "multiple_choice",
-          "question_text": "What is the speaker most concerned about?",
+          "question_text": "What is this passage mainly about?",
           "options": [
-            "The customer has been unusually demanding today",
-            "The ticket was never actually opened",
-            "The billing issue might not be fixed"
+            "Different study techniques that can help students improve their grades",
+            "The connection between sleep and memory",
+            "Why teenagers usually need more sleep than adults"
           ]
         },
         {
-          "id": "338f0728-6bf8-4d29-8480-b513483ea085",
+          "id": "3804cdc2-325c-4909-bdda-277a697320fb",
           "position": 14,
           "answer_format": "multiple_choice",
-          "question_text": "Why does he doubt the ticket was properly resolved?",
+          "question_text": "Which sentence best summarises the text?",
           "options": [
-            "Only the first of two charges was checked",
-            "The ticket was closed without any review",
-            "The customer had complained too many times"
-          ]
-        },
-        {
-          "id": "42393e2d-c676-4477-86fd-0dfa0daf4481",
-          "position": 15,
-          "answer_format": "multiple_choice",
-          "question_text": "What does he suggest before calling the customer back?",
-          "options": [
-            "Cancel the callback appointment altogether for now",
-            "Wait until someone re-checks both charges",
-            "Tell her it's fixed right away"
-          ]
-        },
-        {
-          "id": "02366f89-a147-43e8-9751-0943569bd730",
-          "position": 16,
-          "answer_format": "multiple_choice",
-          "question_text": "Which best describes his attitude?",
-          "options": [
-            "Confident: the problem is completely settled",
-            "Alarmed: the customer might complain publicly online",
-            "Cautious: the issue may still be unresolved"
+            "Sleep matters mainly right before exams, not as a regular habit.",
+            "Deep sleep helps the brain store new information, so rest matters as much as study time.",
+            "A short nap after studying can fully replace a full night's sleep."
           ]
         }
       ]
     },
     {
-      "audio_asset_id": "77d2bfa0-00e3-4046-924e-3c3e13a5d1c0",
-      "title": "Talk about AI in recruitment",
-      "cefr_level": "C1",
-      "max_plays": 1,
+      "title": "Is the open-plan office actually working?",
+      "cefr_level": "B2",
+      "passage_text": "Open-plan offices were meant to increase collaboration, yet a growing number of workers now describe them as a source of constant distraction rather than teamwork. Frequent interruptions, background noise, and the pressure to appear constantly available can make it harder, not easier, to concentrate on demanding tasks.\n\nSome companies have responded by introducing \"quiet zones\" or allowing staff to book private rooms for focused work, effectively rebuilding the walls they removed a decade earlier. Others argue that the problem is not the layout itself but a culture that treats every message as urgent, regardless of how the office is arranged. Until that culture changes, redesigning the space may only address part of the issue.",
       "questions": [
         {
-          "id": "9a13d065-0ca7-4f1e-9f14-1086ac2cbc98",
+          "id": "d6124c9b-5a4c-46bc-9fad-db4cda6ef303",
+          "position": 15,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Layout\" in this context is closest in meaning to:",
+          "options": [
+            "the color scheme used in decoration",
+            "the total number of employees",
+            "the physical arrangement of a space"
+          ]
+        },
+        {
+          "id": "5e6bc457-6cef-462a-ba20-76440af01f41",
+          "position": 16,
+          "answer_format": "multiple_choice",
+          "question_text": "According to the text, why have some companies created \"quiet zones\"?",
+          "options": [
+            "To give staff a way to concentrate without interruptions",
+            "To reduce the total number of desks in the office",
+            "To encourage more group meetings among different teams"
+          ]
+        },
+        {
+          "id": "a08e0d3c-8a5b-4ddb-a0ca-76a3f1932418",
           "position": 17,
           "answer_format": "multiple_choice",
-          "question_text": "What is her overall position on using these tools?",
+          "question_text": "What is the writer's main point?",
           "options": [
-            "She supports the tools but distrusts how they're relied on",
-            "She is firmly opposed to using them at all",
-            "She believes vendors deliberately fake their published figures"
+            "Open-plan offices work well for teamwork but poorly for focused, individual tasks.",
+            "The real problem may be workplace culture, not the office layout.",
+            "Quiet zones have reduced distractions for some staff, though the wider culture hasn't changed."
           ]
-        },
+        }
+      ]
+    },
+    {
+      "title": "Remote Work and Communication",
+      "cefr_level": "B2",
+      "passage_text": "Since remote work became widespread, many companies have had to rethink how they communicate internally. Face-to-face conversations, once the default way to resolve misunderstandings quickly, have largely been replaced by written messages and video calls. While this shift has given employees greater flexibility, it has also introduced new challenges.\n\nWritten communication, for instance, can easily be misread, since tone and body language are absent. Consequently, some organisations now train staff specifically in written communication skills, encouraging them to be clear, concise, and mindful of how a message might be interpreted by someone who cannot see their face. Others have adopted stricter rules about which topics should be discussed by call rather than by chat, precisely to avoid this kind of ambiguity.",
+      "questions": [
         {
-          "id": "47167cfe-8e4e-47f3-a940-2af122e6aea5",
+          "id": "e8342dd7-9d35-4b9f-9211-8aba1a56a825",
           "position": 18,
           "answer_format": "multiple_choice",
-          "question_text": "Why does she doubt the published accuracy figures?",
+          "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
           "options": [
-            "They were deliberately manipulated by the vendors",
-            "They're based on tidy data, not real messy applications",
-            "They always perform worse than a human reviewer"
+            "strong disagreement",
+            "a controversy that divides opinion",
+            "unclear meaning"
           ]
         },
         {
-          "id": "812e06e0-f7fe-4486-b480-f7fc673761c7",
+          "id": "b94c874c-92a2-465d-a834-5928429b9a78",
           "position": 19,
           "answer_format": "multiple_choice",
-          "question_text": "What does she mean by \"a quieter problem\"?",
+          "question_text": "According to the text, why do some organisations now train staff specifically in written communication skills?",
           "options": [
-            "The system always gives a clear error message",
-            "Rejected candidates are always told the exact reason",
-            "Strong candidates can be rejected without anyone noticing"
+            "Because written messages are easily misread without tone or body language to clarify them",
+            "Because employees asked for fewer video calls during the week",
+            "Because remote work removed the need to write anything formally"
           ]
         },
         {
-          "id": "d6e0b378-541a-44be-a6ae-34e6585547d0",
+          "id": "245e0816-0a6e-4693-85c0-2ff3c86277b7",
           "position": 20,
           "answer_format": "multiple_choice",
-          "question_text": "What does she want before trusting the system at scale?",
+          "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
-            "Real performance data and a right to challenge results",
-            "More marketing demonstrations arranged by the vendors themselves",
-            "Nothing more, since she completely trusts the system already"
+            "Remote work has eliminated the need for regular team meetings.",
+            "Remote work has reshaped internal communication, raising the need for clearer writing.",
+            "Companies have stopped allowing employees to make phone calls."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "The Limits of Self-Reported Data",
+      "cefr_level": "C1",
+      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains all-important in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
+      "questions": [
+        {
+          "id": "e3c0ade5-68ea-4f94-9086-e507e9d234bb",
+          "position": 21,
+          "answer_format": "multiple_choice",
+          "question_text": "\"All-important\" means:",
+          "options": [
+            "unreliable",
+            "rarely used",
+            "absolutely necessary"
+          ]
+        },
+        {
+          "id": "1a54a107-33d3-4965-88e6-b66738de63bf",
+          "position": 22,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best paraphrases: \"Rather than abandoning self-report methods altogether, most researchers now combine them with objective measures\"?",
+          "options": [
+            "Most researchers have stopped using self-reported data completely.",
+            "Most researchers now use self-reported data alongside other verification methods.",
+            "Objective measures have proven unreliable compared to self-reports."
+          ]
+        },
+        {
+          "id": "a588b5cc-0e7a-4677-9c17-8caaec2c88bc",
+          "position": 23,
+          "answer_format": "multiple_choice",
+          "question_text": "Which title best fits this passage?",
+          "options": [
+            "Understanding and Managing the Limitations of Self-Reported Data",
+            "Self-Reported Data: A Method Researchers Are Slowly Abandoning",
+            "A Brief History of Data Collection Methods in Social Science"
+          ]
+        },
+        {
+          "id": "482f7fd6-f61a-4a2d-8777-d45a9d38b22d",
+          "position": 24,
+          "answer_format": "multiple_choice",
+          "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
+          "options": [
+            "They believe objective measures are generally more accurate, so self-reports should play a smaller role.",
+            "They believe the biases described mean self-reported data mainly reflects social pressure, not real behaviour.",
+            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Extract from an HR policy: offboarding planning",
+      "cefr_level": "C1",
+      "passage_text": "Effective offboarding planning should begin as early as possible once an employee has given notice, rather than being treated as a task reserved for their final day. Delays are frequently caused not by the departing employee but by administrative factors, such as returning equipment, revoking system access, or confirming final pay calculations.\n\nManagers are therefore encouraged to identify likely offboarding tasks at the point notice is given and to communicate these to HR and IT without delay. Where a role is likely to require a handover period, briefing a colleague should be initiated well in advance, since preparing training materials often takes longer than expected and is entirely independent of the employee's departure date.",
+      "questions": [
+        {
+          "id": "8893f4aa-a173-4095-b810-ae987e76c4a8",
+          "position": 25,
+          "answer_format": "multiple_choice",
+          "question_text": "\"Notice\" (as in \"once an employee has given notice\") most likely means:",
+          "options": [
+            "news about a company event",
+            "advance notice that someone plans to leave",
+            "a legal document confirming employment"
+          ]
+        },
+        {
+          "id": "6ad9d175-9499-4eca-866e-b8ed29872b7e",
+          "position": 26,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...rather than being treated as a task reserved for their final day\" — what does this suggest about how offboarding is often handled in practice?",
+          "options": [
+            "It is often left until an employee's last day, which the writer considers too late",
+            "It is shared equally between the departing employee and HR, which the writer sees as a fair balance",
+            "It already starts on the day notice is given, which the writer considers the ideal approach"
+          ]
+        },
+        {
+          "id": "128cc7ee-0fa9-4cac-ba79-a7ee7660f358",
+          "position": 27,
+          "answer_format": "multiple_choice",
+          "question_text": "Which statement best summarises the text?",
+          "options": [
+            "Offboarding works best when HR decides the timeline and the departing employee simply follows it.",
+            "Offboarding should start early since most delays are administrative.",
+            "Employees are usually ready to leave before HR finishes paperwork."
+          ]
+        },
+        {
+          "id": "d64fea9a-6ab2-4784-a993-45eca4a8a561",
+          "position": 28,
+          "answer_format": "multiple_choice",
+          "question_text": "\"...preparing training materials often takes longer than expected and is entirely independent of the employee's departure date\" most nearly means:",
+          "options": [
+            "Preparing training materials takes its own time, regardless of the departure date.",
+            "Training materials can only be prepared once the employee has left.",
+            "Employees must stay longer whenever training materials are not ready."
           ]
         }
       ]
