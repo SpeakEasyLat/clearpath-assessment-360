@@ -91,11 +91,23 @@ const MIN_LEVEL_FOR_STEPS2 = "B2";
 // ">=75% correcto para aprobar". Con 8 preguntas eso es exactamente 6/8 (75.0%).
 const STEPS2_PASS_THRESHOLD = 75;
 
+// v13 (11/08/2026): agrega nivel1_listening_general y nivel1_reading_general (los
+// modulos de Listening/Reading del track NIVEL1_ONLY / Assessment Speak Easy).
+// BUG REAL encontrado antes de que ningun estudiante lo pisara (0 respuestas
+// registradas en esos dos modulos al momento del fix): sin esta entrada, skill salia
+// undefined para esos modulos, la rama `else if (skill)` de mas abajo nunca se
+// ejecutaba, y el sub_score de listening/reading nunca se guardaba -- el estudiante
+// terminaba el modulo en pantalla pero el attempt se quedaba sin ese sub_score para
+// siempre, sin poder avanzar (nivel1Complete nunca se cumple). Fix aditivo, no toca
+// ninguna rama existente.
+//
 // module (question_bank) -> skill (sub_scores).
 const MODULE_TO_SKILL = {
 nivel1_grammar: "grammar",
 nivel1_listening: "listening",
+nivel1_listening_general: "listening",
 nivel1_reading: "reading",
+nivel1_reading_general: "reading",
 steps2: "steps2_reading",
 oet_listening: "oet_listening",
 oet_reading: "oet_reading",
