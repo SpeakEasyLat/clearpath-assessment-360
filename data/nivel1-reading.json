@@ -1,8 +1,8 @@
 {
   "_meta": {
     "module": "nivel1_reading",
-    "version": 3,
-    "revisionNote": "v3 (06/08/2026): se reordenaron las opciones de las 28 preguntas para que la respuesta correcta no quede casi siempre en la posición B (antes 21/28 eran B, 0/28 eran C), y se reescribieron los distractores demasiado cortos para que ya no delaten la respuesta correcta por ser la opción más larga. El texto exacto de cada correct_answer en Supabase no cambió, solo su posición dentro de options y el texto de los distractores incorrectos."
+    "version": 4,
+    "revisionNote": "v4 (11/08/2026): revisión pedagógica completa (informe de Diana) — se reescribieron los ítems de A1/A2 que pedían identificar la función gramatical de un conector (ahora localización/comprensión literal), se moderaron distractores con lenguaje absoluto (always/completely/banned/solely/etc.), se reemplazó el cognado 'indispensable' por 'all-important', se parafrasearon respuestas que casi copiaban el texto (wristband), se igualaron longitudes de opciones donde la correcta era obviamente más larga, y se agregó una pista textual para 'medication reconciliation'. correct_answer también cambió en Supabase para estos ítems (no solo el orden de las opciones, como en v3)."
   },
   "time_limit_seconds": 1200,
   "texts": [
@@ -37,11 +37,11 @@
           "id": "442beb96-fba2-416b-a24f-017ef2dea86a",
           "position": 3,
           "answer_format": "multiple_choice",
-          "question_text": "\"If you need help on the weekend, please call...\" — here, \"if\" introduces:",
+          "question_text": "According to the notice, what do you need before going to the clinic?",
           "options": [
-            "a reason",
-            "a condition",
-            "a result"
+            "An appointment",
+            "A referral letter from another doctor",
+            "Proof of insurance"
           ]
         },
         {
@@ -50,9 +50,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is this notice mainly about?",
           "options": [
-            "The clinic's emergency phone number only",
-            "The process for booking an appointment online",
-            "The clinic's opening times and what to do on weekends"
+            "The times when the clinic is open and what to do outside those hours",
+            "How to book a clinic appointment using the phone or website",
+            "The names and schedules of the clinic's doctors"
           ]
         }
       ]
@@ -88,11 +88,11 @@
           "id": "84a403d4-d452-4cf7-92cb-a41bdec0e0a6",
           "position": 7,
           "answer_format": "multiple_choice",
-          "question_text": "\"If you cannot come to this appointment, please call us...\" — this sentence describes:",
+          "question_text": "According to the message, what should Mr. Ortiz do if he cannot come to his appointment, and why?",
           "options": [
-            "two things happening at the same time",
-            "a condition and an action",
-            "a cause with no solution"
+            "Call at least 24 hours in advance, so the clinic can offer the appointment to someone else",
+            "Come to the clinic anyway, since appointments cannot be cancelled",
+            "Wait for the clinic to call him back before doing anything"
           ]
         },
         {
@@ -112,9 +112,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is the main purpose of this message?",
           "options": [
-            "To cancel the patient's upcoming appointment",
-            "To ask the patient to pay for a previous visit",
-            "To remind the patient of an appointment and give instructions"
+            "To remind the patient about their appointment and explain what to bring",
+            "To cancel the patient's appointment because of a scheduling conflict",
+            "To request payment for a treatment received earlier"
           ]
         }
       ]
@@ -150,7 +150,7 @@
           "id": "6011707d-cc78-4446-851a-c3ac7964942b",
           "position": 12,
           "answer_format": "multiple_choice",
-          "question_text": "Choose the best word: \"Experts recommend seven hours of sleep, ___ this can vary depending on age.\"",
+          "question_text": "Complete the sentence based on the text: \"A short nap can improve memory, ___ it should not replace a full night's sleep.\"",
           "options": [
             "because",
             "so",
@@ -163,9 +163,9 @@
           "answer_format": "multiple_choice",
           "question_text": "What is this passage mainly about?",
           "options": [
-            "Why students should avoid naps",
+            "Different study techniques that can help students improve their grades",
             "The connection between sleep and memory",
-            "How long a university exam should last"
+            "Why teenagers usually need more sleep than adults"
           ]
         },
         {
@@ -174,9 +174,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which sentence best summarises the text?",
           "options": [
+            "Getting more sleep matters mainly the night before an exam, not throughout the week.",
             "Deep sleep helps the brain store new information, so rest matters as much as study time.",
-            "Sleep has little real effect on how well students perform in exams.",
-            "A short nap is always more effective for memory than a full night's sleep."
+            "A short nap after studying can fully replace a full night's sleep."
           ]
         }
       ]
@@ -193,7 +193,7 @@
           "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
           "options": [
             "strong disagreement",
-            "fast response",
+            "a controversy that divides opinion",
             "unclear meaning"
           ]
         },
@@ -201,11 +201,11 @@
           "id": "9a2615cc-5744-49a1-bdf0-c2564d9b6e25",
           "position": 16,
           "answer_format": "multiple_choice",
-          "question_text": "\"Consequently, some organisations now train staff...\" — \"consequently\" signals:",
+          "question_text": "According to the text, why do some organisations now train staff specifically in written communication skills?",
           "options": [
-            "a cause",
-            "a result",
-            "a similarity"
+            "Because written messages are easily misread without tone or body language to clarify them",
+            "Because employees asked for fewer video calls during the week",
+            "Because remote work removed the need to write anything formally"
           ]
         },
         {
@@ -214,9 +214,9 @@
           "answer_format": "multiple_choice",
           "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
-            "Remote work has changed internal communication and created a need for clearer writing skills.",
-            "Remote work has made face-to-face meetings completely unnecessary for every team.",
-            "Companies have decided to stop allowing employees to make phone calls at work."
+            "Remote work has eliminated the need for regular team meetings.",
+            "Remote work has reshaped internal communication, raising the need for clearer writing.",
+            "Companies have stopped allowing employees to make phone calls."
           ]
         }
       ]
@@ -244,7 +244,7 @@
           "question_text": "According to the text, a coloured wristband is used to:",
           "options": [
             "record which blood type a patient has been given",
-            "alert staff that a patient is at high risk of falling",
+            "warn any staff member that a patient needs extra care",
             "show that a patient has recovered from surgery"
           ]
         },
@@ -255,8 +255,8 @@
           "question_text": "What is this extract mainly advising staff to do?",
           "options": [
             "Assess risk early, mark high-risk patients clearly, and remove physical hazards.",
-            "Rely mainly on close supervision, without changing anything else on the ward.",
-            "Avoid admitting elderly or post-surgical patients to the ward altogether."
+            "Focus mainly on staff supervision, since changing the ward layout rarely helps.",
+            "Limit which patients are admitted to the ward based on their age or recovery stage."
           ]
         }
       ]
@@ -264,13 +264,13 @@
     {
       "title": "The Limits of Self-Reported Data",
       "cefr_level": "C1",
-      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains indispensable in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
+      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains all-important in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
       "questions": [
         {
           "id": "423875f9-a65d-41ec-9d6e-b2b28861f5d9",
           "position": 21,
           "answer_format": "multiple_choice",
-          "question_text": "\"Indispensable\" means:",
+          "question_text": "\"All-important\" means:",
           "options": [
             "unreliable",
             "rarely used",
@@ -284,7 +284,7 @@
           "question_text": "Which statement best paraphrases: \"Rather than abandoning self-report methods altogether, most researchers now combine them with objective measures\"?",
           "options": [
             "Most researchers have stopped using self-reported data completely.",
-            "Most researchers now use self-reported data alongside other, more objective sources.",
+            "Most researchers now use self-reported data alongside other verification methods.",
             "Objective measures have proven unreliable compared to self-reports."
           ]
         },
@@ -295,7 +295,7 @@
           "question_text": "Which title best fits this passage?",
           "options": [
             "Understanding and Managing the Limitations of Self-Reported Data",
-            "Why Self-Reported Data Should Be Banned from Research",
+            "Self-Reported Data: A Method Researchers Are Slowly Abandoning",
             "A Brief History of Data Collection Methods in Social Science"
           ]
         },
@@ -305,8 +305,8 @@
           "answer_format": "multiple_choice",
           "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
           "options": [
-            "They believe it should be avoided whenever objective measures are available.",
-            "They believe the biases described make self-reported data unusable for medical research.",
+            "They believe objective measures are generally more accurate, so self-reports should play a smaller role.",
+            "They believe the biases described mean self-reported data mainly reflects social pressure, not real behaviour.",
             "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses."
           ]
         }
@@ -315,7 +315,7 @@
     {
       "title": "Extract from clinical guidelines: discharge planning",
       "cefr_level": "C1",
-      "passage_text": "Effective discharge planning should begin as early as possible in a patient's admission, rather than being treated as a task reserved for the final day of a hospital stay. Delays are frequently caused not by clinical factors but by administrative ones, such as awaiting transport, medication reconciliation, or confirmation of a home care package.\n\nClinicians are therefore encouraged to identify likely discharge barriers at the point of admission and to communicate these to the multidisciplinary team without delay. Where a patient is likely to require ongoing support, referral to community services should be initiated well in advance, since these services often have their own waiting periods that are entirely independent of the patient's readiness to leave hospital.",
+      "passage_text": "Effective discharge planning should begin as early as possible in a patient's admission, rather than being treated as a task reserved for the final day of a hospital stay. Delays are frequently caused not by clinical factors but by administrative ones, such as awaiting transport, completing medication reconciliation — comparing what a patient is currently taking against what they actually need — or confirmation of a home care package.\n\nClinicians are therefore encouraged to identify likely discharge barriers at the point of admission and to communicate these to the multidisciplinary team without delay. Where a patient is likely to require ongoing support, referral to community services should be initiated well in advance, since these services often have their own waiting periods that are entirely independent of the patient's readiness to leave hospital.",
       "questions": [
         {
           "id": "788f0a5e-40d6-4cd4-9d47-382cd5593b62",
@@ -332,11 +332,11 @@
           "id": "082126cf-61d2-4dbc-ab84-375515c60199",
           "position": 26,
           "answer_format": "multiple_choice",
-          "question_text": "\"...rather than being treated as a task reserved for the final day\" — this phrase signals:",
+          "question_text": "\"...rather than being treated as a task reserved for the final day\" — what does this suggest about how discharge planning is often handled in practice?",
           "options": [
-            "a contrast with common practice",
-            "similarity between two ideas",
-            "a cause-and-effect relationship"
+            "It is often left until close to when the patient is ready to leave, which the writer considers too late",
+            "It is shared equally between doctors and administrative staff, which the writer sees as a fair balance",
+            "It already happens gradually from the day of admission, which the writer considers the ideal approach"
           ]
         },
         {
@@ -345,7 +345,7 @@
           "answer_format": "multiple_choice",
           "question_text": "Which statement best summarises the text?",
           "options": [
-            "Discharge planning is solely the responsibility of doctors, not the rest of the team.",
+            "Discharge planning works best when doctors decide the date and the rest of the team follows.",
             "Patients are usually ready to leave hospital before community services are available.",
             "Discharge planning should start early because delays are often administrative, not clinical."
           ]
