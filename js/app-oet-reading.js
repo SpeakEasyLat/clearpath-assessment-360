@@ -57,7 +57,61 @@ async function init() {
   const res = await fetch('data/oet-reading.json');
   readingData = await res.json();
   steps = buildSteps(readingData);
+
+  // Si el estudiante ya había respondido preguntas de este módulo (recargó la página o
+  // entró de nuevo con el mismo código antes de terminar el attempt), retomamos en la
+  // primera parte con preguntas pendientes -- nunca hacia atrás, respetando la regla de
+  // que una parte ya confirmada queda cerrada (pedido de Diana, 10/08/2026).
+  const alreadyComplete = await restoreProgress(sessionToken);
+  if (alreadyComplete) {
+    finished = true;
+    renderDone(false);
+    return;
+  }
+
   renderStep();
+}
+
+// Pide a get-module-progress las respuestas ya guardadas de oet_reading y posiciona
+// currentStepIndex en la primera parte con alguna pregunta sin responder, precargando
+// savedAnswersByStep para las partes ya completas. Si falla (sin conexión), no bloquea.
+// Devuelve true si el módulo entero ya estaba completo.
+async function restoreProgress(sessionToken) {
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-module-progress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ session_token: sessionToken, module: 'oet_reading' }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const savedByQuestionId = data.answers || {};
+
+    let firstIncompleteStep = steps.length;
+    steps.forEach((step, si) => {
+      const allAnswered = step.questionIds.every((qid) =>
+        Object.prototype.hasOwnProperty.call(savedByQuestionId, qid)
+      );
+      if (allAnswered) {
+        const stepAnswers = {};
+        step.questionIds.forEach((qid) => {
+          stepAnswers[qid] = savedByQuestionId[qid] === null ? '' : savedByQuestionId[qid];
+        });
+        savedAnswersByStep[si] = stepAnswers;
+      } else if (firstIncompleteStep === steps.length) {
+        firstIncompleteStep = si;
+      }
+    });
+    if (firstIncompleteStep === steps.length) return true;
+    currentStepIndex = firstIncompleteStep;
+    return false;
+  } catch (err) {
+    return false;
+  }
 }
 
 function sessionTokenOrRedirect() {

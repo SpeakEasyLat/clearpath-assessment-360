@@ -30,6 +30,44 @@ let finished = false;
 let timerHandle = null;
 let remainingSeconds = 0;
 
+// Borrador local: a diferencia de Grammar/Listening/Reading (que guardan cada
+// respuesta al toque en el server), Writing solo llama a submit-writing al terminar
+// una tarea -- si el estudiante recarga la página o se le cae la conexión a mitad de
+// escribir, antes se perdía todo el texto no enviado. Pedido de Diana, 10/08/2026:
+// guardamos un borrador en sessionStorage en cada input y lo restauramos al cargar.
+// Se guarda en el navegador (no en el server) para no disparar la calificación de IA
+// antes de que el estudiante confirme "Guardar y continuar".
+const DRAFT_KEY = 'cp360_writing_draft_nivel1';
+
+function loadDraft() {
+try {
+const raw = sessionStorage.getItem(DRAFT_KEY);
+return raw ? JSON.parse(raw) : {};
+} catch (err) {
+return {};
+}
+}
+
+function saveDraft(index, text) {
+try {
+const draft = loadDraft();
+draft[index] = text;
+sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+} catch (err) {
+// sessionStorage lleno o no disponible: no bloqueamos la escritura del estudiante.
+}
+}
+
+function clearDraft(index) {
+try {
+const draft = loadDraft();
+delete draft[index];
+sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+} catch (err) {
+// no crítico
+}
+}
+
 function sessionTokenOrRedirect() {
 const token = sessionStorage.getItem('cp360_session_token');
 if (!token) {
@@ -57,6 +95,14 @@ if (prompts.length === 0) {
 quizArea.innerHTML = '<p class="note">No hay consignas configuradas.</p>';
 return;
 }
+
+// Restaurar cualquier borrador local (recarga de página, cierre accidental de la
+// pestaña, etc.) antes de renderizar la primera tarea.
+const draft = loadDraft();
+Object.keys(draft).forEach((idx) => {
+if (draft[idx]) responses.set(Number(idx), draft[idx]);
+});
+
 remainingSeconds = writingData.timeLimitSeconds || 1200;
 startTimer();
 renderTask();
@@ -125,6 +171,7 @@ wordCountEl.textContent = `${n} ${n === 1 ? 'palabra' : 'palabras'}`;
 refreshCount();
 textarea.addEventListener('input', () => {
 responses.set(currentIndex, textarea.value);
+saveDraft(currentIndex, textarea.value);
 refreshCount();
 });
 saveBtn.addEventListener('click', () => handleSave());
@@ -170,6 +217,10 @@ saveBtn.disabled = false;
 saveBtn.textContent = originalLabel;
 return;
 }
+
+// Guardado OK: ya quedó en submit-writing, el borrador local de esta tarea no hace
+// falta más.
+clearDraft(currentIndex);
 
 // Guardado OK: avanzar o finalizar.
 if (currentIndex < prompts.length - 1) {
@@ -227,6 +278,7 @@ if (timerHandle) {
 clearInterval(timerHandle);
 timerHandle = null;
 }
+try { sessionStorage.removeItem(DRAFT_KEY); } catch (err) { /* no crítico */ }
 if (progressFill) progressFill.style.width = '100%';
 if (progressLabel) progressLabel.textContent = 'Writing completado';
 renderDone(timedOut);

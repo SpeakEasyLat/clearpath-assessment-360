@@ -37,6 +37,37 @@ let savedText = '';
 let finished = false;
 let timerHandle = null;
 
+// Borrador local (mismo mecanismo que Nivel 1 Writing, pedido de Diana 10/08/2026):
+// esta tarea solo se guarda en el server al hacer clic en "Finish" -- si el estudiante
+// recarga o pierde la conexión a mitad de escribir la carta, antes se perdía todo el
+// texto no enviado. Se guarda en sessionStorage, no en el server, para no disparar la
+// calificación de IA antes de tiempo.
+const DRAFT_KEY = 'cp360_writing_draft_oet';
+
+function loadDraft() {
+  try {
+    return sessionStorage.getItem(DRAFT_KEY) || '';
+  } catch (err) {
+    return '';
+  }
+}
+
+function saveDraft(text) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, text);
+  } catch (err) {
+    // no crítico
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch (err) {
+    // no crítico
+  }
+}
+
 function sessionTokenOrRedirect() {
   const token = sessionStorage.getItem('cp360_session_token');
   if (!token) {
@@ -64,6 +95,8 @@ async function init() {
   readingRemaining = Number(writingData.readingTimeSeconds) > 0 ? Number(writingData.readingTimeSeconds) : 120;
   const total = Number(writingData.timeLimitSeconds) > 0 ? Number(writingData.timeLimitSeconds) : 1020;
   writingRemaining = Math.max(60, total - readingRemaining);
+
+  savedText = loadDraft();
 
   startTimer();
   renderReadingPhase();
@@ -160,6 +193,7 @@ function renderWritingPhase() {
   refreshCount();
   textarea.addEventListener('input', () => {
     savedText = textarea.value;
+    saveDraft(textarea.value);
     refreshCount();
   });
   saveBtn.addEventListener('click', () => handleSave());
@@ -226,6 +260,7 @@ async function saveResponse(sessionToken, text) {
       return 'unauthorized';
     }
     if (!res.ok) return 'error';
+    clearDraft();
     return 'ok';
   } catch (err) {
     return 'error';
@@ -250,6 +285,7 @@ function finishModule(timedOut = false) {
     clearInterval(timerHandle);
     timerHandle = null;
   }
+  clearDraft();
   if (progressFill) progressFill.style.width = '100%';
   if (progressLabel) progressLabel.textContent = 'OET Writing completed';
   renderDone(timedOut);

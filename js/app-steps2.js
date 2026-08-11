@@ -61,8 +61,55 @@ async function init() {
   }
   timeRemaining = Number(stepsData.time_limit_seconds) > 0 ? Number(stepsData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
 
+  // Si el estudiante ya había respondido preguntas de este módulo (recargó la página o
+  // entró de nuevo con el mismo código antes de terminar el attempt), retomamos justo
+  // donde se quedó en vez de reiniciar desde la pregunta 1 (pedido de Diana,
+  // 10/08/2026).
+  const alreadyComplete = await restoreProgress(sessionToken);
+  if (alreadyComplete) {
+    finished = true;
+    renderDone(false);
+    return;
+  }
+
   startTimer();
   renderQuestion();
+}
+
+// Pide a get-module-progress las respuestas ya guardadas de steps2 y posiciona
+// currentIndex en la primera pregunta sin responder. Si falla (sin conexión), no
+// bloquea. Devuelve true si las preguntas ya estaban todas respondidas.
+async function restoreProgress(sessionToken) {
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-module-progress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ session_token: sessionToken, module: 'steps2' }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const savedByQuestionId = data.answers || {};
+
+    let firstUnanswered = questions.length;
+    questions.forEach((q, i) => {
+      if (Object.prototype.hasOwnProperty.call(savedByQuestionId, q.id)) {
+        const selected = savedByQuestionId[q.id];
+        answers.set(q.id, selected);
+        savedAnswers.set(q.id, selected);
+      } else if (firstUnanswered === questions.length) {
+        firstUnanswered = i;
+      }
+    });
+    if (firstUnanswered === questions.length) return true;
+    currentIndex = firstUnanswered;
+    return false;
+  } catch (err) {
+    return false;
+  }
 }
 
 function sessionTokenOrRedirect() {

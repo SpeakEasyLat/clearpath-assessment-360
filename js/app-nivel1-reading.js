@@ -57,8 +57,62 @@ async function init() {
   groups = readingData.texts;
   timeRemaining = Number(readingData.time_limit_seconds) > 0 ? Number(readingData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
 
+  // Si el estudiante ya había respondido preguntas de este módulo (recargó la página o
+  // entró de nuevo con el mismo código antes de terminar el attempt), retomamos en el
+  // primer texto con preguntas pendientes en vez de reiniciar desde el texto 1 (pedido
+  // de Diana, 10/08/2026).
+  const alreadyComplete = await restoreProgress(sessionToken);
+  if (alreadyComplete) {
+    finished = true;
+    renderDone(false);
+    return;
+  }
+
   startTimer();
   renderGroup();
+}
+
+// Pide a get-module-progress las respuestas ya guardadas de este módulo y posiciona
+// currentGroupIndex en el primer texto que tenga alguna pregunta sin responder,
+// precargando savedAnswersByGroup para los textos ya completos. Si falla (sin
+// conexión), no bloquea: el módulo arranca desde el texto 1 como antes. Devuelve true
+// si las 28 preguntas ya estaban respondidas (módulo completo).
+async function restoreProgress(sessionToken) {
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-module-progress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ session_token: sessionToken, module: 'reading' }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const savedByQuestionId = data.answers || {};
+
+    let firstIncompleteGroup = groups.length;
+    groups.forEach((group, gi) => {
+      const allAnswered = group.questions.every((q) =>
+        Object.prototype.hasOwnProperty.call(savedByQuestionId, q.id)
+      );
+      if (allAnswered) {
+        const groupAnswers = {};
+        group.questions.forEach((q) => {
+          groupAnswers[q.id] = savedByQuestionId[q.id] === null ? '' : savedByQuestionId[q.id];
+        });
+        savedAnswersByGroup[gi] = groupAnswers;
+      } else if (firstIncompleteGroup === groups.length) {
+        firstIncompleteGroup = gi;
+      }
+    });
+    if (firstIncompleteGroup === groups.length) return true; // todas respondidas
+    currentGroupIndex = firstIncompleteGroup;
+    return false;
+  } catch (err) {
+    return false;
+  }
 }
 
 function sessionTokenOrRedirect() {

@@ -42,7 +42,60 @@ const dataFile = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY'
   : 'data/nivel1-listening.json?v=2';
 const res = await fetch(dataFile);
 listeningData = await res.json();
+
+// Si el estudiante ya había respondido preguntas de este módulo (recargó la página o
+// entró de nuevo con el mismo código antes de terminar el attempt), retomamos en el
+// primer audio con preguntas pendientes, sin volver a gastar reproducciones de audios
+// ya completados (pedido de Diana, 10/08/2026).
+const alreadyComplete = await restoreProgress(sessionToken);
+if (alreadyComplete) {
+  renderDone();
+  return;
+}
+
 renderAudioGroup();
+}
+
+// Pide a get-module-progress las respuestas ya guardadas de listening y posiciona
+// currentAudioIndex en el primer audio con alguna pregunta sin responder, precargando
+// savedAnswersByGroup para los audios ya completos. Si falla (sin conexión), no
+// bloquea. Devuelve true si el módulo entero ya estaba completo.
+async function restoreProgress(sessionToken) {
+try {
+  const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/get-module-progress`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ session_token: sessionToken, module: 'listening' }),
+  });
+  if (!res.ok) return false;
+  const data = await res.json();
+  const savedByQuestionId = data.answers || {};
+
+  let firstIncompleteGroup = listeningData.audios.length;
+  listeningData.audios.forEach((group, gi) => {
+    const allAnswered = group.questions.every((q) =>
+      Object.prototype.hasOwnProperty.call(savedByQuestionId, q.id)
+    );
+    if (allAnswered) {
+      const groupAnswers = {};
+      group.questions.forEach((q) => {
+        groupAnswers[q.id] = savedByQuestionId[q.id] === null ? '' : savedByQuestionId[q.id];
+      });
+      savedAnswersByGroup[gi] = groupAnswers;
+    } else if (firstIncompleteGroup === listeningData.audios.length) {
+      firstIncompleteGroup = gi;
+    }
+  });
+  if (firstIncompleteGroup === listeningData.audios.length) return true;
+  currentAudioIndex = firstIncompleteGroup;
+  return false;
+} catch (err) {
+  return false;
+}
 }
 function sessionTokenOrRedirect() {
 const token = sessionStorage.getItem('cp360_session_token');
