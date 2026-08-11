@@ -60,10 +60,31 @@ function bookingButton(url, titulo, subtitulo, id) {
 // Google Calendar no le avisa a este sitio cuando el estudiante termina de reservar,
 // así que esto asume que el clic en "Agendar" ya expresa la intención de reservar
 // (decisión de Diana, 10/08/2026).
+//
+// v3 (11/08/2026, backlog): además, el clic dispara register-speaking-booking para
+// dejar un registro en speaking_assessment_bookings (quién reservó, qué tipo, cuándo).
+// Es "fire-and-forget": no se espera la respuesta ni se bloquea la redirección -- si
+// esta llamada falla, el estudiante igual llega a su reserva sin notar nada; solo se
+// pierde el registro interno.
+function registerBooking() {
+  const token = sessionStorage.getItem('cp360_session_token');
+  if (!token) return;
+  fetch(`${SUPABASE_FUNCTIONS_BASE}/register-speaking-booking`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ session_token: token }),
+  }).catch(() => { /* no crítico: no bloquear ni avisar al estudiante */ });
+}
+
 function wireBookingRedirect(id) {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('click', () => {
+    registerBooking();
     setTimeout(() => { window.location.href = 'thankyou.html'; }, 150);
   });
 }
