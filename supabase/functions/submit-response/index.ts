@@ -236,21 +236,86 @@ console.error("submit-response: error actualizando unlock_state", unlockError);
 return { error: "Error interno. Intenta de nuevo en un momento." };
 }
 
+// v12 (10/08/2026, pedido de Diana): ya NO marcamos completed aca con solo
+// nivel1Complete -- para las rutas OET y STEPS2 todavia quedan modulos pendientes en
+// este punto (OET Listening/Reading/Writing, o STEP CK 2). Eso es lo que
+// checkAndMarkAttemptComplete() (mas abajo) resuelve correctamente para las 3 rutas;
+// se llama aca abajo con el assignedRoute recien calculado, y tambien se llama de
+// forma independiente desde los otros puntos donde termina un modulo final de la ruta
+// (steps2 en este mismo archivo, oet_writing en submit-writing) -- ver el comentario
+// largo en esa funcion para el porque completo.
 if (nivel1Complete) {
+await checkAndMarkAttemptComplete(supabase, attemptId, assignedRoute);
+}
+
+return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
+}
+
+// Marca attempts.status = 'completed' solo cuando el estudiante ya no tiene NINGUN
+// modulo pendiente segun la ruta que le toco -- no solo Nivel 1. Bug real que esto
+// corrige (encontrado 10/08/2026): antes, el attempt se marcaba completed apenas
+// terminaba Nivel 1 (los 4 sub_scores de grammar/listening/writing/reading), aunque
+// para las rutas OET y STEPS2 todavia quedaran modulos por rendir (OET Listening/
+// Reading/Writing, o STEP CK 2). Si en ese punto el estudiante recargaba la pagina o
+// volvia a entrar con el mismo access_code, login() (attempt.status !== "in_progress"
+// -> crear nuevo) le armaba un attempt en blanco y perdia TODO Nivel 1, no solo el
+// modulo en el que estaba parado -- esto era el bug reportado como "me llevo a
+// grammar". Ahora: ENGLISH no tiene modulos extra (Nivel 1 completo ya es todo el
+// recorrido); OET necesita ademas oet_listening + oet_reading + oet_writing; STEPS2
+// necesita ademas steps2_reading. Mientras falte alguno de esos, el attempt sigue
+// in_progress y login() siempre retoma el mismo attempt sin importar cuantas veces el
+// estudiante recargue o reingrese. Se llama desde el final de cada ruta: nivel1
+// (recomputeRouteAndPersist, arriba, cubre ENGLISH), steps2 (mas abajo en este mismo
+// archivo), y oet_writing (submit-writing/index.ts -- DUPLICADA alli, mantener
+// sincronizada).
+async function checkAndMarkAttemptComplete(supabase, attemptId, knownAssignedRoute) {
+let assignedRoute = knownAssignedRoute;
+if (assignedRoute === undefined) {
+const { data: unlock, error: unlockError } = await supabase
+.from("unlock_state")
+.select("assigned_route")
+.eq("attempt_id", attemptId)
+.maybeSingle();
+if (unlockError) {
+console.error("checkAndMarkAttemptComplete: error leyendo unlock_state", unlockError);
+return;
+}
+assignedRoute = unlock ? unlock.assigned_route : null;
+}
+if (!assignedRoute) return; // Nivel 1 todavia no termino -- nada que cerrar.
+
+const { data: subScores, error: subScoresError } = await supabase
+.from("sub_scores")
+.select("skill")
+.eq("attempt_id", attemptId);
+if (subScoresError) {
+console.error("checkAndMarkAttemptComplete: error leyendo sub_scores", subScoresError);
+return;
+}
+const skillsPresent = new Set((subScores || []).map((s) => s.skill));
+
+let fullJourneyComplete = false;
+if (assignedRoute === "OET") {
+fullJourneyComplete =
+skillsPresent.has("oet_listening") && skillsPresent.has("oet_reading") && skillsPresent.has("oet_writing");
+} else if (assignedRoute === "STEPS2") {
+fullJourneyComplete = skillsPresent.has("steps2_reading");
+} else {
+fullJourneyComplete = true; // ENGLISH: Nivel 1 completo ya es todo el recorrido.
+}
+if (!fullJourneyComplete) return;
+
 const { error: attemptError } = await supabase
 .from("attempts")
 .update({ status: "completed", completed_at: new Date().toISOString() })
 .eq("id", attemptId)
 .neq("status", "completed");
-
 if (attemptError) {
-console.error("submit-response: error marcando attempt completed", attemptError);
-// No cortamos la respuesta por esto -- la ruta ya quedo guardada, que es lo que
-// necesita el router. Se puede reintentar/corregir a mano si hace falta.
+console.error("checkAndMarkAttemptComplete: error marcando attempt completed", attemptError);
+// No cortamos la respuesta por esto -- el router (get-unlock-state) sigue
+// funcionando igual de bien con status in_progress. Se puede reintentar/corregir a
+// mano si hace falta.
 }
-}
-
-return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
 }
 
 Deno.serve(async (req) => {
@@ -423,6 +488,10 @@ return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
 // No se llama a recomputeRouteAndPersist aca -- la ruta del Nivel 1 no depende de
 // steps2_reading (ver comentario v10 arriba). get-unlock-state usa la presencia de
 // este sub_score para saber que STEP CK 2 ya se rindio y mandar a speaking.html.
+// STEP CK 2 es el ultimo modulo de la ruta STEPS2 -- si ya esta, el recorrido
+// completo termino (v12, pedido de Diana 10/08/2026, ver checkAndMarkAttemptComplete
+// mas arriba).
+await checkAndMarkAttemptComplete(supabase, attemptId);
 } else if (skill && (question.module === "oet_listening" || question.module === "oet_reading")) {
 const totalQuestions = moduleQuestionIds.length;
 const percent = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
