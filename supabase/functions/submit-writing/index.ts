@@ -517,19 +517,68 @@ async function recomputeRouteAndPersist(supabase, attemptId) {
     return { error: "Error interno. Intenta de nuevo en un momento." };
   }
 
+  // v12 (10/08/2026, pedido de Diana): ya NO marcamos completed aca con solo
+  // nivel1Complete -- ver checkAndMarkAttemptComplete() mas abajo (DUPLICADA en
+  // submit-response/index.ts, mantener sincronizada) para el porque completo.
   if (nivel1Complete) {
-    const { error: attemptError } = await supabase
-      .from("attempts")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
-      .eq("id", attemptId)
-      .neq("status", "completed");
-
-    if (attemptError) {
-      console.error("submit-writing: error marcando attempt completed", attemptError);
-    }
+    await checkAndMarkAttemptComplete(supabase, attemptId, assignedRoute);
   }
 
   return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
+}
+
+// Marca attempts.status = 'completed' solo cuando el estudiante ya no tiene NINGUN
+// modulo pendiente segun la ruta que le toco -- no solo Nivel 1. DUPLICADA en
+// submit-response/index.ts (ver el comentario largo alli para el porque completo del
+// bug real que esto corrige, reportado como "me llevo a grammar"). Mantener
+// sincronizadas. Se llama desde el final de cada ruta: nivel1 (recomputeRouteAndPersist,
+// arriba, cubre ENGLISH), steps2 (submit-response/index.ts), y oet_writing (mas abajo
+// en este mismo archivo).
+async function checkAndMarkAttemptComplete(supabase, attemptId, knownAssignedRoute) {
+  let assignedRoute = knownAssignedRoute;
+  if (assignedRoute === undefined) {
+    const { data: unlock, error: unlockError } = await supabase
+      .from("unlock_state")
+      .select("assigned_route")
+      .eq("attempt_id", attemptId)
+      .maybeSingle();
+    if (unlockError) {
+      console.error("checkAndMarkAttemptComplete: error leyendo unlock_state", unlockError);
+      return;
+    }
+    assignedRoute = unlock ? unlock.assigned_route : null;
+  }
+  if (!assignedRoute) return;
+
+  const { data: subScores, error: subScoresError } = await supabase
+    .from("sub_scores")
+    .select("skill")
+    .eq("attempt_id", attemptId);
+  if (subScoresError) {
+    console.error("checkAndMarkAttemptComplete: error leyendo sub_scores", subScoresError);
+    return;
+  }
+  const skillsPresent = new Set((subScores || []).map((s) => s.skill));
+
+  let fullJourneyComplete = false;
+  if (assignedRoute === "OET") {
+    fullJourneyComplete =
+      skillsPresent.has("oet_listening") && skillsPresent.has("oet_reading") && skillsPresent.has("oet_writing");
+  } else if (assignedRoute === "STEPS2") {
+    fullJourneyComplete = skillsPresent.has("steps2_reading");
+  } else {
+    fullJourneyComplete = true;
+  }
+  if (!fullJourneyComplete) return;
+
+  const { error: attemptError } = await supabase
+    .from("attempts")
+    .update({ status: "completed", completed_at: new Date().toISOString() })
+    .eq("id", attemptId)
+    .neq("status", "completed");
+  if (attemptError) {
+    console.error("checkAndMarkAttemptComplete: error marcando attempt completed", attemptError);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -737,6 +786,11 @@ Deno.serve(async (req) => {
     if (routeResult && routeResult.error) {
       return json({ error: routeResult.error }, 500);
     }
+  } else if (promptRow.module === "oet_writing") {
+    // oet_writing es el ultimo modulo de la ruta OET (oet_listening -> oet_reading ->
+    // oet_writing) -- si ya esta, el recorrido completo termino (v12, pedido de Diana
+    // 10/08/2026, ver checkAndMarkAttemptComplete arriba).
+    await checkAndMarkAttemptComplete(supabase, attemptId);
   }
 
   return json({ ok: true, module_complete: true, graded: true });
