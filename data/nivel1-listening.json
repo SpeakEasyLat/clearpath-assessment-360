@@ -1,7 +1,8 @@
 {
   "_meta": {
     "module": "nivel1_listening",
-    "version": 2
+    "version": 3,
+    "revisionNote": "v3 (12/08/2026): ajustes de Q9/Q16/Q17 segun informe pedagogico de listening (fiabilidad, patron de actitud, inferencia C1 real)."
   },
   "audios": [
     {
@@ -34,7 +35,7 @@
       "cefr_level": "B1",
       "max_plays": 1,
       "questions": [
-        { "id": "85d5cb32-d5bc-4365-bac3-6e33d4dc3d8c", "position": 9, "answer_format": "multiple_choice", "question_text": "What are the white tablets for?", "options": ["The cough", "An infection", "Helping her sleep"] },
+        { "id": "85d5cb32-d5bc-4365-bac3-6e33d4dc3d8c", "position": 9, "answer_format": "multiple_choice", "question_text": "What are the white tablets, according to the pharmacist?", "options": ["The cough medicine", "The antibiotic", "Helping him sleep"] },
         { "id": "a31c4618-aa40-49e9-a884-ef9d7790f79f", "position": 10, "answer_format": "multiple_choice", "question_text": "How often should he take them?", "options": ["Twice a day", "Every eight hours", "For four days"] },
         { "id": "11b94b06-4c28-4cdb-8463-06dbde0120ec", "position": 11, "answer_format": "multiple_choice", "question_text": "What should he do if he misses a dose?", "options": ["Take two together next time", "Skip the whole day", "Take it when he remembers, unless the next is nearly due"] },
         { "id": "066fc810-af99-4775-98de-46ffc4d0d3e9", "position": 12, "answer_format": "multiple_choice", "question_text": "When should he take the syrup?", "options": ["Every night", "Only if the cough stops him sleeping", "After driving"] }
@@ -49,7 +50,7 @@
         { "id": "2c6c4487-8bea-4ab4-9d51-4dfbf148a059", "position": 13, "answer_format": "multiple_choice", "question_text": "What is the speaker most concerned about?", "options": ["Her breathing has not improved", "The cough has never been explained", "Her mobility"] },
         { "id": "99b0909b-9660-40a6-8107-88f2ef46decf", "position": 14, "answer_format": "multiple_choice", "question_text": "What does he think of the chest X-ray report?", "options": ["He accepts it: it was reported as clear", "He wants a repeat because the first showed a problem", "He doubts it because the image quality was poor"] },
         { "id": "28ac0814-b014-4190-8b97-c0e45be4a27d", "position": 15, "answer_format": "multiple_choice", "question_text": "What does he advise about the Friday discharge?", "options": ["Confirm Friday with the family", "Stop repeating that date for now", "Tell them she will have to stay longer"] },
-        { "id": "8c173b4a-4496-4863-81a5-008ac8f8b6bc", "position": 16, "answer_format": "multiple_choice", "question_text": "Which best describes his attitude?", "options": ["Confident: the diagnosis is settled", "Alarmed: the patient is deteriorating", "Cautious: the picture may be incomplete"] }
+        { "id": "8c173b4a-4496-4863-81a5-008ac8f8b6bc", "position": 16, "answer_format": "multiple_choice", "question_text": "Which best describes his attitude?", "options": ["He believes the case is now fully explained", "He believes the patient's condition is getting worse", "He believes some questions about her condition remain open"] }
       ]
     },
     {
@@ -58,7 +59,7 @@
       "cefr_level": "C1",
       "max_plays": 1,
       "questions": [
-        { "id": "c431b00d-569b-4592-b739-b401572044f6", "position": 17, "answer_format": "multiple_choice", "question_text": "What is her overall position?", "options": ["She is opposed to its use", "She supports AI but warns about how it is adopted", "She believes the figures were manipulated"] },
+        { "id": "c431b00d-569b-4592-b739-b401572044f6", "position": 17, "answer_format": "multiple_choice", "question_text": "According to the speaker, which does she consider the more serious problem with these tools?", "options": ["The gap between accuracy on curated data and real, messy cases", "The cultural risk of treating machine-endorsed decisions as unchallengeable", "Their overall accuracy compared to a human radiologist"] },
         { "id": "989e9a60-015a-4c28-b1ed-77beaf109f2c", "position": 18, "answer_format": "multiple_choice", "question_text": "Why does she question the published figures?", "options": ["They were deliberately manipulated", "They are worse than a general radiologist", "They come from curated data, unlike everyday practice"] },
         { "id": "dfeb0207-fa31-487e-bc2c-7340566ca149", "position": 19, "answer_format": "multiple_choice", "question_text": "What does she mean by saying it fails quietly?", "options": ["The system gives no warning message", "Its errors are less likely to be challenged because the algorithm endorsed them", "The failures are visible and easy to correct"] },
         { "id": "77034c13-4b98-439a-99af-02a53f5bd604", "position": 20, "answer_format": "multiple_choice", "question_text": "What does she want before a department adopts these tools?", "options": ["More validation data", "A ban until performance in real conditions improves", "A clear account of who may disagree with the machine, and what happens to them"] }
