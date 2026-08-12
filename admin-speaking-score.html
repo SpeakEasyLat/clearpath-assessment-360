@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Speaking Assessment — Carga de resultados</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap');
+  :root {
+    --charcoal-dark: #333333;
+    --teal: #7fc8ce;
+    --teal-dark: #4fa8af;
+    --teal-light: #eaf7f8;
+    --gray-100: #faf9f7;
+    --gray-300: #e2e0dc;
+    --gray-600: #767676;
+    --bad: #c62828;
+    --good: #2e7d32;
+    --radius: 14px;
+    --font-heading: 'Quicksand', sans-serif;
+    --font-body: 'Nunito', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    color: var(--charcoal-dark);
+    background: var(--gray-100);
+    margin: 0;
+    padding: 32px 16px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .subtitle { color: var(--gray-600); font-size: 13.5px; margin: 0 0 24px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 18px;
+  }
+  label {
+    display: block;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    margin: 14px 0 6px;
+  }
+  label:first-child { margin-top: 0; }
+  input[type="email"], input[type="password"], input[type="text"], select, textarea {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--charcoal-dark);
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  input[type="number"] {
+    width: 70px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+  }
+  button {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    background: var(--teal-dark);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 24px;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  button:hover { background: var(--charcoal-dark); }
+  button.secondary {
+    background: transparent;
+    color: var(--gray-600);
+    border: 1px solid var(--gray-300);
+    padding: 8px 16px;
+    font-size: 12.5px;
+    margin-top: 0;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .error { color: var(--bad); font-size: 13px; margin-top: 10px; }
+  .success { color: var(--good); font-size: 13px; margin-top: 10px; }
+  .booking-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--gray-300);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background: var(--gray-100);
+  }
+  .booking-row:hover { border-color: var(--teal-dark); }
+  .booking-row .name { font-family: var(--font-heading); font-weight: 700; font-size: 14.5px; }
+  .booking-row .meta { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+  .badge {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff;
+    background: var(--teal-dark);
+    padding: 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .badge.oet { background: #8e6ec9; }
+  .criteria-grid {
+    display: grid;
+    grid-template-columns: 1fr 70px;
+    align-items: center;
+    gap: 4px 12px;
+  }
+  .criteria-grid .crit-label { font-size: 13.5px; padding: 6px 0; }
+  .criteria-group-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--teal-dark);
+    margin: 18px 0 8px;
+  }
+  .criteria-group-title:first-of-type { margin-top: 0; }
+  .hint { font-size: 11.5px; color: var(--gray-600); margin: -2px 0 6px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .empty-state { color: var(--gray-600); font-size: 13.5px; text-align: center; padding: 20px 0; }
+  #app { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Speaking Assessment</h1>
+  <p class="subtitle">Carga del resultado evaluado en vivo. Solo para uso interno de Speak Easy Online.</p>
+
+  <!-- Login -->
+  <div id="login-card" class="card">
+    <label for="login-email">Email</label>
+    <input type="email" id="login-email" autocomplete="username">
+    <label for="login-password">Contraseña</label>
+    <input type="password" id="login-password" autocomplete="current-password">
+    <div id="login-error" class="error" style="display:none;"></div>
+    <button id="login-btn">Iniciar sesión</button>
+  </div>
+
+  <!-- App (post-login) -->
+  <div id="app">
+    <div class="top-bar">
+      <span id="session-email" style="font-size:12.5px; color:var(--gray-600);"></span>
+      <button class="secondary" id="logout-btn">Cerrar sesión</button>
+    </div>
+
+    <div id="list-card" class="card">
+      <h2 style="font-family:var(--font-heading); font-size:15px; margin:0 0 14px;">Reservas pendientes de score</h2>
+      <div id="list-loading" style="font-size:13px; color:var(--gray-600);">Cargando...</div>
+      <div id="list-empty" class="empty-state" style="display:none;">No hay reservas pendientes de score en este momento.</div>
+      <div id="list-error" class="error" style="display:none;"></div>
+      <div id="list-items"></div>
+    </div>
+
+    <div id="form-card" class="card" style="display:none;">
+      <button class="secondary" id="back-btn" style="margin-bottom:14px;">&larr; Volver a la lista</button>
+      <h2 id="form-title" style="font-family:var(--font-heading); font-size:15px; margin:0 0 4px;"></h2>
+      <p id="form-subtitle" style="font-size:12.5px; color:var(--gray-600); margin:0 0 16px;"></p>
+      <div id="form-fields"></div>
+      <div id="form-error" class="error" style="display:none;"></div>
+      <div id="form-success" class="success" style="display:none;"></div>
+      <button id="submit-btn">Guardar resultado</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qqdxmmvhthwcqhgmvyic.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+const SESSION_KEY = 'cp360_admin_speaking_token';
+const EMAIL_KEY = 'cp360_admin_speaking_email';
+
+const LINGUISTIC_CRITERIA = [
+  ['intelligibility', 'Intelligibility'],
+  ['fluency', 'Fluency'],
+  ['appropriateness_of_language', 'Appropriateness of language'],
+  ['resources_of_grammar_and_expression', 'Resources of grammar and expression'],
+];
+const CLINICAL_CRITERIA = [
+  ['relationship_building', 'Relationship building'],
+  ['understanding_patient_perspective', 'Understanding and incorporating the patient\'s perspective'],
+  ['providing_structure', 'Providing structure'],
+  ['information_gathering', 'Information gathering'],
+  ['information_giving', 'Information giving'],
+];
+const CEFR_SUBLEVELS = ['A1.1','A1.2','A2.1','A2.2','B1.1','B1.2','B1.3','B2.1','B2.2','B2.3','C1.1','C1.2'];
+const PRONUNCIATION_GROUPS = [
+  ['A. Vowel Quality & Length', [
+    ['unstressed_vowel_reduction', 'Unstressed vowel reduction (schwa)'],
+    ['fleece_kit_contrast', 'FLEECE vs. KIT contrast'],
+  ]],
+  ['B. Diphthongs', [
+    ['face_price_glide', 'FACE / PRICE glide'],
+    ['goat_mouth_choice_glide', 'GOAT / MOUTH / CHOICE glide'],
+  ]],
+  ['C. R-Colored Vowels & the English /r/', [
+    ['nurse_near_square_vowels', 'NURSE / NEAR / SQUARE vowels'],
+    ['english_r_quality', 'Quality of English /r/'],
+  ]],
+  ['D. Consonants', [
+    ['h_dropped_or_replaced', '/h/ dropped or replaced with a guttural sound'],
+    ['b_v_distinction', '/b/-/v/ distinction (betacismo)'],
+    ['th_voiceless_voiced', 'Voiceless & voiced TH (/θ/, /ð/)'],
+    ['sh_ch_j_zh_distinctions', '/ʃ/, /tʃ/, /dʒ/, /ʒ/ distinctions'],
+    ['initial_s_clusters', 'Initial /s/-clusters (no added vowel)'],
+    ['past_tense_ed_endings', 'Regular past-tense -ed endings'],
+  ]],
+  ['E. Stress, Rhythm & Intonation', [
+    ['word_stress_cognates', 'Word stress on English-Spanish cognates'],
+    ['sentence_rhythm', 'Sentence rhythm (stress-timed)'],
+    ['linking_across_words', 'Linking across word boundaries'],
+  ]],
+  ['F. Reading Fluency & Comprehension', [
+    ['pausing_at_punctuation', 'Pausing at punctuation / paragraph breaks'],
+    ['self_correction', 'Self-correction when stumbling'],
+  ]],
+];
+
+let selectedBooking = null;
+
+function el(id) { return document.getElementById(id); }
+
+function getToken() { return sessionStorage.getItem(SESSION_KEY); }
+
+async function apiCall(path, body) {
+  const token = getToken();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(EMAIL_KEY);
+    showLogin('Tu sesión expiró. Volvé a iniciar sesión.');
+    throw new Error('401');
+  }
+  if (!res.ok) {
+    throw new Error(data.error || `Error ${res.status}`);
+  }
+  return data;
+}
+
+function showLogin(message) {
+  el('app').style.display = 'none';
+  el('login-card').style.display = 'block';
+  if (message) {
+    el('login-error').textContent = message;
+    el('login-error').style.display = 'block';
+  }
+}
+
+function showApp() {
+  el('login-card').style.display = 'none';
+  el('app').style.display = 'block';
+  el('session-email').textContent = sessionStorage.getItem(EMAIL_KEY) || '';
+  loadPending();
+}
+
+el('login-btn').addEventListener('click', async () => {
+  const email = el('login-email').value.trim();
+  const password = el('login-password').value;
+  el('login-error').style.display = 'none';
+  if (!email || !password) {
+    el('login-error').textContent = 'Completá email y contraseña.';
+    el('login-error').style.display = 'block';
+    return;
+  }
+  el('login-btn').disabled = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.access_token) {
+      throw new Error(data.error_description || data.msg || 'Credenciales inválidas.');
+    }
+    sessionStorage.setItem(SESSION_KEY, data.access_token);
+    sessionStorage.setItem(EMAIL_KEY, email);
+    showApp();
+  } catch (err) {
+    el('login-error').textContent = err.message || 'No se pudo iniciar sesión.';
+    el('login-error').style.display = 'block';
+  } finally {
+    el('login-btn').disabled = false;
+  }
+});
+
+el('logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(EMAIL_KEY);
+  showLogin();
+});
+
+async function loadPending() {
+  el('form-card').style.display = 'none';
+  el('list-card').style.display = 'block';
+  el('list-loading').style.display = 'block';
+  el('list-empty').style.display = 'none';
+  el('list-error').style.display = 'none';
+  el('list-items').innerHTML = '';
+  try {
+    const data = await apiCall('list-pending-speaking-scores');
+    el('list-loading').style.display = 'none';
+    const bookings = data.bookings || [];
+    if (bookings.length === 0) {
+      el('list-empty').style.display = 'block';
+      return;
+    }
+    bookings.forEach((b) => {
+      const row = document.createElement('div');
+      row.className = 'booking-row';
+      const dateStr = b.scheduled_at
+        ? new Date(b.scheduled_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
+        : 'sin fecha agendada';
+      row.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(b.student_name || 'Sin nombre')}</div>
+          <div class="meta">${escapeHtml(b.student_email || '')} · ${dateStr}</div>
+        </div>
+        <span class="badge ${b.assessment_type === 'OET' ? 'oet' : ''}">${escapeHtml(b.assessment_type)}</span>
+      `;
+      row.addEventListener('click', () => openForm(b));
+      el('list-items').appendChild(row);
+    });
+  } catch (err) {
+    if (err.message === '401') return;
+    el('list-loading').style.display = 'none';
+    el('list-error').textContent = err.message || 'No se pudo cargar la lista.';
+    el('list-error').style.display = 'block';
+  }
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function numberInput(id, min, max) {
+  return `<input type="number" id="${id}" min="${min}" max="${max}" step="1">`;
+}
+
+function openForm(booking) {
+  selectedBooking = booking;
+  el('list-card').style.display = 'none';
+  el('form-card').style.display = 'block';
+  el('form-error').style.display = 'none';
+  el('form-success').style.display = 'none';
+  el('form-title').textContent = `${booking.student_name || 'Sin nombre'} — ${booking.assessment_type}`;
+  el('form-subtitle').textContent = booking.student_email || '';
+
+  const fields = el('form-fields');
+  if (booking.assessment_type === 'OET') {
+    fields.innerHTML = `
+      <div class="criteria-group-title">Linguistic criteria (0-6)</div>
+      <div class="criteria-grid">
+        ${LINGUISTIC_CRITERIA.map(([key, label]) => `
+          <div class="crit-label">${label}</div>
+          <div>${numberInput('crit-' + key, 0, 6)}</div>
+        `).join('')}
+      </div>
+      <div class="criteria-group-title">Clinical communication criteria (0-3)</div>
+      <div class="criteria-grid">
+        ${CLINICAL_CRITERIA.map(([key, label]) => `
+          <div class="crit-label">${label}</div>
+          <div>${numberInput('crit-' + key, 0, 3)}</div>
+        `).join('')}
+      </div>
+      <label for="overall-grade">Grade / nivel general</label>
+      <input type="text" id="overall-grade" placeholder="ej. B">
+      <label for="comment">Comentario</label>
+      <textarea id="comment" placeholder="Observaciones generales de la sesión..."></textarea>
+    `;
+  } else {
+    fields.innerHTML = `
+      <label for="cefr-sublevel">Nivel CEFR (sublevel)</label>
+      <select id="cefr-sublevel">
+        <option value="">Elegir...</option>
+        ${CEFR_SUBLEVELS.map((lvl) => `<option value="${lvl}">${lvl}</option>`).join('')}
+      </select>
+      ${PRONUNCIATION_GROUPS.map(([groupTitle, items]) => `
+        <div class="criteria-group-title">${escapeHtml(groupTitle)}</div>
+        <div class="criteria-grid">
+          ${items.map(([key, label]) => `
+            <div class="crit-label">${escapeHtml(label)}</div>
+            <div>${numberInput('pron-' + key, 1, 5)}</div>
+          `).join('')}
+        </div>
+      `).join('')}
+      <p class="hint">Escala: 1 = errores frecuentes que afectan la comprensión · 5 = precisión nativa.</p>
+      <label for="pron-notes">Overall impression &amp; recommended focus</label>
+      <textarea id="pron-notes" placeholder="Impresión general y foco recomendado para próximas clases..."></textarea>
+      <label for="comment">Comentario general</label>
+      <textarea id="comment" placeholder="Observaciones generales de la sesión..."></textarea>
+    `;
+  }
+}
+
+el('back-btn').addEventListener('click', () => loadPending());
+
+el('submit-btn').addEventListener('click', async () => {
+  if (!selectedBooking) return;
+  el('form-error').style.display = 'none';
+  el('form-success').style.display = 'none';
+
+  let evaluatorScore;
+  try {
+    if (selectedBooking.assessment_type === 'OET') {
+      const linguistic = {};
+      for (const [key] of LINGUISTIC_CRITERIA) {
+        linguistic[key] = readInt('crit-' + key, 0, 6);
+      }
+      const clinical_communication = {};
+      for (const [key] of CLINICAL_CRITERIA) {
+        clinical_communication[key] = readInt('crit-' + key, 0, 3);
+      }
+      const overallGrade = el('overall-grade').value.trim();
+      const comment = el('comment').value.trim();
+      if (!overallGrade) throw new Error('Falta el grade / nivel general.');
+      if (!comment) throw new Error('Falta el comentario.');
+      evaluatorScore = { type: 'OET', linguistic, clinical_communication, overall_grade: overallGrade, comment };
+    } else {
+      const cefrSublevel = el('cefr-sublevel').value;
+      if (!cefrSublevel) throw new Error('Elegí un nivel CEFR.');
+      const pronunciation_checklist = {};
+      for (const [, items] of PRONUNCIATION_GROUPS) {
+        for (const [key] of items) {
+          pronunciation_checklist[key] = readInt('pron-' + key, 1, 5);
+        }
+      }
+      const pronunciationNotes = el('pron-notes').value.trim();
+      const comment = el('comment').value.trim();
+      if (!comment) throw new Error('Falta el comentario general.');
+      evaluatorScore = {
+        type: 'English',
+        cefr_sublevel: cefrSublevel,
+        pronunciation_checklist,
+        pronunciation_notes: pronunciationNotes,
+        comment,
+      };
+    }
+  } catch (err) {
+    el('form-error').textContent = err.message;
+    el('form-error').style.display = 'block';
+    return;
+  }
+
+  el('submit-btn').disabled = true;
+  try {
+    await apiCall('submit-speaking-score', { booking_id: selectedBooking.id, evaluator_score: evaluatorScore });
+    el('form-success').textContent = 'Guardado. Si con esto el assessment queda completo, el reporte sale solo por correo.';
+    el('form-success').style.display = 'block';
+    setTimeout(() => loadPending(), 1500);
+  } catch (err) {
+    if (err.message === '401') return;
+    el('form-error').textContent = err.message || 'No se pudo guardar.';
+    el('form-error').style.display = 'block';
+  } finally {
+    el('submit-btn').disabled = false;
+  }
+});
+
+function readInt(id, min, max) {
+  const raw = el(id).value;
+  const n = parseInt(raw, 10);
+  if (raw === '' || isNaN(n) || n < min || n > max) {
+    const labelEl = document.querySelector(`label[for="${id}"]`);
+    throw new Error(`Falta o es inválido: ${id.replace(/^(crit|pron)-/, '').replace(/_/g, ' ')} (debe ser ${min}-${max}).`);
+  }
+  return n;
+}
+
+// Sesión ya iniciada en este tab -> saltar login.
+if (getToken()) {
+  showApp();
+}
+</script>
+</body>
+</html>
