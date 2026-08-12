@@ -1,0 +1,268 @@
+// Edge Function: submit-speaking-score
+//
+// Le permite a Diana cargar el resultado del Speaking Assessment (evaluado en vivo)
+// sin tocar Supabase Studio a mano. Antes de esta función, evaluator_score en
+// speaking_assessment_bookings solo podía llenarse editando la fila directamente en
+// el dashboard de Supabase -- lo cual además significaba que el reporte de FULL_360
+// (que depende de evaluator_score, ver generate-report) nunca se generaba solo.
+//
+// Seguridad: esta función exige un token de sesión de Supabase Auth real (no la anon
+// key pública del sitio, que cualquiera puede ver en el código fuente del frontend).
+// Se valida llamando a /auth/v1/user con el token recibido -- la anon key no tiene
+// "sub" (no representa a ningún usuario), así que si alguien intenta usarla acá en
+// vez de un login real, la validación falla. Solo existe una cuenta de Auth en este
+// proyecto (la de Diana), creada a mano una única vez.
+//
+// Al guardar el evaluator_score, dispara generate-report de forma fire-and-forget
+// para ese attempt -- si con este dato ya queda todo completo (Nivel 1 + OET/STEPS2
+// si corresponde + este evaluator_score), el reporte sale solo. Si generate-report
+// decide que todavía falta algo, no pasa nada -- es idempotente y seguro llamarla de
+// más, y nunca bloquea ni demora la respuesta de esta función.
+//
+// Los dos schemas posibles de evaluator_score, según assessment_type del booking
+// (ver criterios: OET Speaking Guide Part 1 [Linguistics] y Part 2 [Clinical
+// Communication], y ORAL_ENGLISH_ASSESSMENT / Reading & Pronunciation Diagnostic
+// Checklist para English):
+//
+//  OET (médico):
+//   {
+//     type: "OET",
+//     linguistic: { intelligibility, fluency, appropriateness_of_language,
+//                   resources_of_grammar_and_expression },       // cada uno 0-6
+//     clinical_communication: { relationship_building,
+//                   understanding_patient_perspective, providing_structure,
+//                   information_gathering, information_giving }, // cada uno 0-3
+//     overall_grade: string,   // asignado por Diana a criterio propio, NO se calcula acá
+//                              // (no hay una conversión oficial confiable disponible)
+//     comment: string
+//   }
+//
+//  English (no médico):
+//   {
+//     type: "English",
+//     cefr_sublevel: string,      // uno de la escalera A1.1..C1.2 (ORAL_ENGLISH_ASSESSMENT)
+//     cefr_estimate: string,      // se deriva automáticamente acá (se recorta el sufijo, ej B2.2 -> B2)
+//     pronunciation_checklist: { ...17 ítems 1-5, ver Reading & Pronunciation Diagnostic Checklist },
+//     pronunciation_notes: string,  // "Overall Impression & Recommended Focus" del checklist
+//     comment: string
+//   }
+//
+// v1 (12/08/2026, pedido de Diana).
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+// Escalera de sublevels usada en ORAL_ENGLISH_ASSESSMENT (guía del track English).
+const CEFR_SUBLEVELS = [
+  "A1.1", "A1.2",
+  "A2.1", "A2.2",
+  "B1.1", "B1.2", "B1.3",
+  "B2.1", "B2.2", "B2.3",
+  "C1.1", "C1.2",
+];
+
+// Los 4 criterios lingüísticos oficiales de OET Speaking (0-6 cada uno).
+const LINGUISTIC_KEYS = [
+  "intelligibility",
+  "fluency",
+  "appropriateness_of_language",
+  "resources_of_grammar_and_expression",
+];
+
+// Los 5 criterios de comunicación clínica oficiales de OET Speaking (0-3 cada uno).
+const CLINICAL_KEYS = [
+  "relationship_building",
+  "understanding_patient_perspective",
+  "providing_structure",
+  "information_gathering",
+  "information_giving",
+];
+
+// Los 17 ítems del Reading & Pronunciation Diagnostic Checklist (1-5 cada uno).
+const PRONUNCIATION_KEYS = [
+  "unstressed_vowel_reduction",
+  "fleece_kit_contrast",
+  "face_price_glide",
+  "goat_mouth_choice_glide",
+  "nurse_near_square_vowels",
+  "english_r_quality",
+  "h_dropped_or_replaced",
+  "b_v_distinction",
+  "th_voiceless_voiced",
+  "sh_ch_j_zh_distinctions",
+  "initial_s_clusters",
+  "past_tense_ed_endings",
+  "word_stress_cognates",
+  "sentence_rhythm",
+  "linking_across_words",
+  "pausing_at_punctuation",
+  "self_correction",
+];
+
+function isIntInRange(v: unknown, min: number, max: number): v is number {
+  return typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
+}
+
+// Deriva el nivel CEFR "simple" (A1..C1) a partir de un sublevel (ej. "B2.2" -> "B2").
+// Es una transformación textual directa, no un juicio pedagógico -- el sublevel real
+// lo elige Diana.
+function simplifyCefr(sublevel: string): string {
+  return sublevel.split(".")[0];
+}
+
+function validateEvaluatorScore(assessmentType: string, score: any): string | null {
+  if (!score || typeof score !== "object") return "Falta evaluator_score.";
+  if (score.type !== assessmentType) {
+    return `evaluator_score.type ("${score.type}") no coincide con el tipo de la reserva ("${assessmentType}").`;
+  }
+  if (typeof score.comment !== "string" || !score.comment.trim()) {
+    return "Falta el comentario general.";
+  }
+
+  if (assessmentType === "OET") {
+    const linguistic = score.linguistic;
+    if (!linguistic || typeof linguistic !== "object") return "Falta el desglose de criterios lingüísticos.";
+    for (const key of LINGUISTIC_KEYS) {
+      if (!isIntInRange(linguistic[key], 0, 6)) {
+        return `Criterio lingüístico inválido: ${key} (debe ser un entero entre 0 y 6).`;
+      }
+    }
+    const clinical = score.clinical_communication;
+    if (!clinical || typeof clinical !== "object") return "Falta el desglose de comunicación clínica.";
+    for (const key of CLINICAL_KEYS) {
+      if (!isIntInRange(clinical[key], 0, 3)) {
+        return `Criterio de comunicación clínica inválido: ${key} (debe ser un entero entre 0 y 3).`;
+      }
+    }
+    if (typeof score.overall_grade !== "string" || !score.overall_grade.trim()) {
+      return "Falta el grade/nivel general.";
+    }
+    return null;
+  }
+
+  if (assessmentType === "English") {
+    if (typeof score.cefr_sublevel !== "string" || !CEFR_SUBLEVELS.includes(score.cefr_sublevel)) {
+      return `cefr_sublevel inválido: "${score.cefr_sublevel}".`;
+    }
+    const checklist = score.pronunciation_checklist;
+    if (!checklist || typeof checklist !== "object") return "Falta el checklist de pronunciación.";
+    for (const key of PRONUNCIATION_KEYS) {
+      if (!isIntInRange(checklist[key], 1, 5)) {
+        return `Ítem de pronunciación inválido: ${key} (debe ser un entero entre 1 y 5).`;
+      }
+    }
+    return null;
+  }
+
+  return `Tipo de assessment desconocido: ${assessmentType}.`;
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Método no permitido." }, 405);
+  }
+
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) {
+    return json({ error: "Falta autenticación." }, 401);
+  }
+
+  const anonClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+  );
+  const { data: userData, error: userError } = await anonClient.auth.getUser(token);
+  if (userError || !userData?.user) {
+    return json({ error: "Sesión inválida o expirada. Volvé a iniciar sesión." }, 401);
+  }
+
+  let body: { booking_id?: unknown; evaluator_score?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Body inválido." }, 400);
+  }
+
+  const bookingId = typeof body.booking_id === "string" ? body.booking_id.trim() : "";
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!bookingId || !UUID_RE.test(bookingId)) {
+    return json({ error: "Falta o es inválido booking_id." }, 400);
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const { data: booking, error: bookingError } = await supabase
+    .from("speaking_assessment_bookings")
+    .select("id, attempt_id, assessment_type, evaluator_score")
+    .eq("id", bookingId)
+    .maybeSingle();
+
+  if (bookingError) {
+    console.error("submit-speaking-score: error buscando booking", bookingError);
+    return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
+  }
+  if (!booking) {
+    return json({ error: "No se encontró esa reserva." }, 404);
+  }
+  if (booking.evaluator_score) {
+    return json({ error: "Esta reserva ya tiene un score cargado." }, 409);
+  }
+
+  let evaluatorScore = body.evaluator_score as any;
+  const validationError = validateEvaluatorScore(booking.assessment_type, evaluatorScore);
+  if (validationError) {
+    return json({ error: validationError }, 400);
+  }
+
+  if (evaluatorScore.type === "English") {
+    // cefr_estimate siempre se deriva acá, nunca se confía en lo que mande el frontend.
+    evaluatorScore = { ...evaluatorScore, cefr_estimate: simplifyCefr(evaluatorScore.cefr_sublevel) };
+  }
+
+  const { error: updateError } = await supabase
+    .from("speaking_assessment_bookings")
+    .update({ evaluator_score: evaluatorScore, status: "completed" })
+    .eq("id", bookingId);
+
+  if (updateError) {
+    console.error("submit-speaking-score: error guardando evaluator_score", updateError);
+    return json({ error: "Error interno guardando el score." }, 500);
+  }
+
+  // Fire-and-forget: si con este dato el reporte ya queda completo, generate-report lo
+  // manda solo. No esperamos su respuesta ni fallamos esta llamada si generate-report
+  // tiene un problema -- el score ya quedó guardado, que es lo importante acá.
+  fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+      "apikey": Deno.env.get("SUPABASE_ANON_KEY")!,
+    },
+    body: JSON.stringify({ attempt_id: booking.attempt_id }),
+  }).catch((err) => {
+    console.error("submit-speaking-score: no se pudo disparar generate-report", err);
+  });
+
+  return json({ ok: true });
+});
