@@ -1,0 +1,802 @@
+// Edge Function: generate-report
+//
+// Genera el "reporte de resultados" (PDF) de un attempt y lo manda por correo a Diana
+// (info@speakeasy.lat) vía Resend. NO se lo manda al estudiante -- es Diana quien
+// decide, después, si se lo reenvía ella misma.
+//
+// Se llama de dos formas:
+//   1. Automáticamente, fire-and-forget, desde submit-response, submit-writing y
+//      submit-speaking-score, cada vez que se guarda un sub_score o un evaluator_score
+//      que podría completar el assessment. Nunca bloquea ni demora la respuesta al
+//      estudiante (ni a Diana, en el caso de submit-speaking-score).
+//   2. Manualmente, con POST { attempt_id: "..." } directo a esta función -- útil para
+//      pruebas o para regenerar un reporte a pedido.
+//
+// "Completo" significa:
+//   - NIVEL1_ONLY: existen los 4 sub_scores de Nivel 1 (grammar, listening, writing,
+//     reading). No hay Speaking que esperar -- el track nunca pasa por ahí en cuanto a
+//     scoring (sí agenda Speaking, pero eso no bloquea el reporte).
+//   - FULL_360: además de los 4 de Nivel 1, si assigned_route es STEPS2 u OET hacen
+//     falta también esos sub_scores adicionales (steps2_reading, o
+//     oet_listening+oet_reading+oet_writing). Y en cualquier caso de FULL_360, hace
+//     falta que speaking_assessment_bookings tenga un evaluator_score cargado (Diana
+//     lo carga desde admin-speaking-score.html después de la sesión en vivo) -- si no
+//     está, el reporte espera.
+//
+// report_sent_at (columna en attempts) evita reenviar el mismo reporte cada vez que se
+// dispara esta función de más (es idempotente por diseño, justamente para poder
+// llamarla "por las dudas" desde varios lugares sin preocuparse por duplicados).
+//
+// Naming visible en el reporte (nunca se menciona "ClearPath", nombre interno del
+// proyecto):
+//   - NIVEL1_ONLY -> "Assessment Speak Easy"
+//   - FULL_360    -> "Assessment 360"
+//
+// v3 (12/08/2026, pedido de Diana): antes, el bloque de Speaking Assessment solo
+// mostraba evaluator_score.cefr_estimate + comment, formato genérico que no reflejaba
+// los criterios reales con los que Diana evalúa. Ahora entiende dos schemas distintos
+// según assessment_type -- ver buildSpeakingBlock más abajo:
+//   - OET: desglosa los 9 criterios oficiales de OET Speaking (4 lingüísticos 0-6 +
+//     5 de comunicación clínica 0-3) como filas individuales, más una fila de
+//     resultado general.
+//   - English: muestra el sublevel CEFR asignado y, si el checklist de pronunciación
+//     marcó ítems débiles (rating <=2), los lista como flag en vez de volcar las 17
+//     filas del checklist completo en el PDF (esas quedan guardadas en la base para
+//     consulta, pero no saturan el reporte).
+// Además, esta versión se agrega por primera vez al repo (antes solo vivía desplegada
+// en Supabase, sin respaldo en git).
+//
+// v2 (10/08/2026, reportado por Diana): el PDF generado por PDFShift podia cortar una
+// tarjeta de resultado (.skill-row) justo por la mitad entre dos paginas -- se veia
+// como una banda oscura horizontal atravesando la tarjeta (el limite de pagina del
+// motor de impresion de Chromium, no un bug del HTML en si). Se agrego
+// page-break-inside/break-inside: avoid a .skill-row, .header, .overall-box y .footer,
+// y page-break-after/break-after: avoid a .section-title (para que el titulo de una
+// seccion no quede solo al final de una pagina, separado de su primera tarjeta).
+//
+// v1 (10/08/2026, pedido de Diana).
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+const NOTIFY_EMAIL = "info@speakeasy.lat";
+const NOTIFY_FROM = "ClearPath Assessment <notificaciones@speakeasy.lat>";
+
+// --- Branding (mismos tokens que css/style.css) --------------------------------
+const LOGO_GENERIC_URL = "https://assessment.speakeasy.lat/assets/logo-speakeasy.png";
+const LOGO_CLEARPATH_URL = "https://assessment.speakeasy.lat/assets/logo-speakeasy-clearpath.png";
+
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function skillRowHtml(s: {
+  name: string;
+  raw: number | null;
+  max: number | null;
+  cefr: string | null;
+  comment: string;
+  flag?: string | null;
+}): string {
+  const scoreHtml =
+    s.raw !== null && s.max !== null
+      ? `<span class="skill-score">${s.raw}/${s.max}</span>`
+      : "";
+  const cefrHtml = s.cefr ? `<span class="skill-cefr">${escapeHtml(s.cefr)}</span>` : "";
+  const flagHtml = s.flag ? `<div class="skill-flag">${escapeHtml(s.flag)}</div>` : "";
+  return `
+    <div class="skill-row">
+      <div class="skill-row-header">
+        <span class="skill-name">${escapeHtml(s.name)}</span>
+        ${scoreHtml}
+        ${cefrHtml}
+      </div>
+      <p class="skill-comment">${escapeHtml(s.comment)}</p>
+      ${flagHtml}
+    </div>`;
+}
+
+function buildReportHtml(params: {
+  studentName: string;
+  assessmentLabel: string; // "Assessment Speak Easy" | "Assessment 360"
+  logoUrl: string;
+  reportDate: string;
+  overallCefr: string | null;
+  overallNote: string;
+  blocks: Array<{
+    title: string;
+    skills: Array<{
+      name: string;
+      raw: number | null;
+      max: number | null;
+      cefr: string | null;
+      comment: string;
+      flag?: string | null;
+    }>;
+  }>;
+}): string {
+  const reportTitle = `Reporte de resultados — ${params.assessmentLabel}`;
+  const blocksHtml = params.blocks
+    .map(
+      (block) => `
+    <div class="section-title">${escapeHtml(block.title)}</div>
+    ${block.skills.map(skillRowHtml).join("\n")}
+  `,
+    )
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap');
+
+  :root {
+    --charcoal-dark: #333333;
+    --teal: #7fc8ce;
+    --teal-dark: #4fa8af;
+    --teal-light: #eaf7f8;
+    --gray-100: #faf9f7;
+    --gray-300: #e2e0dc;
+    --gray-600: #767676;
+    --bad: #c62828;
+    --radius: 14px;
+    --font-heading: 'Quicksand', sans-serif;
+    --font-body: 'Nunito', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    color: var(--charcoal-dark);
+    background: #ffffff;
+    margin: 0;
+    padding: 36px 44px;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--teal);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .header img { height: 52px; }
+  .header .meta { text-align: right; font-size: 12.5px; color: var(--gray-600); }
+  .header .meta strong {
+    color: var(--charcoal-dark);
+    font-family: var(--font-heading);
+    font-size: 14px;
+  }
+  h1 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--charcoal-dark);
+    margin: 0 0 4px;
+  }
+  .subtitle { color: var(--gray-600); font-size: 13px; margin: 0 0 20px; }
+  .overall-box {
+    background: var(--teal-light);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 26px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .overall-cefr {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 40px;
+    color: var(--teal-dark);
+    line-height: 1;
+  }
+  .overall-text { font-size: 13px; color: var(--charcoal-dark); }
+  .overall-text .label {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--charcoal-dark);
+    display: block;
+    margin-bottom: 3px;
+  }
+  .section-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--charcoal-dark);
+    margin: 22px 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    /* Evita que el titulo de la seccion quede solo al final de una pagina, separado
+       de la primera tarjeta que le sigue. */
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  .section-title:first-of-type { margin-top: 0; }
+  .skill-row {
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    background: var(--gray-100);
+    /* Evita que PDFShift corte la tarjeta a la mitad entre dos paginas del PDF (eso
+       se veia como una banda oscura horizontal atravesando la tarjeta -- el limite
+       de pagina del PDF, no un bug visual del HTML). page-break-inside es la
+       propiedad que realmente respeta el motor de impresion de Chromium/PDFShift;
+       break-inside es el equivalente moderno, se agregan los dos por compatibilidad. */
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .skill-row-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .skill-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--charcoal-dark);
+    flex: 1;
+  }
+  .skill-score { font-size: 13px; color: var(--gray-600); font-weight: 600; }
+  .skill-cefr {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    background: var(--teal-dark);
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+  .skill-comment { font-size: 12.5px; line-height: 1.5; color: var(--charcoal-dark); margin: 0; }
+  .skill-flag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--bad);
+    background: #fdecea;
+    border: 1px solid var(--bad);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .footer {
+    margin-top: 28px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gray-300);
+    font-size: 10.5px;
+    color: var(--gray-600);
+    text-align: center;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img src="${params.logoUrl}" alt="Speak Easy">
+    <div class="meta">
+      <strong>${escapeHtml(params.studentName)}</strong><br>
+      ${escapeHtml(params.assessmentLabel)}<br>
+      Fecha: ${escapeHtml(params.reportDate)}
+    </div>
+  </div>
+
+  <h1>${escapeHtml(reportTitle)}</h1>
+  <p class="subtitle">Documento generado automáticamente a partir de los resultados guardados en la plataforma.</p>
+
+  <div class="overall-box">
+    <div class="overall-cefr">${params.overallCefr ? escapeHtml(params.overallCefr) : "—"}</div>
+    <div class="overall-text">
+      <span class="label">Nivel CEFR general</span>
+      ${escapeHtml(params.overallNote)}
+    </div>
+  </div>
+
+  ${blocksHtml}
+
+  <div class="footer">
+    ${escapeHtml(params.assessmentLabel)} · Speak Easy Online · Reporte generado automáticamente
+  </div>
+</body>
+</html>`;
+}
+
+// --- Comentarios cualitativos por skill, generados a partir de lo ya calculado -----
+// (no se vuelve a llamar a la IA de evaluación -- solo se resume lo que ya está en
+// band_detail / ai_rubric_scores).
+
+const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
+
+function skillCommentFromBandDetail(skillName: string, raw: number, max: number, cefr: string | null, bandDetail: any): string {
+  if (!cefr) {
+    return `No se pudo determinar un nivel CEFR a partir de las respuestas guardadas en ${skillName}.`;
+  }
+  if (bandDetail && bandDetail.perBand) {
+    const inconsistent = bandDetail.pattern_inconsistent === true;
+    const base = `Alcanzó nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
+    return inconsistent
+      ? `${base} El patrón de respuestas mostró alguna inconsistencia entre bandas -- revisar el detalle antes de confirmar el resultado.`
+      : `${base} Desempeño consistente en todas las bandas evaluadas hasta ese nivel.`;
+  }
+  return `Alcanzó nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
+}
+
+function writingCommentFromRubric(promptTitle: string, rubric: any, cefr: string | null): string {
+  if (!rubric) {
+    return `Sin calificación disponible para "${promptTitle}".`;
+  }
+  if (rubric.grading_failed) {
+    return `No se pudo calificar automáticamente "${promptTitle}" (falla técnica al momento de la corrección). Requiere revisión manual.`;
+  }
+  const overall = typeof rubric.overall_comment === "string" ? rubric.overall_comment : "";
+  return overall || `Nivel estimado: ${cefr || "no determinado"}.`;
+}
+
+// --- Bloque de Speaking Assessment --------------------------------------------------
+// Los 4 criterios lingüísticos oficiales de OET Speaking (0-6 cada uno).
+const LINGUISTIC_LABELS: Record<string, string> = {
+  intelligibility: "Intelligibility",
+  fluency: "Fluency",
+  appropriateness_of_language: "Appropriateness of language",
+  resources_of_grammar_and_expression: "Resources of grammar and expression",
+};
+
+// Los 5 criterios de comunicación clínica oficiales de OET Speaking (0-3 cada uno).
+const CLINICAL_LABELS: Record<string, string> = {
+  relationship_building: "Relationship building",
+  understanding_patient_perspective: "Understanding and incorporating the patient's perspective",
+  providing_structure: "Providing structure",
+  information_gathering: "Information gathering",
+  information_giving: "Information giving",
+};
+
+// Los 17 ítems del Reading & Pronunciation Diagnostic Checklist -- acá solo se usan
+// para nombrar los que salieron débiles (rating <=2) como flag; el detalle completo
+// queda en la base, no se vuelca fila por fila en el PDF.
+const PRONUNCIATION_LABELS: Record<string, string> = {
+  unstressed_vowel_reduction: "Reducción de vocales átonas (schwa)",
+  fleece_kit_contrast: "Contraste FLEECE/KIT",
+  face_price_glide: "Diptongos FACE/PRICE",
+  goat_mouth_choice_glide: "Diptongos GOAT/MOUTH/CHOICE",
+  nurse_near_square_vowels: "Vocales NURSE/NEAR/SQUARE",
+  english_r_quality: "Calidad del /r/ inglés",
+  h_dropped_or_replaced: "/h/ omitida o gutural",
+  b_v_distinction: "Distinción /b/-/v/ (betacismo)",
+  th_voiceless_voiced: "TH sorda/sonora (/θ/, /ð/)",
+  sh_ch_j_zh_distinctions: "Distinciones /ʃ/, /tʃ/, /dʒ/, /ʒ/",
+  initial_s_clusters: "Grupos consonánticos iniciales /s/",
+  past_tense_ed_endings: "Terminaciones -ed de pasado",
+  word_stress_cognates: "Acentuación en cognados",
+  sentence_rhythm: "Ritmo de la oración",
+  linking_across_words: "Enlaces entre palabras",
+  pausing_at_punctuation: "Pausas en la puntuación",
+  self_correction: "Autocorrección",
+};
+
+function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score: any }) {
+  const score = booking.evaluator_score;
+
+  if (!score || typeof score !== "object") {
+    return {
+      title: "Speaking Assessment",
+      skills: [
+        {
+          name: booking.assessment_type === "OET" ? "OET Speaking" : "English Speaking",
+          raw: null,
+          max: null,
+          cefr: null,
+          comment: "Evaluado en vivo por Diana.",
+        },
+      ],
+    };
+  }
+
+  if (score.type === "OET") {
+    const linguistic = score.linguistic || {};
+    const clinical = score.clinical_communication || {};
+    const skills = [];
+    for (const key of Object.keys(LINGUISTIC_LABELS)) {
+      if (typeof linguistic[key] === "number") {
+        skills.push({ name: LINGUISTIC_LABELS[key], raw: linguistic[key], max: 6, cefr: null, comment: "" });
+      }
+    }
+    for (const key of Object.keys(CLINICAL_LABELS)) {
+      if (typeof clinical[key] === "number") {
+        skills.push({ name: CLINICAL_LABELS[key], raw: clinical[key], max: 3, cefr: null, comment: "" });
+      }
+    }
+    skills.push({
+      name: "OET Speaking — Resultado general",
+      raw: null,
+      max: null,
+      cefr: score.overall_grade || null,
+      comment: score.comment || "Evaluado en vivo por Diana.",
+    });
+    return { title: "OET Speaking", skills };
+  }
+
+  if (score.type === "English") {
+    const checklist = score.pronunciation_checklist || {};
+    const weakItems = Object.keys(PRONUNCIATION_LABELS)
+      .filter((key) => typeof checklist[key] === "number" && checklist[key] <= 2)
+      .map((key) => PRONUNCIATION_LABELS[key]);
+    return {
+      title: "Speaking Assessment",
+      skills: [
+        {
+          name: "English Speaking",
+          raw: null,
+          max: null,
+          cefr: score.cefr_sublevel || score.cefr_estimate || null,
+          comment: score.comment || "Evaluado en vivo por Diana.",
+          flag: weakItems.length
+            ? `Puntos de pronunciación a reforzar: ${weakItems.join(", ")}.`
+            : (score.pronunciation_notes || null),
+        },
+      ],
+    };
+  }
+
+  // Formato desconocido/legado -- fallback conservador (compatibilidad hacia atrás).
+  return {
+    title: "Speaking Assessment",
+    skills: [
+      {
+        name: booking.assessment_type === "OET" ? "OET Speaking" : "English Speaking",
+        raw: null,
+        max: null,
+        cefr: score.cefr_estimate || null,
+        comment: score.comment || "Evaluado en vivo por Diana.",
+      },
+    ],
+  };
+}
+
+// --- PDFShift --------------------------------------------------------------------
+
+async function htmlToPdf(html: string): Promise<Uint8Array> {
+  const apiKey = Deno.env.get("PDFSHIFT_API_KEY");
+  if (!apiKey) {
+    throw new Error("Falta el secret PDFSHIFT_API_KEY en Supabase.");
+  }
+  const res = await fetch("https://api.pdfshift.io/v3/convert/pdf", {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${btoa(`api:${apiKey}`)}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      source: html,
+      landscape: false,
+      use_print: false,
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`PDFShift respondió ${res.status}: ${errText.slice(0, 500)}`);
+  }
+  const buf = await res.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+// --- Resend (con adjunto) ---------------------------------------------------------
+
+async function sendReportEmail(params: {
+  studentName: string;
+  assessmentLabel: string;
+  pdfBytes: Uint8Array;
+  fileName: string;
+}) {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    throw new Error("Falta el secret RESEND_API_KEY en Supabase.");
+  }
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: NOTIFY_FROM,
+      to: [NOTIFY_EMAIL],
+      subject: `Reporte de resultados: ${params.studentName} (${params.assessmentLabel})`,
+      text: `Adjunto el reporte de resultados de ${params.studentName} (${params.assessmentLabel}), generado automáticamente al completar el assessment.`,
+      attachments: [
+        {
+          filename: params.fileName,
+          content: bytesToBase64(params.pdfBytes),
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Resend respondió ${res.status}: ${errText.slice(0, 500)}`);
+  }
+}
+
+// --- Lógica principal --------------------------------------------------------------
+
+async function buildAndSendReport(
+  supabase: ReturnType<typeof createClient>,
+  attemptId: string,
+): Promise<{ sent: boolean; reason?: string }> {
+  // 1. Attempt + student + track + report_sent_at.
+  const { data: attempt, error: attemptError } = await supabase
+    .from("attempts")
+    .select("id, track, status, report_sent_at, student_id")
+    .eq("id", attemptId)
+    .maybeSingle();
+
+  if (attemptError || !attempt) {
+    return { sent: false, reason: "attempt no encontrado" };
+  }
+  if (attempt.report_sent_at) {
+    return { sent: false, reason: "ya se había enviado antes" };
+  }
+
+  const track = attempt.track === "NIVEL1_ONLY" ? "NIVEL1_ONLY" : "FULL_360";
+
+  const { data: student, error: studentError } = await supabase
+    .from("students")
+    .select("full_name, email")
+    .eq("id", attempt.student_id)
+    .maybeSingle();
+
+  if (studentError || !student) {
+    return { sent: false, reason: "student no encontrado" };
+  }
+
+  // 2. unlock_state (para saber assigned_route en FULL_360).
+  const { data: unlock } = await supabase
+    .from("unlock_state")
+    .select("assigned_route")
+    .eq("attempt_id", attemptId)
+    .maybeSingle();
+
+  const assignedRoute = unlock ? unlock.assigned_route : null;
+
+  // 3. sub_scores del attempt.
+  const { data: subScores, error: subScoresError } = await supabase
+    .from("sub_scores")
+    .select("skill, raw_score, max_score, cefr_estimate, band_detail")
+    .eq("attempt_id", attemptId);
+
+  if (subScoresError) {
+    return { sent: false, reason: "error leyendo sub_scores" };
+  }
+  const byskill = Object.fromEntries((subScores || []).map((s: any) => [s.skill, s]));
+  const nivel1Skills = ["grammar", "listening", "writing", "reading"];
+  const nivel1Complete = nivel1Skills.every((sk) => byskill[sk]);
+
+  if (!nivel1Complete) {
+    return { sent: false, reason: "Nivel 1 todavía no está completo" };
+  }
+
+  // 4. Si FULL_360, verificar módulos adicionales según assigned_route, y el
+  // evaluator_score de Speaking (Diana lo carga desde admin-speaking-score.html).
+  if (track === "FULL_360") {
+    if (assignedRoute === "STEPS2" && !byskill["steps2_reading"]) {
+      return { sent: false, reason: "STEP CK 2 todavía no está completo" };
+    }
+    if (assignedRoute === "OET") {
+      const oetSkills = ["oet_listening", "oet_reading", "oet_writing"];
+      if (!oetSkills.every((sk) => byskill[sk])) {
+        return { sent: false, reason: "OET todavía no está completo" };
+      }
+    }
+    const { data: booking } = await supabase
+      .from("speaking_assessment_bookings")
+      .select("evaluator_score")
+      .eq("attempt_id", attemptId)
+      .maybeSingle();
+
+    if (!booking || !booking.evaluator_score) {
+      return { sent: false, reason: "falta el evaluator_score de Speaking" };
+    }
+  }
+
+  // 5. Armar los bloques del reporte.
+  const skillLabels: Record<string, string> = {
+    grammar: "Grammar",
+    listening: "Listening",
+    reading: "Reading",
+    writing: "Writing",
+    steps2_reading: "STEP CK 2",
+    oet_listening: "OET Listening",
+    oet_reading: "OET Reading",
+    oet_writing: "OET Writing",
+  };
+
+  const { data: writingSubs } = await supabase
+    .from("writing_submissions")
+    .select("prompt_id, ai_rubric_scores, cefr_estimate, writing_prompts(title)")
+    .eq("attempt_id", attemptId);
+
+  const nivel1Block = {
+    title: "Nivel 1",
+    skills: nivel1Skills.map((sk) => {
+      const row = byskill[sk];
+      if (sk === "writing") {
+        // Comentario por cada tarea de writing enviada, si hay más de una.
+        const subs = (writingSubs || []).filter((w: any) => w);
+        if (subs.length > 0) {
+          const comments = subs
+            .map((w: any) => {
+              const title = w.writing_prompts?.title || "tarea";
+              return writingCommentFromRubric(title, w.ai_rubric_scores, w.cefr_estimate);
+            })
+            .join(" ");
+          return {
+            name: skillLabels[sk],
+            raw: row.raw_score,
+            max: row.max_score,
+            cefr: row.cefr_estimate,
+            comment: comments,
+          };
+        }
+      }
+      return {
+        name: skillLabels[sk],
+        raw: row.raw_score,
+        max: row.max_score,
+        cefr: row.cefr_estimate,
+        comment: skillCommentFromBandDetail(skillLabels[sk], row.raw_score, row.max_score, row.cefr_estimate, row.band_detail),
+      };
+    }),
+  };
+
+  const blocks = [nivel1Block];
+
+  if (track === "FULL_360") {
+    if (assignedRoute === "STEPS2") {
+      const row = byskill["steps2_reading"];
+      const passed = row?.band_detail?.passed === true;
+      blocks.push({
+        title: "STEP CK 2",
+        skills: [
+          {
+            name: "STEP CK 2 Reading",
+            raw: row.raw_score,
+            max: row.max_score,
+            cefr: null,
+            comment: passed
+              ? `Aprobó con ${row.band_detail.percent}% (umbral mínimo ${row.band_detail.threshold}%).`
+              : `No alcanzó el umbral mínimo: ${row.band_detail.percent}% (se requiere ${row.band_detail.threshold}%).`,
+          },
+        ],
+      });
+    } else if (assignedRoute === "OET") {
+      blocks.push({
+        title: "OET",
+        skills: ["oet_listening", "oet_reading", "oet_writing"].map((sk) => {
+          const row = byskill[sk];
+          return {
+            name: skillLabels[sk],
+            raw: row.raw_score,
+            max: row.max_score,
+            cefr: null,
+            comment: `Resultado informativo: ${row.band_detail?.percent ?? Math.round((row.raw_score / row.max_score) * 100)}% de respuestas correctas.`,
+          };
+        }),
+      });
+    }
+
+    const { data: booking } = await supabase
+      .from("speaking_assessment_bookings")
+      .select("assessment_type, evaluator_score")
+      .eq("attempt_id", attemptId)
+      .maybeSingle();
+
+    if (booking) {
+      blocks.push(buildSpeakingBlock(booking as any));
+    }
+  }
+
+  // 6. Nivel CEFR general: el más bajo entre los skills de Nivel 1 (nivel de piso).
+  const nivel1Cefrs = nivel1Skills.map((sk) => byskill[sk]?.cefr_estimate).filter(Boolean) as string[];
+  const overallCefr = nivel1Cefrs.length
+    ? nivel1Cefrs.reduce((lowest, c) => (CEFR_ORDER.indexOf(c) < CEFR_ORDER.indexOf(lowest) ? c : lowest))
+    : null;
+  const overallNote = "El nivel general queda determinado por la skill más baja de Nivel 1, siguiendo el criterio de nivel de piso usado en la plataforma.";
+
+  const assessmentLabel = track === "NIVEL1_ONLY" ? "Assessment Speak Easy" : "Assessment 360";
+  const logoUrl = track === "NIVEL1_ONLY" ? LOGO_GENERIC_URL : LOGO_CLEARPATH_URL;
+  const reportDate = new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
+
+  const html = buildReportHtml({
+    studentName: student.full_name || "Estudiante",
+    assessmentLabel,
+    logoUrl,
+    reportDate,
+    overallCefr,
+    overallNote,
+    blocks,
+  });
+
+  // 7. HTML -> PDF -> correo.
+  const pdfBytes = await htmlToPdf(html);
+  const fileName = `Reporte - ${(student.full_name || "estudiante").replace(/[^a-zA-Z0-9 ]/g, "")}.pdf`;
+
+  await sendReportEmail({
+    studentName: student.full_name || "Estudiante",
+    assessmentLabel,
+    pdfBytes,
+    fileName,
+  });
+
+  // 8. Marcar enviado.
+  await supabase
+    .from("attempts")
+    .update({ report_sent_at: new Date().toISOString() })
+    .eq("id", attemptId);
+
+  return { sent: true };
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Método no permitido." }, 405);
+  }
+
+  let body: { attempt_id?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "Body inválido." }, 400);
+  }
+
+  const attemptId = typeof body.attempt_id === "string" ? body.attempt_id.trim() : "";
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!attemptId || !UUID_RE.test(attemptId)) {
+    return json({ error: "Falta o es inválido attempt_id." }, 400);
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  try {
+    const result = await buildAndSendReport(supabase, attemptId);
+    return json(result);
+  } catch (err) {
+    console.error("generate-report: error generando/enviando reporte", err);
+    return json({ error: "Error interno generando el reporte.", detail: String(err) }, 500);
+  }
+});
