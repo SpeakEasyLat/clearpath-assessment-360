@@ -1,0 +1,70 @@
+// Edge Function: list-pending-speaking-scores
+//
+// Lista los bookings de Speaking Assessment que ya se agendaron (existe fila en
+// speaking_assessment_bookings, ver register-speaking-booking) pero todavía no tienen
+// evaluator_score cargado -- para que admin-speaking-score.html le muestre a Diana una
+// lista para elegir, en vez de tener que copiar/pegar IDs desde Supabase Studio.
+//
+// Misma validación de sesión que submit-speaking-score: exige un token de Supabase
+// Auth real (no la anon key pública del sitio) -- ver el comentario en ese archivo
+// para el detalle de por qué esto es seguro.
+//
+// v1 (12/08/2026, pedido de Diana).
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (req.method !== "POST") {
+    return json({ error: "Método no permitido." }, 405);
+  }
+
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) {
+    return json({ error: "Falta autenticación." }, 401);
+  }
+
+  const anonClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+  );
+  const { data: userData, error: userError } = await anonClient.auth.getUser(token);
+  if (userError || !userData?.user) {
+    return json({ error: "Sesión inválida o expirada. Volvé a iniciar sesión." }, 401);
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const { data: bookings, error } = await supabase
+    .from("speaking_assessment_bookings")
+    .select("id, attempt_id, assessment_type, status, scheduled_at, created_at, student_name, student_email")
+    .is("evaluator_score", null)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("list-pending-speaking-scores: error buscando bookings", error);
+    return json({ error: "Error interno. Intenta de nuevo en un momento." }, 500);
+  }
+
+  return json({ ok: true, bookings: bookings || [] });
+});
