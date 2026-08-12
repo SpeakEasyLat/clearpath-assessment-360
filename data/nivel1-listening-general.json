@@ -1,68 +1,268 @@
 {
   "_meta": {
     "module": "nivel1_listening_general",
-    "version": 1,
-    "revisionNote": "11/08/2026: reconstruido a partir de question_bank/audio_assets en Supabase (módulo nivel1_listening_general). El archivo data/nivel1-listening-general.json que había en el repo tenía el contenido de Reading pegado por error (idéntico a nivel1-reading-general.json) — este archivo lo reemplaza con el listening real: 5 audios de temática general (no clínica), ya generados y subidos al bucket audio-assets, y sus 20 preguntas ya cargadas en Supabase."
+    "version": 3,
+    "revisionNote": "v3 (12/08/2026): ajustes de Q4/Q7/Q11/Q16/Q17/Q20 segun informe pedagogico de listening (equivalencia con la version medica, anclaje de distractores, inferencia C1 real)."
   },
   "audios": [
     {
       "audio_asset_id": "3b69ab68-ca6b-41c3-b070-f228939e2153",
-      "title": "Reservar una mesa en un restaurante",
+      "title": "Booking a table at a restaurant",
       "cefr_level": "A1",
       "max_plays": 1,
       "questions": [
-        { "id": "371c8678-aa3c-4e98-bde6-693d159aef5b", "position": 1, "answer_format": "multiple_choice", "question_text": "How many people is the table for?", "options": ["One", "Two", "Four"] },
-        { "id": "f50a0b17-c2b1-4382-9d9e-b660a157f486", "position": 2, "answer_format": "multiple_choice", "question_text": "What day is the table for?", "options": ["Today", "Next week", "Tomorrow"] },
-        { "id": "7967cd4d-befc-44c4-b4aa-1635a778737a", "position": 3, "answer_format": "multiple_choice", "question_text": "What time is the table?", "options": ["Eight o'clock", "Seven o'clock", "Nine o'clock"] },
-        { "id": "e26528da-8123-4418-a197-857fa10942b6", "position": 4, "answer_format": "multiple_choice", "question_text": "What is her name?", "options": ["Bella Vista", "Carla Vega", "Maria Lopez"] }
+        {
+          "id": "371c8678-aa3c-4e98-bde6-693d159aef5b",
+          "position": 1,
+          "answer_format": "multiple_choice",
+          "question_text": "How many people is the table for?",
+          "options": [
+            "One",
+            "Two",
+            "Four"
+          ]
+        },
+        {
+          "id": "f50a0b17-c2b1-4382-9d9e-b660a157f486",
+          "position": 2,
+          "answer_format": "multiple_choice",
+          "question_text": "What day is the table for?",
+          "options": [
+            "Today",
+            "Next week",
+            "Tomorrow"
+          ]
+        },
+        {
+          "id": "7967cd4d-befc-44c4-b4aa-1635a778737a",
+          "position": 3,
+          "answer_format": "multiple_choice",
+          "question_text": "What time is the table?",
+          "options": [
+            "Eight o'clock",
+            "Seven o'clock",
+            "Nine o'clock"
+          ]
+        },
+        {
+          "id": "e26528da-8123-4418-a197-857fa10942b6",
+          "position": 4,
+          "answer_format": "multiple_choice",
+          "question_text": "What is her family name?",
+          "options": [
+            "Carla",
+            "Bella Vista",
+            "Vega"
+          ]
+        }
       ]
     },
     {
       "audio_asset_id": "98302cdb-27aa-4a01-8a39-1d5a49ccdca2",
-      "title": "Un problema con un pedido en línea",
+      "title": "A problem with an online order",
       "cefr_level": "A2",
       "max_plays": 1,
       "questions": [
-        { "id": "949f528d-7dbb-4aa5-8a11-9c22fa33b7ce", "position": 1, "answer_format": "multiple_choice", "question_text": "What did the customer order?", "options": ["A jacket", "A phone", "A pair of shoes"] },
-        { "id": "bdbcc04b-122f-4f7c-b56d-17d3eadb666a", "position": 2, "answer_format": "multiple_choice", "question_text": "How long ago did the package leave the warehouse?", "options": ["Three days ago", "One week ago", "This morning"] },
-        { "id": "cf8261e6-8fef-4dda-bbee-e9c0b635a0bb", "position": 3, "answer_format": "multiple_choice", "question_text": "When should the package arrive?", "options": ["By Monday", "By Friday", "Tomorrow"] },
-        { "id": "526a5844-a0ae-4011-b48c-afcb3901819f", "position": 4, "answer_format": "multiple_choice", "question_text": "What did the agent promise to do if the package is late?", "options": ["Give a refund only", "Do nothing, the customer must wait", "Send a free replacement"] }
+        {
+          "id": "949f528d-7dbb-4aa5-8a11-9c22fa33b7ce",
+          "position": 5,
+          "answer_format": "multiple_choice",
+          "question_text": "What did the customer order?",
+          "options": [
+            "A jacket",
+            "A phone",
+            "A pair of shoes"
+          ]
+        },
+        {
+          "id": "bdbcc04b-122f-4f7c-b56d-17d3eadb666a",
+          "position": 6,
+          "answer_format": "multiple_choice",
+          "question_text": "How long ago did the package leave the warehouse?",
+          "options": [
+            "Three days ago",
+            "One week ago",
+            "This morning"
+          ]
+        },
+        {
+          "id": "cf8261e6-8fef-4dda-bbee-e9c0b635a0bb",
+          "position": 7,
+          "answer_format": "multiple_choice",
+          "question_text": "When should the package arrive?",
+          "options": [
+            "By Monday",
+            "By Friday",
+            "In three days"
+          ]
+        },
+        {
+          "id": "526a5844-a0ae-4011-b48c-afcb3901819f",
+          "position": 8,
+          "answer_format": "multiple_choice",
+          "question_text": "What did the agent promise to do if the package is late?",
+          "options": [
+            "Give a refund only",
+            "Do nothing, the customer must wait",
+            "Send a free replacement"
+          ]
+        }
       ]
     },
     {
       "audio_asset_id": "762aaf7f-06b3-4e00-94a1-e83fe39d1d76",
-      "title": "Instrucciones de check-in en un hotel",
+      "title": "Hotel check-in instructions",
       "cefr_level": "B1",
       "max_plays": 1,
       "questions": [
-        { "id": "331e4538-399f-4bff-825e-cdc9164d2cde", "position": 1, "answer_format": "multiple_choice", "question_text": "What time does breakfast start?", "options": ["Nine o'clock", "Seven o'clock", "Eleven o'clock"] },
-        { "id": "dd910a53-4cfb-4ccd-85be-9b09aea5472e", "position": 2, "answer_format": "multiple_choice", "question_text": "When does the pool close?", "options": ["Nine p.m.", "Ten p.m.", "Midnight"] },
-        { "id": "d4f8b0c4-5c36-4bc0-92cc-e2b93e5bfea1", "position": 3, "answer_format": "multiple_choice", "question_text": "What should the guest do to request a late check-out?", "options": ["Just leave later without telling anyone", "Pay an automatic extra fee on the bill", "Ask at the front desk the night before"] },
-        { "id": "3234913e-fd9f-4d74-97c7-f1c8a9eef36f", "position": 4, "answer_format": "multiple_choice", "question_text": "What does the receptionist recommend for valuables?", "options": ["Use the safe at reception", "Leave them in the room", "Carry them at all times"] }
+        {
+          "id": "331e4538-399f-4bff-825e-cdc9164d2cde",
+          "position": 9,
+          "answer_format": "multiple_choice",
+          "question_text": "What time does breakfast start?",
+          "options": [
+            "Nine o'clock",
+            "Seven o'clock",
+            "Eleven o'clock"
+          ]
+        },
+        {
+          "id": "dd910a53-4cfb-4ccd-85be-9b09aea5472e",
+          "position": 10,
+          "answer_format": "multiple_choice",
+          "question_text": "When does the pool close?",
+          "options": [
+            "Nine p.m.",
+            "Ten p.m.",
+            "Midnight"
+          ]
+        },
+        {
+          "id": "d4f8b0c4-5c36-4bc0-92cc-e2b93e5bfea1",
+          "position": 11,
+          "answer_format": "multiple_choice",
+          "question_text": "What should the guest do to request a late check-out?",
+          "options": [
+            "Ask at the front desk on the day of departure",
+            "Ask at the front desk the night before",
+            "It's guaranteed any day, regardless of hotel availability"
+          ]
+        },
+        {
+          "id": "3234913e-fd9f-4d74-97c7-f1c8a9eef36f",
+          "position": 12,
+          "answer_format": "multiple_choice",
+          "question_text": "What does the receptionist recommend for valuables?",
+          "options": [
+            "Use the safe at reception",
+            "Leave them in the room",
+            "Carry them at all times"
+          ]
+        }
       ]
     },
     {
       "audio_asset_id": "7dc1e3d9-ef14-4e59-8c59-2e174d989634",
-      "title": "Cambio de turno en un call center",
+      "title": "Shift handover at a call center",
       "cefr_level": "B2",
       "max_plays": 1,
       "questions": [
-        { "id": "d719b601-56e8-4a8e-8749-807cd81e3b74", "position": 1, "answer_format": "multiple_choice", "question_text": "What is the speaker most concerned about?", "options": ["The customer has been unusually demanding today", "The ticket was never actually opened", "The billing issue might not be fixed"] },
-        { "id": "338f0728-6bf8-4d29-8480-b513483ea085", "position": 2, "answer_format": "multiple_choice", "question_text": "Why does he doubt the ticket was properly resolved?", "options": ["Only the first of two charges was checked", "The ticket was closed without any review", "The customer had complained too many times"] },
-        { "id": "42393e2d-c676-4477-86fd-0dfa0daf4481", "position": 3, "answer_format": "multiple_choice", "question_text": "What does he suggest before calling the customer back?", "options": ["Cancel the callback appointment altogether for now", "Wait until someone re-checks both charges", "Tell her it's fixed right away"] },
-        { "id": "02366f89-a147-43e8-9751-0943569bd730", "position": 4, "answer_format": "multiple_choice", "question_text": "Which best describes his attitude?", "options": ["Confident: the problem is completely settled", "Alarmed: the customer might complain publicly online", "Cautious: the issue may still be unresolved"] }
+        {
+          "id": "d719b601-56e8-4a8e-8749-807cd81e3b74",
+          "position": 13,
+          "answer_format": "multiple_choice",
+          "question_text": "What is the speaker most concerned about?",
+          "options": [
+            "The customer has been unusually demanding today",
+            "The ticket was never actually opened",
+            "The billing issue might not be fixed"
+          ]
+        },
+        {
+          "id": "338f0728-6bf8-4d29-8480-b513483ea085",
+          "position": 14,
+          "answer_format": "multiple_choice",
+          "question_text": "Why does he doubt the ticket was properly resolved?",
+          "options": [
+            "Only the first of two charges was checked",
+            "The ticket was closed without any review",
+            "The customer had complained too many times"
+          ]
+        },
+        {
+          "id": "42393e2d-c676-4477-86fd-0dfa0daf4481",
+          "position": 15,
+          "answer_format": "multiple_choice",
+          "question_text": "What does he suggest before calling the customer back?",
+          "options": [
+            "Cancel the callback appointment altogether for now",
+            "Wait until someone re-checks both charges",
+            "Tell her it's fixed right away"
+          ]
+        },
+        {
+          "id": "02366f89-a147-43e8-9751-0943569bd730",
+          "position": 16,
+          "answer_format": "multiple_choice",
+          "question_text": "Which best describes his attitude?",
+          "options": [
+            "He believes the situation is now fully resolved",
+            "He believes the customer is about to escalate this publicly",
+            "He believes the problem might still not actually be fixed"
+          ]
+        }
       ]
     },
     {
       "audio_asset_id": "77d2bfa0-00e3-4046-924e-3c3e13a5d1c0",
-      "title": "Charla sobre IA en selección de personal",
+      "title": "Talk about AI in recruitment",
       "cefr_level": "C1",
       "max_plays": 1,
       "questions": [
-        { "id": "9a13d065-0ca7-4f1e-9f14-1086ac2cbc98", "position": 1, "answer_format": "multiple_choice", "question_text": "What is her overall position on using these tools?", "options": ["She supports the tools but distrusts how they're relied on", "She is firmly opposed to using them at all", "She believes vendors deliberately fake their published figures"] },
-        { "id": "47167cfe-8e4e-47f3-a940-2af122e6aea5", "position": 2, "answer_format": "multiple_choice", "question_text": "Why does she doubt the published accuracy figures?", "options": ["They were deliberately manipulated by the vendors", "They're based on tidy data, not real messy applications", "They always perform worse than a human reviewer"] },
-        { "id": "812e06e0-f7fe-4486-b480-f7fc673761c7", "position": 3, "answer_format": "multiple_choice", "question_text": "What does she mean by \"a quieter problem\"?", "options": ["The system always gives a clear error message", "Rejected candidates are always told the exact reason", "Strong candidates can be rejected without anyone noticing"] },
-        { "id": "d6e0b378-541a-44be-a6ae-34e6585547d0", "position": 4, "answer_format": "multiple_choice", "question_text": "What does she want before trusting the system at scale?", "options": ["Real performance data and a right to challenge results", "More marketing demonstrations arranged by the vendors themselves", "Nothing more, since she completely trusts the system already"] }
+        {
+          "id": "9a13d065-0ca7-4f1e-9f14-1086ac2cbc98",
+          "position": 17,
+          "answer_format": "multiple_choice",
+          "question_text": "What does the comparison to \"questioning a colleague's judgment\" suggest about how people treat the algorithm's decisions?",
+          "options": [
+            "They give the algorithm's decisions more unquestioning trust than they would a person's",
+            "They question the algorithm's decisions just as often as a colleague's",
+            "They rely on the algorithm less than they rely on colleagues"
+          ]
+        },
+        {
+          "id": "47167cfe-8e4e-47f3-a940-2af122e6aea5",
+          "position": 18,
+          "answer_format": "multiple_choice",
+          "question_text": "Why does she doubt the published accuracy figures?",
+          "options": [
+            "They were deliberately manipulated by the vendors",
+            "They're based on tidy data, not real messy applications",
+            "They always perform worse than a human reviewer"
+          ]
+        },
+        {
+          "id": "812e06e0-f7fe-4486-b480-f7fc673761c7",
+          "position": 19,
+          "answer_format": "multiple_choice",
+          "question_text": "What does she mean by \"a quieter problem\"?",
+          "options": [
+            "The system always gives a clear error message",
+            "Rejected candidates are always told the exact reason",
+            "Strong candidates can be rejected without anyone noticing"
+          ]
+        },
+        {
+          "id": "d6e0b378-541a-44be-a6ae-34e6585547d0",
+          "position": 20,
+          "answer_format": "multiple_choice",
+          "question_text": "What does she want before trusting the system at scale?",
+          "options": [
+            "Real performance data and a right to challenge results",
+            "More demonstrations showing how the tool performs on sample applications",
+            "She already trusts the results enough to use them as they are"
+          ]
+        }
       ]
     }
   ]
