@@ -455,6 +455,24 @@ async function gradeWithAI(promptRow, responseText, compact = false) {
 // disponibles hasta ahora, y la persiste en unlock_state + attempts.status. DUPLICADA
 // en submit-response -- ver la nota al inicio de este archivo.
 async function recomputeRouteAndPersist(supabase, attemptId) {
+  // v2 (14/08/2026, bug real encontrado antes de que ningun estudiante lo pisara):
+  // falta esta lectura de track, un estudiante de NIVEL1_ONLY que sacara B2 en las 4
+  // destrezas de Nivel 1 quedaba asignado a la ruta OET o STEPS2 igual que uno de
+  // FULL_360. NIVEL1_ONLY debe quedar SIEMPRE en la ruta ENGLISH, sin importar el
+  // resultado -- ver seccion 1 del Brief. DUPLICADO en submit-response, mantener
+  // sincronizados.
+  const { data: attemptRow, error: attemptTrackError } = await supabase
+    .from("attempts")
+    .select("track")
+    .eq("id", attemptId)
+    .maybeSingle();
+
+  if (attemptTrackError) {
+    console.error("submit-writing: error leyendo track del attempt", attemptTrackError);
+    return { error: "Error interno. Intenta de nuevo en un momento." };
+  }
+  const track = attemptRow ? attemptRow.track : null;
+
   const { data: allSubScores, error: allSubScoresError } = await supabase
     .from("sub_scores")
     .select("skill, cefr_estimate")
@@ -485,17 +503,25 @@ async function recomputeRouteAndPersist(supabase, attemptId) {
   let speakingAssessmentType = null;
 
   if (nivel1Complete) {
-    const allFourOk =
-      meetsLevel(grammarLevel, MIN_LEVEL_FOR_OET) &&
-      meetsLevel(listeningLevel, MIN_LEVEL_FOR_OET) &&
-      meetsLevel(writingLevel, MIN_LEVEL_FOR_OET) &&
-      meetsLevel(readingLevel, MIN_LEVEL_FOR_OET);
-    const readingOk = meetsLevel(readingLevel, MIN_LEVEL_FOR_STEPS2);
+    if (track === "NIVEL1_ONLY") {
+      // NIVEL1_ONLY nunca pasa por STEPS2 ni OET, sin importar el resultado.
+      assignedRoute = "ENGLISH";
+      oetUnlocked = false;
+      steps2Unlocked = false;
+      speakingAssessmentType = "English";
+    } else {
+      const allFourOk =
+        meetsLevel(grammarLevel, MIN_LEVEL_FOR_OET) &&
+        meetsLevel(listeningLevel, MIN_LEVEL_FOR_OET) &&
+        meetsLevel(writingLevel, MIN_LEVEL_FOR_OET) &&
+        meetsLevel(readingLevel, MIN_LEVEL_FOR_OET);
+      const readingOk = meetsLevel(readingLevel, MIN_LEVEL_FOR_STEPS2);
 
-    assignedRoute = allFourOk ? "OET" : (readingOk ? "STEPS2" : "ENGLISH");
-    oetUnlocked = assignedRoute === "OET";
-    steps2Unlocked = assignedRoute === "STEPS2";
-    speakingAssessmentType = assignedRoute === "OET" ? "OET" : "English";
+      assignedRoute = allFourOk ? "OET" : (readingOk ? "STEPS2" : "ENGLISH");
+      oetUnlocked = assignedRoute === "OET";
+      steps2Unlocked = assignedRoute === "STEPS2";
+      speakingAssessmentType = assignedRoute === "OET" ? "OET" : "English";
+    }
   }
 
   const { error: unlockError } = await supabase
