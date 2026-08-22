@@ -63,7 +63,10 @@ return;
 }
 sessionStorage.setItem('cp360_session_token', data.session_token);
 sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || fullName);
-window.location.href = 'welcome.html';
+// Si el estudiante ya completó su Assessment (attempt.status === 'completed'), no lo
+// mandamos de nuevo por welcome/intake -- lo llevamos directo al router, que lo manda
+// a su siguiente paso real (normalmente speaking.html a agendar su Speaking Assessment).
+window.location.href = (data.attempt && data.attempt.status === 'completed') ? 'siguiente.html' : 'welcome.html';
 } catch (err) {
 showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
 startBtn.disabled = false;
