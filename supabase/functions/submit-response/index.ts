@@ -88,7 +88,18 @@ const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
 
 // STEP CK 2 (Fase 3): pass/fail puro, sin bandas CEFR. Decision de Diana (05/08/2026):
-// ">=75% correcto para aprobar". Con 8 preguntas eso es exactamente 6/8 (75.0%).
+// ">=75% correcto para aprobar". Con 8 preguntas eso era exactamente 6/8 (75.0%).
+//
+// v (24/08/2026, pedido de Diana): el banco de steps2 se redisenio por completo -- las
+// 8 vinetas clinicas originales median conocimiento medico/de manejo clinico (formato
+// USMLE), no habilidad de lectura en ingles, que es lo que este modulo dice evaluar
+// (los datos mostraban 0%-50% de aciertos por pregunta). Se mantuvo el texto de cada
+// vineta pero se reemplazo la pregunta final por DOS preguntas de comprension lectora
+// (gist + vocabulario en contexto C1-C2), lo que paso el banco de 8 a 16 preguntas.
+// No hizo falta tocar nada de este archivo: el calculo de abajo es 100% dinamico
+// (cuenta las preguntas de question_bank en runtime via totalInModule/moduleQuestionIds,
+// nunca un numero fijo), asi que 12/16 sigue siendo el mismo 75% que antes era 6/8. Ver
+// data/steps2.json y js/app-steps2.js para el contenido nuevo.
 const STEPS2_PASS_THRESHOLD = 75;
 
 // v13 (11/08/2026): agrega nivel1_listening_general y nivel1_reading_general (los
