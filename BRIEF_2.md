@@ -1,6 +1,6 @@
 # Brief — ClearPath Assessment 360
 
-**Actualizado:** 21 de agosto de 2026 (se unificó este documento con `BRIEF_1.md`, un archivo duplicado que había quedado subido desde el 14/08 sin fusionar — confirma que el fix de ruteo de `NIVEL1_ONLY` de la sección 6.8 sí se aplicó ese mismo día; se agregó al historial el cambio de URLs de booking de Calendar del 18/08/2026. Ver sección 5, 21/08/2026)
+**Actualizado:** 24 de agosto de 2026 (se unificó este documento con `BRIEF_2.md`, un archivo duplicado que había quedado subido el 21/08 sin fusionar con `BRIEF.md` — mismo patrón de duplicado que ya había pasado el 14/08 con `BRIEF_1.md`, ver sección 5. Se agregó todo el trabajo del 21 al 24/08/2026 que no estaba documentado en ninguna versión: la reescritura grande de `generate-report` -v7 a v13-, el rescate de OET para Listening, el fix del "duda favorece al estudiante" en Writing, el reporte PARCIAL nuevo -`generate-partial-report`- y una rúbrica de calificación detallada -sección 3.5, nueva-)
 **Preparado por:** Claude, a partir de la revisión completa del repositorio (`SpeakEasyLat/clearpath-assessment-360`), la base de datos y las Edge Functions de Supabase (proyecto `qqdxmmvhthwcqhgmvyic`), y del historial de esta conversación.
 
 > **Nota sobre el alcance de este brief:** no tengo forma de leer conversaciones de otras sesiones de chat fuera de esta. Este documento se armó revisando el estado *real* de las cosas — el código del repositorio, el esquema y los datos actuales de Supabase, y las Edge Functions desplegadas — en vez de basarme solo en lo que se haya dicho en el chat. Reemplaza por completo la versión del 8 de agosto de 2026.
@@ -19,7 +19,7 @@ Assessment 360 es una plataforma de evaluación de inglés para Speak Easy. Hoy 
 
 - **`NIVEL1_ONLY`** (agregado 07-08/08/2026): un segmento de estudiantes de público general que rinde **únicamente** Nivel 1 — English Level, sin pasar nunca por STEPS 2 ni OET, sin importar el resultado. Entra por una puerta separada (`index-nivel1.html`) y usa contenido de Listening/Reading no médico, ya que estos estudiantes no son necesariamente profesionales de la salud.
 
-Desde el 12/08/2026, el resultado final de cada assessment (todas las skills) se arma automáticamente en un PDF y se manda por correo a Diana apenas queda completo — antes esto se revisaba solo por consulta SQL directa. Ver sección 5.
+Desde el 12/08/2026, el resultado final de cada assessment (todas las skills) se arma automáticamente en un PDF y se manda por correo a Diana apenas queda completo — antes esto se revisaba solo por consulta SQL directa. Desde el 24/08/2026, además, se manda un reporte **parcial** apenas termina la parte escrita (Nivel 1 + STEPS2/OET si aplica), sin esperar a Speaking — ver sección 5 (24/08/2026) y 3.3 (`generate-partial-report`).
 
 - **Repositorio (público):** `github.com/SpeakEasyLat/clearpath-assessment-360`
 - **Sitio en vivo:** `assessment.speakeasy.lat` (GitHub Pages)
@@ -70,28 +70,35 @@ data/nivel1-listening-general.json, nivel1-reading-general.json, nivel1-writing-
 data/oet-listening.json, oet-reading.json, oet-writing.json, steps2.json
 supabase/functions/ → código fuente de las Edge Functions. Todas siguen el patrón <nombre>/index.ts, EXCEPTO
                        submit-speaking-score, list-pending-speaking-scores y generate-report, que quedaron
-                       subidas como archivo suelto (sin carpeta) — pendiente de corregir, ver 6.5.
+                       subidas como archivo suelto (sin carpeta) — pendiente de corregir, ver 6.5. Además,
+                       generate-partial-report, send-incomplete-assessment-reminder, send-assessment-reminders,
+                       get-dashboard-stats, debug-signed-audio-url y test-grade-b2 están desplegadas en Supabase
+                       pero NO tienen ningún archivo en el repo todavía — ver 6.9.
 supabase/migrations/ → migraciones SQL (esquema inicial + ajustes posteriores)
 CNAME → assessment.speakeasy.lat
 ```
 
-### 3.2 Base de datos (Supabase, esquema actual en producción — filas al 12/08/2026)
+### 3.2 Base de datos (Supabase, esquema actual en producción — filas al 24/08/2026)
 
 | Tabla | Filas hoy | Para qué sirve |
 |---|---|---|
-| `students` | 11 | Estudiantes, con `access_code` único que Diana genera a mano (o que emite `register-student`) tras confirmar el pago |
-| `attempts` | 1 | Una corrida completa del Assessment 360. Tiene `track` (`FULL_360` default / `NIVEL1_ONLY`) y `report_sent_at` (marca si ya se le mandó el reporte automático a Diana para ese attempt) |
+| `students` | 20 | Estudiantes, con `access_code` único que Diana genera a mano (o que emite `register-student`) tras confirmar el pago |
+| `attempts` | 7 (5 `completed`, 3 de pista `NIVEL1_ONLY`) | Una corrida completa del Assessment 360. Tiene `track` (`FULL_360` default / `NIVEL1_ONLY`), `report_sent_at` (reporte final ya mandado) y, desde el 24/08/2026, `partial_report_sent_at` (reporte parcial —sin Speaking— ya mandado, ver 3.3 `generate-partial-report`) |
 | `question_bank` | 232 | Banco de preguntas de todos los módulos. Incluye módulos activos y algunos "archivo" (versiones viejas de Listening/Reading/Grammar que se reemplazaron pero se dejaron sin borrar — ver detalle abajo) |
-| `student_responses` | 0 | Respuestas guardadas server-side, con `is_correct` calculado por `submit-response` |
-| `sub_scores` | 0 | Ceiling CEFR (o pass/fail para STEP CK 2, o puntaje informativo para OET) por habilidad |
-| `unlock_state` | 1 | Ruta asignada (`OET`/`STEPS2`/`ENGLISH`), si se desbloqueó STEPS2/OET, y qué tipo de Speaking Assessment corresponde |
+| `student_responses` | 380 | Respuestas guardadas server-side, con `is_correct` calculado por `submit-response` |
+| `sub_scores` | 23 | Ceiling CEFR (o pass/fail para STEP CK 2, o puntaje informativo para OET) por habilidad. `band_detail` (jsonb) ahora también guarda `oet_unlock_override`/`oet_unlock_note` para Listening — ver 3.4 y 3.5 |
+| `unlock_state` | 7 | Ruta asignada (`OET`/`STEPS2`/`ENGLISH`), si se desbloqueó STEPS2/OET, y qué tipo de Speaking Assessment corresponde |
 | `audio_assets` | 21 | Metadata de los audios de Listening (`storage_path`, `max_plays`, `module`) |
 | `audio_play_log` | — | Registro de reproducciones ya usadas, para hacer cumplir `max_plays` |
 | `writing_prompts` | 2 | Consignas de Writing: `nivel1_writing` (1) y `oet_writing` (1) — no existe variante `_general`, ambos productos comparten la misma consigna de Nivel 1 |
-| `writing_submissions` | 0 | Texto de cada tarea de Writing + calificación de IA (`ai_rubric_scores`, `cefr_estimate`) |
-| `speaking_assessment_bookings` | 0 | Reserva de la sesión en vivo (desde 11/08/2026 se escribe de verdad, ver 5) + `evaluator_score` (jsonb) con el resultado que carga Diana desde `admin-speaking-score.html` (desde 12/08/2026) |
-| `attempt_sessions` | 2 | Tokens de sesión (expiran 4 h después del login) |
-| `intake_responses` | 0 | Respuestas del formulario previo (no calificado) |
+| `writing_submissions` | 5 | Texto de cada tarea de Writing + calificación de IA (`ai_rubric_scores`, `cefr_estimate`) — desde el 22/08/2026 `ai_rubric_scores` también incluye `correcciones_para_b2` (ver 3.5) |
+| `speaking_assessment_bookings` | 2 (1 con `evaluator_score` cargado) | Reserva de la sesión en vivo (desde 11/08/2026 se escribe de verdad, ver 5) + `evaluator_score` (jsonb) con el resultado que carga Diana desde `admin-speaking-score.html` (desde 12/08/2026) |
+| `attempt_sessions` | — | Tokens de sesión (expiran 4 h después del login) |
+| `intake_responses` | — | Respuestas del formulario previo (no calificado) |
+| `assessment_reminders` | — | Recordatorios a estudiantes que nunca loguearon (`send-assessment-reminders`, 19/08/2026) — no está en este repo, ver 6.9 |
+| `incomplete_assessment_reminders` | — | NUEVO (22/08/2026): recordatorios a estudiantes que sí loguearon pero no terminaron (`send-incomplete-assessment-reminder`) — un solo correo por `attempt_id`, disparado cuando vence la sesión sin que el estudiante haya vuelto. No está en este repo, ver 6.9 |
+
+De estos 5 `attempts` completados, 3 ya recibieron el reporte final (`report_sent_at`) y los 3 que llegaron a completar la parte escrita recibieron también el reporte parcial (`partial_report_sent_at`) — ver sección 5 (24/08/2026).
 
 Desglose de `question_bank` por módulo (232 filas totales, sin cambios desde el último brief):
 
@@ -123,18 +130,21 @@ Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `
 |---|---|
 | `login` | Valida `access_code` contra `students`, crea/retoma `attempt` (fija `track` solo al crear uno nuevo), emite `session_token` (expira en 4 h). Acepta `track: 'NIVEL1_ONLY'` en el body; default `FULL_360` |
 | `submit-intake` | Guarda el formulario previo (no calificado) |
-| `submit-response` | Corrige la respuesta server-side (multiple_choice o note_completion), la guarda, y si con eso se completa el módulo calcula el sub_score y recalcula la ruta del Nivel 1. **Fix 12/08/2026:** `MODULE_TO_SKILL` no incluía `nivel1_listening_general`/`nivel1_reading_general` — los estudiantes de `NIVEL1_ONLY` nunca generaban `sub_score` de listening/reading, aunque sus respuestas sí quedaban guardadas correctamente. Corregido y verificado end-to-end |
+| `submit-response` | v27. Corrige la respuesta server-side (multiple_choice o note_completion), la guarda, y si con eso se completa el módulo calcula el sub_score y recalcula la ruta del Nivel 1. **Fix 12/08/2026:** `MODULE_TO_SKILL` no incluía `nivel1_listening_general`/`nivel1_reading_general`. **v20 (23-24/08/2026):** agrega el rescate de OET para Listening (`LISTENING_B2_RESCUE_THRESHOLD`) — ver 3.5. Ahora también dispara `generate-partial-report` fire-and-forget en cuanto marca el attempt `completed` |
 | `get-audio-url` | Valida sesión + `max_plays`, emite URL firmada, registra la reproducción |
-| `submit-writing` | Guarda cada tarea de Writing, la califica con IA (rúbrica de placement 0-10 combinada con CEFR), escribe `sub_scores` y recalcula la ruta (lógica duplicada intencionalmente respecto a `submit-response` — mantener sincronizadas). Confirmado que **no** necesitaba el mismo fix que `submit-response`: `writing_prompts` no tiene variante `_general`, ambos productos comparten la misma consigna |
-| `get-unlock-state` | Le dice a `siguiente.html` a qué pantalla mandar al estudiante según los sub_scores/ruta ya calculados. Ya está sincronizada en el repo (el brief anterior la marcaba como pendiente de bajar) |
+| `submit-writing` | v34. Guarda cada tarea de Writing, la califica con IA (rúbrica de placement 0-10 combinada con CEFR — ver 3.5), escribe `sub_scores` y recalcula la ruta (lógica duplicada intencionalmente respecto a `submit-response` — mantener sincronizadas). **v17-v19 (21-22/08/2026):** feedback de la IA en español, y nuevo campo `correcciones_para_b2` (hasta 7 ítems). **v9-v10 (23-24/08/2026, caso de Paula):** fuerza en código el nivel alto cuando la IA marca `borderline_decision` pero no lo aplicaba ella sola — ver 3.5. También dispara `generate-partial-report` al completar la parte escrita |
+| `get-unlock-state` | Le dice a `siguiente.html` a qué pantalla mandar al estudiante según los sub_scores/ruta ya calculados |
 | `get-module-progress` | NUEVO (10/08/2026): devuelve qué preguntas de un módulo de opción múltiple ya tienen respuesta guardada, para que el frontend pueda reanudar un módulo interrumpido en vez de reiniciarlo desde la pregunta 1 |
 | `register-student` | Crea un estudiante nuevo con `access_code` único (`CP-XXXXXX`) a partir del formulario de intake de RPS (Google Forms → Apps Script), y le envía el código por correo |
 | `register-speaking-booking` | NUEVO (11/08/2026): persiste en `speaking_assessment_bookings` cada clic en "Agendar" en `speaking.html` — antes esa tabla existía pero nunca se insertaba nada ahí. Idempotente por `attempt_id`, fire-and-forget (no bloquea la redirección a Calendar) |
-| `generate-report` | NUEVO (10/08/2026), extendido 12/08/2026: arma el PDF de resultados y lo manda por correo a Diana vía Resend cuando el assessment queda completo (idempotente vía `attempts.report_sent_at`). v3 entiende los dos schemas de `evaluator_score` de Speaking (desglose de 9 criterios para OET, o nivel CEFR + checklist de pronunciación para English) y corrigió un bug de paginación del PDF (una tarjeta de resultado se cortaba a la mitad entre dos páginas). **Hoy solo se dispara desde `submit-speaking-score`** — ver pendiente en 6.6 |
+| `generate-report` | v16 (¡13 versiones con nombre desde el v3 que llegó al repo el 12/08 — ver 5!). Arma el PDF de resultados FINAL (con Speaking) y lo manda por correo a Diana vía Resend cuando el assessment queda completo (idempotente vía `attempts.report_sent_at`). Cambios grandes 21-22/08/2026 (v7 a v13): Speaking en las dos pistas, "Resultados por destreza" antes del resumen global, nivel funcional como rango de las 2 destrezas más bajas, filas con la escala nativa de OET/STEPS2, y `correcciones_para_b2` en la tarjeta de Writing — ver 3.5 y 5 para el detalle versión por versión. **El código de este archivo en el repo está desactualizado respecto a lo desplegado** — ver 6.9 |
+| `generate-partial-report` | **NUEVO (24/08/2026)**, no está en el repo todavía (ver 6.9). Función hermana de `generate-report`: arma y manda el mismo tipo de PDF pero **parcial** (sin Speaking), apenas `attempts.status` pasa a `completed` — es decir, apenas termina la parte escrita. Idempotente vía `attempts.partial_report_sent_at`, totalmente independiente del reporte final. Incluye una integración opcional con Google Drive (sube el PDF a una carpeta compartida vía cuenta de servicio con domain-wide delegation) que hoy está inactiva porque faltan cargar los secrets `GOOGLE_SERVICE_ACCOUNT_JSON` / `GOOGLE_DRIVE_FOLDER_ID` — ver 6.10 |
 | `submit-speaking-score` | NUEVO (12/08/2026): guarda el `evaluator_score` que Diana carga desde `admin-speaking-score.html`, valida que el schema corresponda al tipo de reserva (OET o English) y dispara `generate-report` fire-and-forget. Exige un token de sesión real de Supabase Auth — rechaza explícitamente la clave anon pública |
 | `list-pending-speaking-scores` | NUEVO (12/08/2026): lista las reservas de Speaking sin `evaluator_score` cargado todavía, para el selector de `admin-speaking-score.html`. Misma validación de sesión que `submit-speaking-score` |
-| `get-dashboard-stats` | NUEVO (14/08/2026): devuelve `student_progress_summary` + `response_statistics` + `completion_times` para `assessment-dashboard.html`. Corre con `service_role` (lee las vistas sin depender de los GRANT de PostgREST) y exige el mismo login real de Supabase Auth que `submit-speaking-score` — nunca se volvió a exponer el permiso público sobre esas vistas |
-| `debug-anthropic` | Utilidad interna para probar la conexión con la API de Anthropic; no forma parte del flujo del estudiante |
+| `get-dashboard-stats` | NUEVO (14/08/2026), no está en el repo todavía (ver 6.9): devuelve `student_progress_summary` + `response_statistics` + `completion_times` para `assessment-dashboard.html`. Corre con `service_role` y exige el mismo login real de Supabase Auth que `submit-speaking-score` |
+| `send-assessment-reminders` | NUEVO (19/08/2026), no está en el repo todavía (ver 6.9): recordatorio por correo a estudiantes que nunca crearon un `attempt` (nunca loguearon), a los 3/10/17 días de creados. Cron diario (`pg_cron`) |
+| `send-incomplete-assessment-reminder` | **NUEVO (22/08/2026)**, no está en el repo todavía (ver 6.9): recordatorio a estudiantes que sí loguearon pero dejaron el assessment a medias (`status='in_progress'`, sesión ya vencida) — un solo correo por `attempt_id`, con su código de acceso para retomar. Excluye a quien ya tiene otro attempt `completed` (evita el falso positivo de un "attempt fantasma" que crea `login` si alguien vuelve a entrar después de terminar). Cron horario |
+| `debug-anthropic` / `debug-signed-audio-url` / `test-grade-b2` | Utilidades internas de diagnóstico (probar la API de Anthropic, generar una URL firmada de audio, probar la calificación de Writing). No forman parte del flujo del estudiante; las dos últimas tampoco están en el repo (ver 6.9) |
 
 ### 3.4 Algoritmo de scoring y reglas de desbloqueo
 
@@ -146,10 +156,45 @@ Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `
   - Si no, pero reading llega a B2 → ruta **STEPS2**.
   - Si reading tampoco llega → ruta **ENGLISH**.
 - **Pista `NIVEL1_ONLY`**: en cuanto están los 4 sub_scores de Nivel 1, la ruta queda **siempre** en `ENGLISH` (Speaking Assessment breve tipo English), sin evaluar los sub_scores — sin importar el resultado (así lo dice la sección 1). `recomputeRouteAndPersist` (en `submit-response`/`submit-writing`) lee `attempts.track` explícitamente para esto desde el 14/08/2026 — antes de ese fix, calculaba la ruta solo a partir de los 4 niveles CEFR sin mirar el track, así que un estudiante `NIVEL1_ONLY` con B2 en las 4 destrezas hubiera quedado asignado a `OET`/`STEPS2` igual que uno de `FULL_360` (bug encontrado y corregido el mismo día, ver 6.8; sin impacto real porque nadie lo pisó antes del fix).
-- Esta lógica está **duplicada intencionalmente** en `js/scoring.js` (preview client-side), `submit-response` y `submit-writing`. Si se cambia algún umbral, hay que tocar los tres lugares.
-- `detectPatternInconsistency()` deja registrado en `sub_scores.band_detail` si el patrón de aciertos por banda es inconsistente (ej. falla B1 pero aprueba B2) — solo diagnóstico, nunca bloquea ni cambia el ceiling asignado.
-- **Nivel CEFR general del reporte** (`generate-report`): es el más bajo entre los 4 skills de Nivel 1 (criterio de "nivel de piso"). No incluye Speaking, OET ni STEPS2 en ese cálculo — esos se muestran aparte en el mismo PDF.
-- Cubierto por 7 casos de test en `js/scoring.test.mjs` (`node js/scoring.test.mjs`).
+- **Rescate de OET para Listening (`LISTENING_B2_RESCUE_THRESHOLD`, 23-24/08/2026, caso de Juan Sebastián):** si el patrón de Listening queda "inconsistente" (el estudiante superó alguna banda POR ENCIMA de donde se cortó su ceiling — ver `detectPatternInconsistency` abajo) PERO sacó ≥75% específicamente en la banda B2, igual se desbloquea OET para esta destreza, aunque el ceiling bottom-up haya quedado más abajo por un traspié puntual en una banda intermedia. **El nivel CEFR mostrado (ceiling) no cambia** — solo cambia la elegibilidad para OET, y se guarda una nota (`band_detail.oet_unlock_note`) que aparece en ambos reportes (parcial y final). Es un pedido explícito de Diana, solo para Listening — no se generalizó a Grammar/Reading. Ver detalle completo en 3.5.
+- Esta lógica (incluido el rescate de Listening) está **triplicada intencionalmente** en `js/scoring.js` (preview client-side), `submit-response` y `submit-writing`. Si se cambia algún umbral, hay que tocar los tres lugares.
+- `detectPatternInconsistency()` deja registrado en `sub_scores.band_detail` si el patrón de aciertos por banda es inconsistente (ej. falla B1 pero aprueba B2) — solo diagnóstico para Grammar/Reading; para Listening además alimenta el rescate de OET de arriba.
+- **Nivel CEFR general del reporte** (`generate-report`/`generate-partial-report`): desde el 21/08/2026 (v8) ya no es un solo nivel sino el **rango** entre las dos destrezas de Nivel 1 con el resultado más bajo (ej. "A1-A2"); si las dos coinciden, se muestra un solo nivel. No incluye Speaking, OET ni STEPS2 en ese cálculo — esos se muestran aparte, con su propia escala (ver 3.5).
+- Cubierto por 7 casos de test en `js/scoring.test.mjs` (`node js/scoring.test.mjs`) — **ojo:** estos tests no se actualizaron todavía para cubrir el rescate de Listening (23-24/08/2026), ver backlog, sección 7.
+
+### 3.5 Rúbrica de calificación
+
+**Writing (Nivel 1 y OET) — `submit-writing`, calificado por IA (Claude), rúbrica `cefr-anchored-v10-borderline-note`:**
+
+- **Framework A — Placement band (entero 0-10):** juicio holístico sobre 6 cualidades: desarrollo del tema, claridad de propósito, organización, control del lenguaje, precisión (accuracy) y rango (vocabulario/estructuras). Se guarda como `ai_rubric_scores.placement_band`.
+- **Framework B — Nivel CEFR (A1-C1):** anclado a los descriptores oficiales del CEFR (range, precisión gramatical, control de vocabulario, coherencia/cohesión, producción escrita general) — el prompt reproduce el texto oficial de cada descriptor para que la IA no use "impresión general".
+- **Regla de frontera B1/B2** (la que decide si el estudiante entra a la ruta OET): se otorga B2 solo si las 3 son ciertas — hay formas de oración complejas controladas, los errores son NO sistemáticos, y el texto forma un discurso coherente (no una lista lineal de puntos). Se otorga B1 si CUALQUIERA de estas es cierta: errores sistemáticos, influencia pervasiva de la lengua materna, discurso lineal, o formas complejas intentadas pero no controladas. Advertencia explícita en el prompt: 2-3 errores aislados en un texto por lo demás controlado son "slips" normales de B2, no motivo para bajar a B1.
+- **"La duda favorece al estudiante" (regla de Diana, 26/07/2026):** cuando la evidencia queda genuinamente repartida entre dos niveles contiguos, se asigna el ALTO. **v9-v10 (23-24/08/2026, bug real — caso de Paula):** hasta esta fecha, la regla dependía de que la IA la aplicara sola dentro del prompt — y en el caso de Paula, la IA marcó `borderline_decision: true`, `borderline_between: "B1/B2"`, pero igual devolvió B1, dejándola afuera de OET sin motivo. Ahora el nivel alto se **fuerza en el código** (no depende de que el modelo lo haga bien), y además queda una nota visible en el comentario del reporte ("este resultado quedó entre los niveles B1 y B2... se asignó B2, pero conviene seguir reforzando").
+- **"Correcciones para llegar a B2" (`correcciones_para_b2`, NUEVO 21-22/08/2026):** lista corta (hasta 7 ítems, subido de 5 el 22/08/2026) de errores de gramática/estructura concretos tomados del propio texto del estudiante, cada uno con su corrección y una explicación breve en español de la regla involucrada. Vive en `ai_rubric_scores`, no se le muestra al estudiante en vivo — se usa en el reporte (tarjeta de Writing de Nivel 1, ver `generate-report` v13 / `generate-partial-report`). Si el texto ya está sólido en B2+, la lista puede venir vacía.
+- El **word count sugerido no es criterio de calificación** (decisión de Diana, 05/08/2026) — se califica el nivel de idioma de lo que efectivamente escribió el estudiante, sin penalizar por longitud.
+- Todo el feedback de la IA (los 6 comentarios, la justificación CEFR, el comentario general y las explicaciones de `correcciones_para_b2`) se pide en español latinoamericano, tuteo, desde el 21/08/2026 (v17) — antes todo el prompt y la respuesta eran en inglés. Las citas textuales del propio texto del estudiante nunca se traducen.
+
+**OET Speaking (carga manual de Diana en `admin-speaking-score.html`):** 9 criterios oficiales — 4 lingüísticos (Intelligibility, Fluency, Appropriateness of Language, Resources of Grammar and Expression) puntuados 0-6, y 5 de comunicación clínica (Relationship Building, Understanding and Incorporating the Patient's Perspective, Providing Structure, Information Gathering, Information Giving) puntuados 0-3, más un `overall_grade` (A/B/C+/C/D/E). Es el único componente donde el grade OET es real, no aproximado.
+
+**Puntaje OET aproximado (Listening/Reading/Writing, `generate-report`/`generate-partial-report` v9, 21/08/2026):** estos módulos de Nivel 1/OET son diagnósticos propios de Speak Easy, no el banco oficial de OET, así que el reporte muestra una aproximación, no un puntaje oficial:
+  - OET Listening / OET Reading: % de aciertos escalado linealmente a 0-500 (`percent * 5`), mapeado al rango de grade oficial más cercano.
+  - OET Writing: el `cefr_estimate` (A1-C1) se convierte al rango OET más cercano vía una tabla de aproximación.
+  - Rangos oficiales verificados el 21/08/2026 contra `geniusclass.co.uk/oet-calculator` (escala 0-500 vigente desde septiembre 2018):
+
+    | Grade | Rango |
+    |---|---|
+    | A | 450–500 |
+    | B | 350–440 |
+    | C+ | 300–340 |
+    | C | 200–290 |
+    | D | 100–190 |
+    | E | 0–90 |
+
+**"Unlock" para OET — resumen de las 3 puertas que hay que cruzar:**
+
+1. **Nivel 1 completo con los 4 skills en B2+** (grammar, listening, writing, reading) — con la única excepción del rescate de Listening descrito en 3.4 (≥75% en banda B2 aunque el ceiling haya quedado más abajo).
+2. **Writing debe llegar a B2** vía la rúbrica de arriba — incluida la regla de "la duda favorece al estudiante", ahora forzada en código.
+3. Una vez asignada la ruta OET, el estudiante rinde OET Listening/Reading/Writing (informativo, no vuelve a decidir nada) y agenda el Speaking Assessment tipo OET — cuyo grade real lo carga Diana.
 
 ---
 
@@ -167,7 +212,8 @@ Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `
 | **STEPS 2** (solo ruta STEPS2, pista `FULL_360`) | ✅ Completo: 8 preguntas, timer 15 min, pass/fail ≥75% |
 | **OET Skills** (solo ruta OET, pista `FULL_360`) | ✅ Completo: Listening (22 preguntas, 3 partes), Reading (16 preguntas, 3 partes), Writing con calificación por IA |
 | **Speaking Assessment** | ✅ Agenda + reserva persistida (`speaking_assessment_bookings`) + carga de resultado por Diana (`admin-speaking-score.html`) + reporte automático al completarse. Aplica a las dos pistas (`FULL_360` y `NIVEL1_ONLY`). Cuenta de login de Diana ya creada (13/08/2026) |
-| **Reporte de resultados** | ✅ Automático para `FULL_360` y `NIVEL1_ONLY` — ambas pistas terminan en Speaking, y `generate-report` se dispara al cargar ese score (ver corrección en sección 5, 14/08/2026) |
+| **Reporte de resultados** | ✅ Automático para `FULL_360` y `NIVEL1_ONLY`. **Final** (`generate-report`, con Speaking): se dispara al cargar el score de Speaking. **Parcial** (`generate-partial-report`, NUEVO 24/08/2026): se dispara apenas termina la parte escrita, sin esperar a Speaking. Ambos son PDF por correo a Diana (nunca al estudiante), idempotentes, y comparten casi todo el armado — ver 3.3, 3.5 y 5 |
+| **Recordatorios automáticos** | ✅ Dos sistemas por correo (Resend + `pg_cron`): a quien nunca logueó (`send-assessment-reminders`, 19/08) y a quien logueó pero dejó el assessment a medias (`send-incomplete-assessment-reminder`, NUEVO 22/08) |
 | **Dashboard interno de estado** | ✅ `assessment-dashboard.html` + `get-dashboard-stats`, con login (14/08/2026) — reemplaza una versión que se rompió con el fix de seguridad del 12/08 |
 | **Producto "solo Nivel 1" (`NIVEL1_ONLY`)** | ✅ Wireado y verificado de punta a punta; bug de scoring de Listening/Reading corregido el 12/08/2026; bug de ruta (podía escapar a OET/STEPS2 si el estudiante sacaba B2 en todo) corregido el 14/08/2026 — ver 6.8 |
 
@@ -206,6 +252,30 @@ Storage: bucket privado `audio-assets`, cero políticas de acceso directo para `
 ### 21/08/2026
 
 1. **Unificación de este documento**: existían dos archivos de brief en el repo, `BRIEF.md` y `BRIEF_1.md`, ambos con el mismo header "Actualizado: 14 de agosto de 2026" pero contenido distinto en la sección 6.8 — `BRIEF_1.md` (subido una sola vez ese día vía "Add files via upload", sin ninguna referencia desde el código ni desde otro documento) ya reflejaba el fix del bug de ruteo de `NIVEL1_ONLY` como corregido, mientras que `BRIEF.md` seguía diciendo que estaba abierto. El commit real (`a7f2d24`, 14/08/2026, "Implement track handling for NIVEL1_ONLY in routing") confirma que el fix se aplicó ese mismo día. Se fusionó todo en este archivo, que queda como la única versión, y se eliminó `BRIEF_1.md`.
+2. **`generate-report` — tanda grande de cambios pedidos por Diana tras revisar reportes reales (v7 a v11):**
+   - **v7**: Speaking ahora se espera e incluye en LOS DOS TRACKS (antes `NIVEL1_ONLY` mandaba el reporte sin esperar Speaking, aunque el estudiante sí lo rinde — se detectó con dos casos reales, Laura Noguera y "Flaco"). El bloque de Speaking tipo English deja de usar el estilo rojo de alerta. El checklist de pronunciación (17 ítems) se resume en 3 grupos neutros ("Logrado", "En desarrollo", "A reforzar") en vez de listar solo los ítems débiles en rojo.
+   - **v8**: se saca "...guardados en la plataforma" del subtítulo (lenguaje de backend). El nivel CEFR general deja de ser un solo nivel y pasa a ser el **rango** entre las 2 destrezas más bajas de Nivel 1.
+   - **v9**: el encabezado ahora muestra primero "Resultados por destreza" (las 4 de Nivel 1 + Speaking) y después el resumen global. Cuando la ruta es OET o STEPS2 se agregan filas con la escala nativa de cada prueba (ver rúbrica, sección 3.5) en vez de forzarlas a CEFR.
+   - **v10**: fix de paginación en la tarjeta de Writing — el mismo bug que v6 ya había arreglado en `.skill-row` (`page-break-inside: avoid` empujando el bloque entero a la página siguiente y dejando un hueco enorme) seguía presente en `.writing-essay`. Se sacó ahí también.
+   - **v11**: se agrega al final del reporte, antes del footer, un bloque invitando a reservar la Q&A Session de 30 min (ya incluida, no opcional).
+3. **`submit-writing` v17**: todo el feedback que escribe la IA (comentario general, las 6 dimensiones, justificación CEFR) se pide explícitamente en español (tuteo) — antes el prompt completo estaba en inglés y la IA respondía en inglés. Las citas textuales del propio texto del estudiante nunca se traducen.
+4. **`submit-writing` v18**: se agrega `correcciones_para_b2` al JSON de la IA — lista de hasta 5 errores concretos con corrección y explicación, pensada para el reporte (no se le muestra al estudiante en vivo). Ver rúbrica completa en 3.5.
+
+### 22/08/2026
+
+1. **`submit-writing` v19**: el tope de `correcciones_para_b2` sube de 5 a 7 ítems — Diana identificó más errores aprovechables en textos reales de prueba de los que el tope anterior dejaba mostrar.
+2. **`generate-report` v13**: en la tarjeta de Writing de Nivel 1, debajo del feedback general, se agrega la lista de "Correcciones para llegar a B2" citando fragmentos concretos del propio texto del estudiante.
+3. **Fix de login (`index.html` / `index-nivel1.html`)**: si el estudiante ya completó su assessment (`attempt.status === 'completed'`) y vuelve a entrar con su código, ya no se lo manda de nuevo por `welcome.html`/`intake.html` — se lo lleva directo a `siguiente.html` (el router), que lo manda a su siguiente paso real (normalmente `speaking.html` a agendar, si todavía no lo agendó).
+4. **`send-incomplete-assessment-reminder` (NUEVO)**: recordatorio por correo, un solo envío por `attempt_id`, a estudiantes que loguearon pero dejaron el assessment a medias y cuya sesión ya venció (a raíz del caso de Yinessa Toledo). v2 el mismo día: se excluyen estudiantes que ya tienen otro `attempt` `completed` — bug real encontrado en producción (login crea un attempt nuevo vacío si alguien reingresa después de terminar; sin este filtro, a Fer RPS y a Paula Elena Hernández Quiroz les habría llegado un "no terminaste" habiendo terminado). Cron horario, no diario como `send-assessment-reminders`. No está en el repo — ver 6.9.
+
+### 23-24/08/2026
+
+> Los timestamps de despliegue en Supabase caen la noche del 23/08 (hora de Bogotá); los comentarios que Diana pidió agregar en el propio código dicen "24/08/2026" — probablemente por una diferencia de huso horario del reloj usado al escribirlos. Se listan acá como un solo bloque de trabajo.
+
+1. **Rescate de OET para Listening (`LISTENING_B2_RESCUE_THRESHOLD = 75`, caso de Juan Sebastián)**: nueva lógica en `js/scoring.js` (commit `dd734b3`, "Implement listening OET rescue threshold logic"), `submit-response` (v20) y `submit-writing` (v3 de `recomputeRouteAndPersist`) — ver el detalle completo en 3.4 y 3.5. Pedido explícito de Diana, solo para Listening.
+2. **Fix real en `submit-writing` (caso de Paula, rubric_version `cefr-anchored-v10-borderline-note`)**: la regla "la duda favorece al estudiante" (26/07/2026) dependía de que la IA la aplicara sola dentro del prompt. En el caso de Paula, la IA marcó `borderline_decision: true` pero igual devolvió el nivel bajo (B1), dejándola afuera de OET sin motivo. Se corrigió forzando el nivel alto en el código (v9) y agregando una nota visible en el reporte cuando esto pasa (v10) — ver 3.5.
+3. **`generate-partial-report` (NUEVO)**: función hermana de `generate-report` — arma y manda un PDF parcial (sin Speaking) apenas termina la parte escrita del assessment (`attempts.status = 'completed'`), en vez de esperar el resultado de Speaking. Idempotente vía `attempts.partial_report_sent_at`. Incluye una integración opcional con Google Drive (domain-wide delegation vía cuenta de servicio) que queda inactiva hasta que Diana cargue los secrets correspondientes — ver 3.3 y 6.10. Probada en producción: los 3 `attempts` que completaron la parte escrita hasta ahora ya recibieron su reporte parcial.
+4. **No está en el repo todavía**: ni el rescate de Listening del lado servidor, ni el fix del caso de Paula, ni `generate-partial-report` tienen commit en GitHub — viven desplegados en Supabase. `js/scoring.js` (el espejo client-side del rescate) sí se subió (commit `dd734b3`), pero el resto de estos cambios de Edge Functions no. Ver 6.9.
 
 ---
 
@@ -237,24 +307,34 @@ Versiones anteriores de este brief decían que `generate-report` no cubría `NIV
 
 ### 6.7 🟡 Otros detalles menores
 
-- Ningún estudiante real (de los 11 cargados) completó un attempt todavía — la única fila en `attempts` es de una cuenta de prueba.
-- `test-flow.mjs` (Playwright) solo cubre login → intake; no se actualizó para cubrir Listening/Reading, `NIVEL1_ONLY`, ni el flujo de Speaking/reporte.
+- Actualizado al 24/08/2026: de los 20 estudiantes cargados, 7 crearon un `attempt` y 5 lo completaron (ver 3.2) — ya hay casos reales detrás de varios de los fixes de la sección 5 (Fer RPS, Paula, Juan Sebastián, Laura Noguera, Yinessa Toledo, entre otros).
+- `test-flow.mjs` (Playwright) solo cubre login → intake; no se actualizó para cubrir Listening/Reading, `NIVEL1_ONLY`, el rescate de OET de Listening, ni el flujo de Speaking/reporte.
 - 6 advertencias de seguridad de severidad baja (`search_path` mutable en funciones internas como `get_student_info` y varios triggers `populate_name`) quedaron anotadas por Diana para revisar más adelante — no son una fuga de datos, son buena práctica de Postgres.
 
 ### 6.8 ✅ NUEVO (14/08/2026) — `NIVEL1_ONLY` podía escapar a la ruta OET/STEPS2 — corregido
 
 `recomputeRouteAndPersist` (duplicada en `submit-response` y `submit-writing`) asignaba la ruta del Nivel 1 solo mirando los 4 niveles CEFR, sin mirar `track`. Un estudiante `NIVEL1_ONLY` con B2 en las 4 destrezas hubiera terminado en la ruta OET (o STEPS2), con contenido médico que no le corresponde a este producto. Corregido el mismo día: ambas funciones ahora leen `attempts.track` y, si es `NIVEL1_ONLY`, fuerzan `assignedRoute = 'ENGLISH'` (y `speakingAssessmentType = 'English'`) sin evaluar los niveles CEFR — exactamente lo que dice la sección 1 de este brief. Desplegado en Supabase (`submit-response` v23, `submit-writing` v25). Sin impacto real hasta ahora (nadie completó un attempt real de `NIVEL1_ONLY` con ese resultado) y sin poder correr un test end-to-end en esta sesión (ver nota de red en sección 8) — conviene que Diana confirme con el próximo estudiante `NIVEL1_ONLY` que complete Nivel 1 con nivel alto.
 
+### 6.9 🟡 NUEVO (24/08/2026) — 6 Edge Functions desplegadas sin ningún respaldo en el repo
+
+Es el mismo problema de la sección 6.5 (estructura de carpetas) pero un escalón peor: `generate-partial-report`, `send-incomplete-assessment-reminder`, `send-assessment-reminders`, `get-dashboard-stats`, `debug-signed-audio-url` y `test-grade-b2` corren en producción hoy pero **no tienen ningún archivo en GitHub** — ni siquiera suelto, como las 3 de 6.5. Si algo le pasa al proyecto de Supabase, el código de estas 6 funciones no está respaldado en ningún otro lado. Se corrige subiendo cada una a `supabase/functions/<nombre>/index.ts` — se puede hacer desde la interfaz web de GitHub ("Add file → Create new file", pegando el contenido que ya se bajó de Supabase vía MCP).
+
+### 6.10 🟡 NUEVO (24/08/2026) — Reporte parcial: subida a Google Drive inactiva
+
+`generate-partial-report` intenta subir cada PDF parcial a una carpeta de Google Drive compartida (vía una cuenta de servicio con domain-wide delegation), pero se auto-omite sin fallar el envío del correo mientras falten dos secrets en Supabase: `GOOGLE_SERVICE_ACCOUNT_JSON` (el JSON completo de la cuenta de servicio) y `GOOGLE_DRIVE_FOLDER_ID` (la carpeta de Drive, compartida como Editor con el `client_email` de esa cuenta, y con el Client ID autorizado en el panel de administración del Workspace para impersonar a Diana). En cuanto Diana cargue esos dos secrets, el upload se activa solo, sin necesidad de un redeploy. También conviene actualizar `js/scoring.test.mjs` para cubrir el rescate de Listening de la sección 3.4/3.5 — los 7 casos actuales no lo prueban.
+
 ---
 
 ## 7. Backlog priorizado (sugerido)
 
-1. Corregir la estructura de carpetas de las 3 Edge Functions nuevas (ver 6.5) — dejado pendiente a pedido de Diana por ahora.
-2. Confirmar en producción el login de `assessment-dashboard.html` (Edge Function nueva, no se pudo probar de punta a punta desde esta sesión — ver 5, 14/08/2026).
-3. Revisar las 6 advertencias de seguridad de severidad baja (`search_path` mutable, ver 6.7).
-4. Limpiar los módulos "archivo" de `question_bank` (ver 6.2).
-5. Definir si un estudiante puede reintentar el assessment completo (hoy no existe mecanismo de reintento).
-6. Actualizar `test-flow.mjs` para cubrir Listening/Reading, `NIVEL1_ONLY` y el flujo de Speaking/reporte.
+1. Subir a GitHub las 6 Edge Functions sin ningún respaldo en el repo (ver 6.9) — más urgente que el punto 2, porque estas ni siquiera están como archivo suelto.
+2. Cargar los secrets de Google Drive (`GOOGLE_SERVICE_ACCOUNT_JSON`, `GOOGLE_DRIVE_FOLDER_ID`) para activar la subida del reporte parcial (ver 6.10).
+3. Corregir la estructura de carpetas de las 3 Edge Functions nuevas (ver 6.5) — dejado pendiente a pedido de Diana por ahora.
+4. Confirmar en producción el login de `assessment-dashboard.html` (Edge Function nueva, no se pudo probar de punta a punta desde esta sesión — ver 5, 14/08/2026).
+5. Revisar las 6 advertencias de seguridad de severidad baja (`search_path` mutable, ver 6.7).
+6. Limpiar los módulos "archivo" de `question_bank` (ver 6.2).
+7. Definir si un estudiante puede reintentar el assessment completo (hoy no existe mecanismo de reintento).
+8. Actualizar `test-flow.mjs` y `js/scoring.test.mjs` para cubrir Listening/Reading, `NIVEL1_ONLY`, el rescate de OET de Listening y el flujo de Speaking/reporte.
 
 ---
 
@@ -268,3 +348,5 @@ Versiones anteriores de este brief decían que `generate-report` no cubría `NIV
 - Cualquier lógica que dependa del resultado del estudiante (como `recomputeRouteAndPersist`) y conviva con más de un `track` tiene que decidir explícitamente qué pasa en cada `track` — no asumir que la fórmula genérica ya excluye correctamente a la pista que no debería verse afectada. El bug de la sección 6.8 es exactamente esto: se agregó `NIVEL1_ONLY` a la sección 1 del brief como "nunca pasa por STEPS2 ni OET, sin importar el resultado", pero el código que asigna la ruta nunca se actualizó para reflejar esa regla.
 - Esta sesión no tiene salida de red directa hacia la API pública de Supabase (ni hacia otros dominios fuera de una lista permitida) — `curl`/`fetch` a `https://qqdxmmvhthwcqhgmvyic.supabase.co/...` falla en el proxy de la sandbox. Las herramientas de Supabase (MCP) sí funcionan porque no pasan por ese proxy. Esto significa que una Edge Function nueva se puede desplegar y su lógica se puede razonar con confianza (comparándola con un patrón ya probado en producción), pero un test end-to-end real vía HTTP (como el que sí se pudo hacer para `submit-speaking-score` en una sesión anterior) puede no ser posible siempre — hay que decírselo a Diana explícitamente en vez de asumir que quedó probado.
 - Este repositorio (`SpeakEasyLat/clearpath-assessment-360`) permite lectura desde sesiones de Claude en la nube, pero **no** push directo — los cambios de código de una sesión en la nube hay que entregárselos a Diana como archivos para que los suba ella misma vía GitHub (editar/reemplazar archivo o "Add file → Upload files"), no asumir que un `git push` va a funcionar. Los cambios directos a Supabase (Edge Functions, tablas, RLS, `question_bank`) sí se pueden aplicar en vivo desde la sesión, vía las herramientas de Supabase — no dependen de que Diana suba nada.
+- **Ojo al subir `BRIEF.md`/`README.md` a GitHub:** ya pasó dos veces (14/08 con `BRIEF_1.md`, 21/08 con `BRIEF_2.md`/`README_1.md`) que al subir la versión actualizada se usa "Add file → Upload files" con GitHub sugiriendo un nombre nuevo (`_1`, `_2`) en vez de reemplazar el archivo original — quedan dos versiones circulando y nada avisa. Al subir estos documentos, hay que usar el botón "Edit"/"Replace" sobre el archivo `BRIEF.md`/`README.md` ya existente, nunca "Add file", y confirmar que el nombre final siga siendo exactamente `BRIEF.md`/`README.md`.
+- **Ojo a la brecha entre lo desplegado en Supabase y lo que hay en el repo:** varias Edge Functions (ver 6.9) llevan días o semanas corriendo en producción sin que nadie las suba a GitHub como archivo. Antes de dar por "actualizado" este brief o el README, conviene comparar `mcp__Supabase__list_edge_functions` contra `supabase/functions/` del repo, no solo mirar los commits recientes — el código más nuevo puede vivir solo en Supabase.
