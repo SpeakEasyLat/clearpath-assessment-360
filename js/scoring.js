@@ -31,6 +31,18 @@ export const PERCENT_THRESHOLD = 70; // % mínimo de acierto en una banda para "
 export const MIN_LEVEL_FOR_OET = 'B2'; // nivel CEFR mínimo (ceiling) para considerar "B1 alto"
 export const MIN_LEVEL_FOR_STEPS2 = 'B2'; // nivel CEFR mínimo (ceiling de reading + vocab médico) para considerar "capacitado para STEPS 2"
 
+// v (24/08/2026, pedido de Diana, caso de Juan Sebastian): cuando el patrón de listening
+// es inconsistente (ver detectPatternInconsistency más abajo -- el estudiante superó
+// alguna banda POR ENCIMA de donde se cortó el ceiling) PERO sacó >=75% específicamente
+// en la banda B2, igual se desbloquea OET para esta destreza, aunque el ceiling
+// bottom-up haya quedado más abajo por un traspié puntual en una banda intermedia (ej.
+// B1). Solo aplica a listening -- pedido explícito de Diana, no generalizado a
+// grammar/reading. El ceilingLevel mostrado NO cambia, solo la elegibilidad para OET.
+// Debe mantenerse sincronizado con submit-response.ts / submit-writing.ts (Edge
+// Functions), que son las que realmente deciden el acceso -- este archivo es la
+// referencia espejo del lado del cliente.
+export const LISTENING_B2_RESCUE_THRESHOLD = 75;
+
 /**
  * @param {Array<{id:number, cefrLevel:string}>} questions - banco de preguntas con su banda CEFR
  * @param {Map<number, boolean>} responses - questionId -> isCorrect
@@ -84,6 +96,48 @@ export function computeGrammarCefr(questions, responses, cefrRanges, percentThre
 }
 
 /**
+ * Detecta un patrón "inconsistente": alguna banda POR ENCIMA del ceiling calculado en
+ * realidad superó el umbral -- el estudiante rindió bien en un nivel más difícil que
+ * donde se le cortó la racha. Es solo diagnóstico (nunca cambia el ceiling en sí), salvo
+ * el caso puntual de listening + LISTENING_B2_RESCUE_THRESHOLD (ver computeListeningOetOverride).
+ * Debe mantenerse sincronizada con detectPatternInconsistency en submit-response.ts.
+ *
+ * @param {Record<string, {correct:number, total:number, percent:number}>} perBand
+ * @param {string|null} ceilingLevel
+ * @returns {boolean}
+ */
+export function detectPatternInconsistency(perBand, ceilingLevel) {
+  const ceilingIdx = ceilingLevel ? CEFR_ORDER.indexOf(ceilingLevel) : -1;
+  for (let i = ceilingIdx + 1; i < CEFR_ORDER.length; i++) {
+    const band = perBand[CEFR_ORDER[i]];
+    if (band && band.total > 0 && band.percent >= PERCENT_THRESHOLD) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Rescate de OET para listening (ver LISTENING_B2_RESCUE_THRESHOLD arriba): true cuando
+ * el patrón está inconsistente Y la banda B2 específicamente llegó a >=75%. Debe
+ * mantenerse sincronizada con el mismo cálculo en submit-response.ts / submit-writing.ts.
+ *
+ * @param {Record<string, {correct:number, total:number, percent:number}>} perBand
+ * @param {string|null} ceilingLevel
+ * @param {number} [rescueThreshold]
+ * @returns {boolean}
+ */
+export function computeListeningOetOverride(perBand, ceilingLevel, rescueThreshold = LISTENING_B2_RESCUE_THRESHOLD) {
+  const patternInconsistent = detectPatternInconsistency(perBand, ceilingLevel);
+  return (
+    patternInconsistent &&
+    !!perBand.B2 &&
+    perBand.B2.total > 0 &&
+    perBand.B2.percent >= rescueThreshold
+  );
+}
+
+/**
  * Decide la ruta del estudiante (OET / STEPS2 / ENGLISH) al terminar el Nivel 1, en base
  * a los CUATRO sub-scores (grammar, listening, writing, reading). Debe mantenerse
  * sincronizada con la misma lógica en las Edge Functions submit-response y submit-writing.
@@ -102,10 +156,12 @@ export function computeGrammarCefr(questions, responses, cefrRanges, percentThre
  *
  * @param {{
  *   grammar: {ceilingLevel:string},
- *   listening: {ceilingLevel:string},
+ *   listening: {ceilingLevel:string, oetUnlockOverride?: boolean},
  *   writing: {cefrEstimate:string},
  *   reading: {ceilingLevel:string}
- * }} subScores
+ * }} subScores - listening.oetUnlockOverride es el resultado de computeListeningOetOverride()
+ *   (ver más arriba) -- true cuando el patrón de listening quedó inconsistente pero la
+ *   banda B2 llegó a LISTENING_B2_RESCUE_THRESHOLD.
  * @param {{minLevelOet?: string, minLevelSteps2?: string}} [thresholds]
  * @returns {{
  *   assignedRoute: 'OET' | 'STEPS2' | 'ENGLISH' | null,  // null = Nivel 1 todavía incompleto
@@ -143,7 +199,11 @@ export function decideUnlocks(subScores, thresholds = {}) {
     subScores.grammar != null && subScores.listening != null && subScores.writing != null && subScores.reading != null;
 
   const grammarOk = meetsLevel(grammarLevel, minLevelOet);
-  const listeningOk = meetsLevel(listeningLevel, minLevelOet);
+  // v (24/08/2026, pedido de Diana): listening puede quedar "Ok" para OET por el rescate
+  // de LISTENING_B2_RESCUE_THRESHOLD aunque su ceiling no llegue a minLevelOet -- ver
+  // computeListeningOetOverride más arriba.
+  const listeningOetOverride = subScores.listening?.oetUnlockOverride === true;
+  const listeningOk = meetsLevel(listeningLevel, minLevelOet) || listeningOetOverride;
   const writingOk = meetsLevel(writingLevel, minLevelOet);
   const readingOk = meetsLevel(readingLevel, minLevelOet);
 
