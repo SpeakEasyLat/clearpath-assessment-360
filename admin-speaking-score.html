@@ -141,6 +141,7 @@
   .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
   .empty-state { color: var(--gray-600); font-size: 13.5px; text-align: center; padding: 20px 0; }
   #app { display: none; }
+  .draft-note { font-size: 11.5px; color: var(--teal-dark); margin: -8px 0 14px; }
 </style>
 </head>
 <body>
@@ -177,6 +178,7 @@
       <button class="secondary" id="back-btn" style="margin-bottom:14px;">&larr; Volver a la lista</button>
       <h2 id="form-title" style="font-family:var(--font-heading); font-size:15px; margin:0 0 4px;"></h2>
       <p id="form-subtitle" style="font-size:12.5px; color:var(--gray-600); margin:0 0 16px;"></p>
+      <div id="draft-note" class="draft-note" style="display:none;">Se recuperó lo que habías escrito antes de que se cerrara la página.</div>
       <div id="form-fields"></div>
       <div id="form-error" class="error" style="display:none;"></div>
       <div id="form-success" class="success" style="display:none;"></div>
@@ -188,8 +190,26 @@
 <script>
 const SUPABASE_URL = 'https://qqdxmmvhthwcqhgmvyic.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+// v2 (20/08/2026, pedido de Diana): la sesión se cortaba en seco (login con solo
+// access_token, sin refresh_token) y encima se guardaba en sessionStorage -- si Diana
+// cerraba la laptop y volvía horas/días después, el token de 1h ya estaba vencido, no
+// había forma de renovarlo sola, y encima al volver a loguearse el formulario que tenía
+// a medio llenar se perdía (openForm arma los inputs desde cero).
+// Ahora:
+//   1. Se guarda también el refresh_token (localStorage, no sessionStorage, para que
+//      sobreviva a cerrar el navegador). Cuando una llamada da 401, se intenta renovar
+//      el access_token con el refresh_token ANTES de mandar a Diana al login -- si
+//      funciona, la llamada original se reintenta sola y ella ni se entera. Esto es lo
+//      que hace que la sesión, en la práctica, no vuelva a "expirar" mientras no cierre
+//      sesión ella misma (así es como Supabase Auth funciona por diseño).
+//   2. Como red de seguridad adicional (por si el refresh_token también venció, o hay
+//      un corte de red, o se cierra la pestaña sin querer), lo que va escribiendo en el
+//      formulario de un booking se autoguarda en localStorage y se recupera solo si
+//      vuelve a abrir ese mismo booking -- nunca más se pierde lo ya escrito.
 const SESSION_KEY = 'cp360_admin_speaking_token';
+const REFRESH_KEY = 'cp360_admin_speaking_refresh';
 const EMAIL_KEY = 'cp360_admin_speaking_email';
+const DRAFT_PREFIX = 'cp360_admin_speaking_draft_';
 
 const LINGUISTIC_CRITERIA = [
   ['intelligibility', 'Intelligibility'],
@@ -241,9 +261,41 @@ let selectedBooking = null;
 
 function el(id) { return document.getElementById(id); }
 
-function getToken() { return sessionStorage.getItem(SESSION_KEY); }
+function getToken() { return localStorage.getItem(SESSION_KEY); }
+function getRefreshToken() { return localStorage.getItem(REFRESH_KEY); }
 
-async function apiCall(path, body) {
+function storeSession(data) {
+  if (data.access_token) localStorage.setItem(SESSION_KEY, data.access_token);
+  if (data.refresh_token) localStorage.setItem(REFRESH_KEY, data.refresh_token);
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(REFRESH_KEY);
+  localStorage.removeItem(EMAIL_KEY);
+}
+
+// Intenta renovar el access_token con el refresh_token guardado. Devuelve true/false
+// según si lo logró -- nunca lanza, para que apiCall decida qué hacer.
+async function refreshAccessToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.access_token) return false;
+    storeSession(data);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function apiCall(path, body, _retried) {
   const token = getToken();
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${path}`, {
     method: 'POST',
@@ -256,8 +308,16 @@ async function apiCall(path, body) {
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) {
-    sessionStorage.removeItem(SESSION_KEY);
-    sessionStorage.removeItem(EMAIL_KEY);
+    // Antes de rendirse y mandar a Diana al login, intenta renovar el token solo. Si
+    // funciona, reintenta la llamada original una vez (con _retried=true para no entrar
+    // en loop si vuelve a fallar).
+    if (!_retried) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return apiCall(path, body, true);
+      }
+    }
+    clearSession();
     showLogin('Tu sesión expiró. Volvé a iniciar sesión.');
     throw new Error('401');
   }
@@ -279,7 +339,7 @@ function showLogin(message) {
 function showApp() {
   el('login-card').style.display = 'none';
   el('app').style.display = 'block';
-  el('session-email').textContent = sessionStorage.getItem(EMAIL_KEY) || '';
+  el('session-email').textContent = localStorage.getItem(EMAIL_KEY) || '';
   loadPending();
 }
 
@@ -303,8 +363,8 @@ el('login-btn').addEventListener('click', async () => {
     if (!res.ok || !data.access_token) {
       throw new Error(data.error_description || data.msg || 'Credenciales inválidas.');
     }
-    sessionStorage.setItem(SESSION_KEY, data.access_token);
-    sessionStorage.setItem(EMAIL_KEY, email);
+    storeSession(data);
+    localStorage.setItem(EMAIL_KEY, email);
     showApp();
   } catch (err) {
     el('login-error').textContent = err.message || 'No se pudo iniciar sesión.';
@@ -315,8 +375,7 @@ el('login-btn').addEventListener('click', async () => {
 });
 
 el('logout-btn').addEventListener('click', () => {
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(EMAIL_KEY);
+  clearSession();
   showLogin();
 });
 
@@ -367,6 +426,44 @@ function escapeHtml(str) {
 function numberInput(id, min, max) {
   return `<input type="number" id="${id}" min="${min}" max="${max}" step="1">`;
 }
+
+// --- Autoguardado del formulario (red de seguridad además del refresh de sesión) ----
+
+function draftKeyFor(bookingId) { return DRAFT_PREFIX + bookingId; }
+
+function saveDraft() {
+  if (!selectedBooking) return;
+  const values = {};
+  el('form-fields').querySelectorAll('input, select, textarea').forEach((f) => {
+    values[f.id] = f.value;
+  });
+  try {
+    localStorage.setItem(draftKeyFor(selectedBooking.id), JSON.stringify(values));
+  } catch (err) {
+    // localStorage lleno o bloqueado: no interrumpe el uso normal del formulario.
+  }
+}
+
+function loadDraft(bookingId) {
+  try {
+    const raw = localStorage.getItem(draftKeyFor(bookingId));
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function clearDraft(bookingId) {
+  try {
+    localStorage.removeItem(draftKeyFor(bookingId));
+  } catch (err) {
+    // no-op
+  }
+}
+
+// Delegado sobre el contenedor fijo #form-fields -- funciona aunque su innerHTML se
+// reconstruya cada vez que se abre un booking distinto.
+el('form-fields').addEventListener('input', saveDraft);
 
 function openForm(booking) {
   selectedBooking = booking;
@@ -422,6 +519,21 @@ function openForm(booking) {
       <textarea id="comment" placeholder="Observaciones generales de la sesión..."></textarea>
     `;
   }
+
+  // Si hay un borrador guardado de este booking (por ejemplo, quedó a medio llenar
+  // cuando se cortó la sesión), se recupera acá.
+  const draft = loadDraft(booking.id);
+  let restored = false;
+  if (draft) {
+    Object.keys(draft).forEach((id) => {
+      const f = el(id);
+      if (f && draft[id]) {
+        f.value = draft[id];
+        restored = true;
+      }
+    });
+  }
+  el('draft-note').style.display = restored ? 'block' : 'none';
 }
 
 el('back-btn').addEventListener('click', () => loadPending());
@@ -476,6 +588,7 @@ el('submit-btn').addEventListener('click', async () => {
   el('submit-btn').disabled = true;
   try {
     await apiCall('submit-speaking-score', { booking_id: selectedBooking.id, evaluator_score: evaluatorScore });
+    clearDraft(selectedBooking.id);
     el('form-success').textContent = 'Guardado. Si con esto el assessment queda completo, el reporte sale solo por correo.';
     el('form-success').style.display = 'block';
     setTimeout(() => loadPending(), 1500);
@@ -498,7 +611,7 @@ function readInt(id, min, max) {
   return n;
 }
 
-// Sesión ya iniciada en este tab -> saltar login.
+// Sesión ya iniciada (ahora en localStorage, sobrevive a cerrar el navegador) -> saltar login.
 if (getToken()) {
   showApp();
 }
