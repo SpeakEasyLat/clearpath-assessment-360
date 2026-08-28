@@ -66,11 +66,26 @@ function bookingButton(url, titulo, subtitulo, id) {
 // Es "fire-and-forget": no se espera la respuesta ni se bloquea la redirección -- si
 // esta llamada falla, el estudiante igual llega a su reserva sin notar nada; solo se
 // pierde el registro interno.
+//
+// v4 (28/08/2026, pedido de Diana -- caso real de Ana Castro y Juan Camilo RPS, que
+// SÍ reservaron en Google Calendar pero nunca quedaron en speaking_assessment_bookings):
+// el bug era la combinación de este fetch con el setTimeout de 150ms de más abajo. Un
+// fetch normal se cancela solo cuando la pestaña navega a otra página ANTES de que
+// termine -- y el cold start de una Edge Function de Supabase (login de sesión +
+// insert) tranquilamente pasa de 150ms, sobre todo si no se llamó hace rato. O sea que
+// wireBookingRedirect navegaba a thankyou.html y de paso abortaba esta llamada a mitad
+// de camino, sin ningún error visible (el .catch() de acá abajo no ve nada raro,
+// porque la petición nunca llega a fallar de verdad -- se corta antes). Se agrega
+// `keepalive: true`, la opción estándar del navegador para exactamente este caso
+// (petición corta que tiene que sobrevivir a que la página navegue o se cierre) --
+// mismo mecanismo que navigator.sendBeacon, pero permitiendo mandar los headers de
+// Authorization/apikey que esta función necesita.
 function registerBooking() {
   const token = sessionStorage.getItem('cp360_session_token');
   if (!token) return;
   fetch(`${SUPABASE_FUNCTIONS_BASE}/register-speaking-booking`, {
     method: 'POST',
+    keepalive: true,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
