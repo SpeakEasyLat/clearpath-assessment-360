@@ -211,6 +211,34 @@ const REFRESH_KEY = 'cp360_admin_speaking_refresh';
 const EMAIL_KEY = 'cp360_admin_speaking_email';
 const DRAFT_PREFIX = 'cp360_admin_speaking_draft_';
 
+// v2 (29/08/2026, pedido de Diana): overall_grade deja de ser un campo de texto libre
+// -- el bug era que este HTML seguía pidiéndolo a mano (y bloqueando el submit si
+// quedaba vacío) aunque submit-speaking-score (v2, 24/08) ya lo recalcula siempre en
+// el servidor e ignora lo que mande el formulario. Ahora se muestra como vista previa
+// de solo lectura, calculada en vivo con la misma fórmula que usa el servidor
+// (scaledScore500 / gradeFromScaledScore) a partir de los 9 criterios -- ver
+// updateGradePreview más abajo.
+// v3 (29/08/2026, pedido de Diana): la vista previa mostraba el puntaje crudo sobre 39
+// (ej. "B (32/39)"), pero el score de OET vive en escala 0-500 -- igual que
+// Listening/Reading/Writing en el resto del assessment. Ahora se muestra ese número
+// (el mismo que guarda submit-speaking-score v3 como overall_score_500), no el crudo.
+const OET_MAX_LINGUISTIC = 4 * 6; // 24 (4 criterios lingüísticos, 0-6 cada uno)
+const OET_MAX_CLINICAL = 5 * 3; // 15 (5 criterios de comunicación clínica, 0-3 cada uno)
+const OET_MAX_SCORE = OET_MAX_LINGUISTIC + OET_MAX_CLINICAL; // 39
+
+function scaledScore500(rawScore) {
+  return Math.round((rawScore / OET_MAX_SCORE) * 100 * 5); // 0-500
+}
+
+function gradeFromScaledScore(scaled) {
+  if (scaled >= 450) return 'A';
+  if (scaled >= 350) return 'B';
+  if (scaled >= 300) return 'C+';
+  if (scaled >= 200) return 'C';
+  if (scaled >= 100) return 'D';
+  return 'E';
+}
+
 const LINGUISTIC_CRITERIA = [
   ['intelligibility', 'Intelligibility'],
   ['fluency', 'Fluency'],
@@ -461,9 +489,33 @@ function clearDraft(bookingId) {
   }
 }
 
+// Recalcula la vista previa del grade de OET a partir de los 9 criterios ya
+// cargados. Puramente informativo -- el valor real siempre lo calcula el servidor
+// (submit-speaking-score) al guardar, este preview solo evita que Diana/Liza tengan
+// que adivinarlo o escribirlo a mano.
+function updateGradePreview() {
+  const preview = el('grade-preview');
+  if (!preview) return;
+  let sum = 0;
+  for (const [key] of [...LINGUISTIC_CRITERIA, ...CLINICAL_CRITERIA]) {
+    const raw = el('crit-' + key) ? el('crit-' + key).value : '';
+    const n = parseInt(raw, 10);
+    if (raw === '' || isNaN(n)) {
+      preview.textContent = 'Completá los 9 criterios para ver el grade estimado.';
+      return;
+    }
+    sum += n;
+  }
+  const scaled = scaledScore500(sum);
+  preview.textContent = `${gradeFromScaledScore(scaled)}  —  ${scaled}/500`;
+}
+
 // Delegado sobre el contenedor fijo #form-fields -- funciona aunque su innerHTML se
 // reconstruya cada vez que se abre un booking distinto.
-el('form-fields').addEventListener('input', saveDraft);
+el('form-fields').addEventListener('input', () => {
+  saveDraft();
+  if (selectedBooking && selectedBooking.assessment_type === 'OET') updateGradePreview();
+});
 
 function openForm(booking) {
   selectedBooking = booking;
@@ -491,8 +543,9 @@ function openForm(booking) {
           <div>${numberInput('crit-' + key, 0, 3)}</div>
         `).join('')}
       </div>
-      <label for="overall-grade">Grade / nivel general</label>
-      <input type="text" id="overall-grade" placeholder="ej. B">
+      <label>Grade / nivel general</label>
+      <div id="grade-preview" class="hint" style="font-size:14.5px; font-weight:700; color:var(--charcoal-dark); margin:-2px 0 10px;">Completá los 9 criterios para ver el grade estimado.</div>
+      <p class="hint" style="margin:-6px 0 10px;">Se calcula solo, a partir de los 9 criterios de arriba. No se escribe a mano — el servidor vuelve a calcularlo igual al guardar.</p>
       <label for="comment">Comentario</label>
       <textarea id="comment" placeholder="Observaciones generales de la sesión..."></textarea>
     `;
@@ -534,6 +587,7 @@ function openForm(booking) {
     });
   }
   el('draft-note').style.display = restored ? 'block' : 'none';
+  if (booking.assessment_type === 'OET') updateGradePreview();
 }
 
 el('back-btn').addEventListener('click', () => loadPending());
@@ -554,11 +608,11 @@ el('submit-btn').addEventListener('click', async () => {
       for (const [key] of CLINICAL_CRITERIA) {
         clinical_communication[key] = readInt('crit-' + key, 0, 3);
       }
-      const overallGrade = el('overall-grade').value.trim();
       const comment = el('comment').value.trim();
-      if (!overallGrade) throw new Error('Falta el grade / nivel general.');
       if (!comment) throw new Error('Falta el comentario.');
-      evaluatorScore = { type: 'OET', linguistic, clinical_communication, overall_grade: overallGrade, comment };
+      // overall_grade ya no se manda desde acá -- lo calcula siempre el servidor
+      // (submit-speaking-score) a partir de linguistic + clinical_communication.
+      evaluatorScore = { type: 'OET', linguistic, clinical_communication, comment };
     } else {
       const cefrSublevel = el('cefr-sublevel').value;
       if (!cefrSublevel) throw new Error('Elegí un nivel CEFR.');
