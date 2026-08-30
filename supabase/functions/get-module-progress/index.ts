@@ -12,16 +12,25 @@
 // pero sin este endpoint la pantalla no tenia forma de saber cuales eran.
 //
 // El frontend manda un "module_key" logico (grammar/listening/reading/oet_listening/
-// oet_reading/steps2), NO el valor real de question_bank.module -- porque Listening y
-// Reading de Nivel 1 tienen dos bancos distintos segun el track del estudiante
-// (nivel1_listening / nivel1_listening_general, ver app-nivel1-listening.js;
-// nivel1_reading / nivel1_reading_general, ver app-nivel1-reading.js), mientras que
-// Grammar usa el mismo banco para los dos tracks (nivel1_grammar, sin variante
-// _general). Este mapa resuelve module_key + track -> valor real de
-// question_bank.module. OJO: debe mantenerse sincronizado a mano con MODULE_TO_SKILL
-// de submit-response/index.ts y con que archivo JSON carga cada pantalla del
-// frontend -- si el dia de manana se agrega un track o modulo nuevo, hay que tocar los
-// dos lugares.
+// oet_reading/steps2), NO el valor real de question_bank.module -- porque Listening de
+// Nivel 1 todavia tiene dos bancos distintos segun el track del estudiante
+// (nivel1_listening / nivel1_listening_general, ver app-nivel1-listening.js), mientras
+// que Grammar y (desde el 30/08/2026) Reading usan el mismo banco para los dos tracks
+// (nivel1_grammar / nivel1_reading, sin variante _general). Este mapa resuelve
+// module_key + track -> valor real de question_bank.module. OJO: debe mantenerse
+// sincronizado a mano con MODULE_TO_SKILL de submit-response/index.ts y con que
+// archivo JSON carga cada pantalla del frontend -- si el dia de manana se agrega un
+// track o modulo nuevo, hay que tocar los dos lugares.
+//
+// v2 (30/08/2026): Reading Nivel 1 se unifico en un solo banco (nivel1_reading) sin
+// contenido clinico para los dos tracks -- se saca la variante NIVEL1_ONLY de
+// "reading" (antes resolvia a nivel1_reading_general, que ya no carga ningun
+// frontend). Sin este cambio, un estudiante NIVEL1_ONLY que recargara la pagina a
+// mitad de Reading hubiera perdido el "retomar donde quedo" (este endpoint hubiera
+// buscado sus respuestas guardadas en el banco equivocado y nunca las encontraba,
+// aunque las respuestas en si nunca se perdian). nivel1_reading_general sigue
+// existiendo en Supabase, sin usarse, por el historial de intentos ya respondidos con
+// ese banco.
 //
 // No expone si la respuesta fue correcta ni ningun puntaje -- mismo cuidado que el
 // resto del Nivel 1 (ver comentario en app-nivel1.js). Solo selected_answer, para poder
@@ -51,7 +60,7 @@ headers: { "Content-Type": "application/json", ...CORS_HEADERS },
 const MODULE_KEY_TO_QUESTION_BANK_MODULE = {
 grammar: { default: "nivel1_grammar" }, // mismo banco para los dos tracks
 listening: { default: "nivel1_listening", NIVEL1_ONLY: "nivel1_listening_general" },
-reading: { default: "nivel1_reading", NIVEL1_ONLY: "nivel1_reading_general" },
+reading: { default: "nivel1_reading" }, // mismo banco para los dos tracks (30/08/2026)
 oet_listening: { default: "oet_listening" },
 oet_reading: { default: "oet_reading" },
 steps2: { default: "steps2" },
