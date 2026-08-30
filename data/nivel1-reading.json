@@ -1,10 +1,10 @@
 {
   "_meta": {
     "module": "nivel1_reading",
-    "version": 6,
-    "revisionNote": "v6 (30/08/2026): recalibracion de Reading Nivel 1. FULL_360 mantiene tematica clinica en A1 (Notice: Clinic Opening Hours) y A2 (Appointment Reminder). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading_general (mismo texto y preguntas). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas (antes intentos de 32 y 18 en B2/C1 se recortaron a pedido de Diana, para que el % threshold se calcule igual en todas las bandas -- B2/C1 necesitan el doble de correctas). IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro de vuelta a 20 min (1200s), igual que la version anterior de 28 preguntas."
+    "version": 7,
+    "revisionNote": "v7 (30/08/2026): recalibracion de Reading Nivel 1. FULL_360 mantiene tematica clinica en A1 (Notice: Clinic Opening Hours) y A2 (Appointment Reminder). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading_general (mismo texto y preguntas). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas (antes intentos de 32 y 18 en B2/C1 se recortaron a pedido de Diana, para que el % threshold se calcule igual en todas las bandas -- B2/C1 necesitan el doble de correctas). IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro subido de 20 a 25 min (1500s) tras una prueba real: con 20 min el tiempo se acababa justo al llegar a C1, dejando esa banda entera sin responder."
   },
-  "time_limit_seconds": 1200,
+  "time_limit_seconds": 1500,
   "texts": [
     {
       "cefr_level": "A1",
