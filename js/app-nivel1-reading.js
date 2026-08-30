@@ -1,17 +1,22 @@
-// Nivel 1 — Reading (v2, 05/08/2026: 6 textos, 28 preguntas, todas multiple_choice,
-// 5 bandas CEFR completas A1-C1). Reemplaza el v1 (3 textos, 12 preguntas, sin A1 ni
-// B1) -- diseño final aprobado por Diana, ver
-// claude/estado-sesion-5-agosto-reading-v2-cerrado.md. Las bandas B2 y C1 tienen DOS
-// textos cada una (uno general + uno estilo OET Reading Part B); cada texto es un
-// "grupo" propio en data/nivel1-reading.json, así que el módulo avanza por 7 grupos
-// en total, no por 5 bandas -- el ceiling en sí sigue calculándose por banda
-// (cefr_level de cada pregunta), no por grupo/texto.
+// Nivel 1 — Reading (v3, 30/08/2026: 5 textos, 32 preguntas, todas multiple_choice,
+// 5 bandas CEFR completas A1-C1). Reemplaza el v2 (7 textos, 28 preguntas, con rama
+// por track entre data/nivel1-reading.json y data/nivel1-reading-general.json).
+// Diana decidió unificar Reading Nivel 1 en un solo banco sin contenido clínico para
+// todos los estudiantes (ambos tracks) -- ya no hay rama por track: siempre se carga
+// data/nivel1-reading.json. Las bandas B2 y C1 ahora tienen un solo texto cada una
+// (antes dos, uno de ellos con temática clínica); cada texto es un "grupo" propio en
+// data/nivel1-reading.json, así que el módulo avanza por 5 grupos en total -- el
+// ceiling en sí sigue calculándose por banda (cefr_level de cada pregunta), no por
+// grupo/texto. data/nivel1-reading-general.json y el módulo nivel1_reading_general en
+// Supabase quedan sin usarse (no se borran, por el historial de intentos ya
+// respondidos con ese banco).
 //
 // El estudiante lee el texto y responde sus preguntas antes de pasar al siguiente
-// grupo. Cronómetro único de 20 minutos para el módulo completo (mismo patrón que
-// Grammar): si se acaba el tiempo, igual guardamos todo lo pendiente (la pregunta donde
-// estaba parado el estudiante y las que nunca llegó a ver, como "sin respuesta") para
-// que las 28 preguntas queden registradas -- si faltan filas en student_responses, el
+// grupo. Cronómetro único de 25 minutos para el módulo completo (subido desde 20 min
+// en v2 por las 4 preguntas extra del nuevo Set B2/C1; mismo patrón que Grammar): si
+// se acaba el tiempo, igual guardamos todo lo pendiente (la pregunta donde estaba
+// parado el estudiante y las que nunca llegó a ver, como "sin respuesta") para que
+// las 32 preguntas queden registradas -- si faltan filas en student_responses, el
 // Edge Function nunca considera terminado el módulo.
 //
 // Cada respuesta se guarda vía submit-response, que corrige server-side contra
@@ -27,7 +32,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const NEXT_STEP_URL = 'siguiente.html';
 const NEXT_STEP_LABEL = 'Continuar';
 
-const DEFAULT_TIME_LIMIT_SECONDS = 20 * 60;
+const DEFAULT_TIME_LIMIT_SECONDS = 25 * 60;
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
@@ -49,10 +54,9 @@ let saving = false;
 async function init() {
   const sessionToken = sessionTokenOrRedirect();
   if (!sessionToken) return;
-  const dataFile = sessionStorage.getItem('cp360_track') === 'NIVEL1_ONLY'
-    ? 'data/nivel1-reading-general.json'
-    : 'data/nivel1-reading.json';
-  const res = await fetch(dataFile);
+  // Un solo banco para todos los tracks (ya no hay rama por cp360_track) -- ver nota
+  // arriba, 30/08/2026.
+  const res = await fetch('data/nivel1-reading.json');
   readingData = await res.json();
   groups = readingData.texts;
   timeRemaining = Number(readingData.time_limit_seconds) > 0 ? Number(readingData.time_limit_seconds) : DEFAULT_TIME_LIMIT_SECONDS;
