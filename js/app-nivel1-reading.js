@@ -9,11 +9,13 @@
 // memory para el detalle completo de qué cambió y por qué.
 //
 // El estudiante lee el texto y responde sus preguntas antes de pasar al siguiente
-// grupo. Cronómetro único de 20 minutos para el módulo completo (mismo valor que la
-// versión anterior de 28 preguntas): si se acaba el tiempo, igual guardamos todo lo
-// pendiente (la pregunta donde estaba parado el estudiante y las que nunca llegó a
-// ver, como "sin respuesta") para que las 28 preguntas queden registradas -- si faltan
-// filas en student_responses, el Edge Function nunca considera terminado el módulo.
+// grupo. Cronómetro único de 25 minutos para el módulo completo (subido de 20 a 25 el
+// 30/08/2026 tras una prueba real de Diana: con 20 min se le acabó el tiempo justo al
+// llegar a C1 y las 8 preguntas de esa banda quedaron sin responder): si se acaba el
+// tiempo, igual guardamos todo lo pendiente (la pregunta donde estaba parado el
+// estudiante y las que nunca llegó a ver, como "sin respuesta") para que las 28
+// preguntas queden registradas -- si faltan filas en student_responses, el Edge
+// Function nunca considera terminado el módulo.
 //
 // Cada respuesta se guarda vía submit-response, que corrige server-side contra
 // question_bank.correct_answer -- el navegador nunca lo ve. A pedido explícito de
@@ -28,7 +30,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const NEXT_STEP_URL = 'siguiente.html';
 const NEXT_STEP_LABEL = 'Continuar';
 
-const DEFAULT_TIME_LIMIT_SECONDS = 20 * 60;
+const DEFAULT_TIME_LIMIT_SECONDS = 25 * 60;
 
 const quizArea = document.getElementById('quizArea');
 const resultArea = document.getElementById('resultArea');
