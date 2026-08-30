@@ -1,10 +1,10 @@
 {
   "_meta": {
     "module": "nivel1_reading_general",
-    "version": 6,
-    "revisionNote": "v6 (30/08/2026): recalibracion de Reading Nivel 1. NIVEL1_ONLY mantiene tematica no clinica en A1 (Notice: Library Opening Hours) y A2 (Class Reminder), con las correcciones de calibracion del 27/08 (cognados, longitud de opciones, distractores). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading (mismo texto y preguntas, banco FULL_360). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas. IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro de vuelta a 20 min (1200s)."
+    "version": 7,
+    "revisionNote": "v7 (30/08/2026): recalibracion de Reading Nivel 1. NIVEL1_ONLY mantiene tematica no clinica en A1 (Notice: Library Opening Hours) y A2 (Class Reminder), con las correcciones de calibracion del 27/08 (cognados, longitud de opciones, distractores). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading (mismo texto y preguntas, banco FULL_360). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas. IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro subido de 20 a 25 min (1500s) tras una prueba real en FULL_360: con 20 min el tiempo se acababa justo al llegar a C1, dejando esa banda entera sin responder."
   },
-  "time_limit_seconds": 1200,
+  "time_limit_seconds": 1500,
   "texts": [
     {
       "cefr_level": "A1",
