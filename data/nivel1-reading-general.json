@@ -1,364 +1,310 @@
 {
   "_meta": {
     "module": "nivel1_reading_general",
-    "version": 2,
-    "revisionNote": "v2 (11/08/2026): revisión pedagógica completa (informe de Diana), aplicada en paralelo a nivel1-reading.json v4 — ver ese archivo para el detalle de los criterios. Se tocaron los ítems compartidos entre ambos productos (Sleep, Remote Work, Limits of Self-Reported Data) y los específicos de Speak Easy que tenían el mismo tipo de problema (Q4 longitud, Q9 longitud, Q26 opinión del autor)."
+    "version": 6,
+    "revisionNote": "v6 (30/08/2026): recalibracion de Reading Nivel 1. NIVEL1_ONLY mantiene tematica no clinica en A1 (Notice: Library Opening Hours) y A2 (Class Reminder), con las correcciones de calibracion del 27/08 (cognados, longitud de opciones, distractores). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading (mismo texto y preguntas, banco FULL_360). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas. IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro de vuelta a 20 min (1200s)."
   },
   "time_limit_seconds": 1200,
   "texts": [
     {
-      "title": "Notice: Library Opening Hours",
       "cefr_level": "A1",
+      "title": "Notice: Library Opening Hours",
       "passage_text": "The library is open from Monday to Friday, from 9 a.m. to 6 p.m. It is closed on Saturdays and Sundays.\n\nIf you need a book urgently on the weekend, you can read it online on our website.\n\nDo not enter the library without your student card.",
       "questions": [
         {
           "id": "48e2ac36-1b9e-4272-b9fc-595d5340aae0",
-          "position": 1,
-          "answer_format": "multiple_choice",
           "question_text": "In this text, \"closed\" means:",
           "options": [
-            "very busy",
             "not open",
+            "very busy",
             "far away"
           ]
         },
         {
           "id": "4d0fec6f-d5f0-4d87-a3a6-c8a67bd8ff44",
-          "position": 2,
-          "answer_format": "multiple_choice",
           "question_text": "Is the library open on Sundays?",
           "options": [
             "Yes, from 9 a.m. to 6 p.m.",
-            "Only in an emergency.",
-            "No, it is closed."
+            "No, it is closed.",
+            "Only in an emergency."
           ]
         },
         {
           "id": "da87e7fe-acf8-4c11-9cee-58411d9044d2",
-          "position": 3,
-          "answer_format": "multiple_choice",
           "question_text": "What do you need to enter the library?",
           "options": [
-            "A student card",
             "A staff badge",
-            "A library book"
+            "A library book",
+            "A student card"
           ]
         },
         {
           "id": "84b18b48-f270-488f-8b2e-dcd8987d3fbe",
-          "position": 4,
-          "answer_format": "multiple_choice",
           "question_text": "What is this notice mainly about?",
           "options": [
-            "How the library decided to close on weekends",
-            "The times when the library is open and what to do outside those hours",
-            "How students can renew or replace a library card"
+            "When the library is open and what students can do outside those hours",
+            "The reason the library recently changed its weekend opening hours",
+            "The process for renewing or replacing a lost library card"
           ]
         }
       ]
     },
     {
-      "title": "Class Reminder",
       "cefr_level": "A2",
+      "title": "Class Reminder",
       "passage_text": "Dear Ms. Alvarez,\n\nThis is a reminder about your English class with Mr. Kim on Thursday, August 13, at 6:30 p.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this class, please call us at least 24 hours before, so we can give the spot to another student. Remember to bring your notebook and a pen.\n\nThank you,\nRiverside Language School",
       "questions": [
         {
           "id": "d0f552c5-b590-4744-a405-3c58e5dcc199",
-          "position": 5,
-          "answer_format": "multiple_choice",
-          "question_text": "\"Reminder\" means:",
+          "question_text": "At what time should the student arrive at the school?",
           "options": [
-            "a message that helps you remember something",
-            "a type of homework you do every week",
-            "a form you must complete before you leave"
+            "6:30 p.m.",
+            "6:45 p.m.",
+            "6:15 p.m."
           ]
         },
         {
           "id": "29a35279-d983-41d6-8baf-bded8a2ee414",
-          "position": 6,
-          "answer_format": "multiple_choice",
-          "question_text": "What time is the class?",
+          "question_text": "According to the message, what should the student do if she cannot come to the class?",
           "options": [
-            "6:15 p.m.",
-            "3:00 p.m.",
-            "6:30 p.m."
+            "Call the school at least 24 hours before",
+            "Give her spot to another student herself",
+            "Bring her notebook and a pen to the next class"
           ]
         },
         {
           "id": "91c02385-9ec3-4ab1-a247-f20bb62393c6",
-          "position": 7,
-          "answer_format": "multiple_choice",
-          "question_text": "What should the student do if she cannot come to the class?",
-          "options": [
-            "Come to the next class instead",
-            "Call the school at least 24 hours before",
-            "Do nothing, since it doesn't really matter"
-          ]
-        },
-        {
-          "id": "3ac609b1-82a6-4ed9-8477-1ff9e994960e",
-          "position": 8,
-          "answer_format": "multiple_choice",
           "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
           "options": [
-            "Come to the school a quarter of an hour before your class.",
             "Come to the school 15 minutes after your class.",
+            "Come to the school a quarter of an hour before your class.",
             "Arrive at the school whenever is convenient, with no fixed time."
           ]
         },
         {
-          "id": "6e2bb1af-124d-467f-95ef-92445485873a",
-          "position": 9,
-          "answer_format": "multiple_choice",
+          "id": "3ac609b1-82a6-4ed9-8477-1ff9e994960e",
           "question_text": "What is the main purpose of this message?",
           "options": [
             "To cancel the student's next scheduled class because of low enrollment",
-            "To remind the student about their class and explain what to bring",
-            "To request payment for a class that already took place"
+            "To request payment for a class that already took place",
+            "To remind the student about their class and explain what to bring"
           ]
         }
       ]
     },
     {
-      "title": "The Importance of Sleep for Learning",
       "cefr_level": "B1",
+      "title": "The Importance of Sleep for Learning",
       "passage_text": "Getting enough sleep is essential for learning new skills, including languages. During deep sleep, the brain organizes the information gathered throughout the day and stores it in long-term memory. However, many students underestimate how much rest they need, especially before an exam or an important class. As a result, they may study for hours but remember very little the next day.\n\nExperts recommend at least seven hours of sleep per night for adults, although this can vary depending on age and lifestyle. Interestingly, taking a short nap after studying can also improve memory, as long as it does not replace a full night's sleep.",
       "questions": [
         {
-          "id": "0af86bd3-105a-40fa-ac8d-a9f3fb6cd17b",
-          "position": 10,
-          "answer_format": "multiple_choice",
+          "id": "6e2bb1af-124d-467f-95ef-92445485873a",
           "question_text": "\"Underestimate\" means:",
           "options": [
-            "to spend far more time studying than is actually necessary",
             "to think something is less important or serious than it really is",
+            "to spend far more time studying than is actually necessary",
             "to sleep for a much shorter time than your body actually needs"
           ]
         },
         {
+          "id": "0af86bd3-105a-40fa-ac8d-a9f3fb6cd17b",
+          "question_text": "According to the text, a short nap can help memory, but only under what condition?",
+          "options": [
+            "if it happens right before an exam",
+            "if the person is already an adult",
+            "if it does not replace a full night's sleep"
+          ]
+        },
+        {
           "id": "4d2f23b9-b21c-4b80-b648-e54efa171d88",
-          "position": 11,
-          "answer_format": "multiple_choice",
-          "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
-          "options": [
-            "a consequence",
-            "a surprising contrast",
-            "a supporting example"
-          ]
-        },
-        {
-          "id": "31ccb011-ca80-4e9b-b14a-8e026354588e",
-          "position": 12,
-          "answer_format": "multiple_choice",
-          "question_text": "Complete the sentence based on the text: \"A short nap can improve memory, ___ it should not replace a full night's sleep.\"",
-          "options": [
-            "because",
-            "so",
-            "although"
-          ]
-        },
-        {
-          "id": "7d49457e-9240-4938-8a72-546e8f9559f4",
-          "position": 13,
-          "answer_format": "multiple_choice",
           "question_text": "What is this passage mainly about?",
           "options": [
-            "Different study techniques that can help students improve their grades",
             "The connection between sleep and memory",
+            "Different study techniques that can help students improve their grades",
             "Why teenagers usually need more sleep than adults"
           ]
         },
         {
-          "id": "3804cdc2-325c-4909-bdda-277a697320fb",
-          "position": 14,
-          "answer_format": "multiple_choice",
+          "id": "31ccb011-ca80-4e9b-b14a-8e026354588e",
           "question_text": "Which sentence best summarises the text?",
           "options": [
-            "Sleep matters mainly right before exams, not as a regular habit.",
-            "Deep sleep helps the brain store new information, so rest matters as much as study time.",
+            "Sleep matters mainly the night before an exam, not as a regular habit.",
+            "Sleep helps store new information, so rest matters as much as studying.",
             "A short nap after studying can fully replace a full night's sleep."
           ]
         }
       ]
     },
     {
-      "title": "Is the open-plan office actually working?",
       "cefr_level": "B2",
-      "passage_text": "Open-plan offices were meant to increase collaboration, yet a growing number of workers now describe them as a source of constant distraction rather than teamwork. Frequent interruptions, background noise, and the pressure to appear constantly available can make it harder, not easier, to concentrate on demanding tasks.\n\nSome companies have responded by introducing \"quiet zones\" or allowing staff to book private rooms for focused work, effectively rebuilding the walls they removed a decade earlier. Others argue that the problem is not the layout itself but a culture that treats every message as urgent, regardless of how the office is arranged. Until that culture changes, redesigning the space may only address part of the issue.",
+      "title": "The Four-Day Work Week",
+      "passage_text": "Over the past few years, a number of companies around the world have experimented with a four-day working week, usually with staff working the same number of hours over four days instead of five, or in some cases working genuinely fewer hours for the same pay. Early trials reported few negative effects on productivity: some companies even found that output stayed the same or improved, a result that may have been due to employees arriving less tired and taking fewer short absences.\n\nIt is often argued that these results should be read with some caution. Many of the companies that volunteered for the trials were already flexible, well-managed organisations that were likely to adapt successfully to almost any change in working patterns; a result from this group cannot simply be assumed to apply to a struggling company with rigid processes. There is also a difference between roles that can be reorganised around output — where finishing a task matters more than the exact hours logged — and roles built around continuous coverage, such as retail or healthcare, where someone still has to be there on the fifth day regardless of how efficient anyone becomes.\n\nNone of this means the four-day week does not work; it means the trials so far tell us more about which organisations can adopt it easily than about whether it would succeed everywhere.",
       "questions": [
         {
-          "id": "d6124c9b-5a4c-46bc-9fad-db4cda6ef303",
-          "position": 15,
-          "answer_format": "multiple_choice",
-          "question_text": "\"Layout\" in this context is closest in meaning to:",
+          "id": "7d49457e-9240-4938-8a72-546e8f9559f4",
+          "question_text": "\"Output\" (as in \"output stayed the same or improved\") most nearly means:",
           "options": [
-            "the color scheme used in decoration",
-            "the total number of employees",
-            "the physical arrangement of a space"
+            "how much work actually gets done",
+            "how many people are on the payroll",
+            "how positive the atmosphere feels at work",
+            "how much money is spent running things"
+          ]
+        },
+        {
+          "id": "3804cdc2-325c-4909-bdda-277a697320fb",
+          "question_text": "\"Coverage\" (as in \"roles built around continuous coverage\") is closest in meaning to:",
+          "options": [
+            "attention from journalists and the news",
+            "protection bought through an insurance plan",
+            "someone on hand at all times",
+            "guidance given to staff who are new"
+          ]
+        },
+        {
+          "id": "d6124c9b-5a4c-46bc-9fad-db4cda6ef303",
+          "question_text": "According to the text, why did some companies see output stay the same or improve during the trials?",
+          "options": [
+            "Staff arrived more rested and took fewer short breaks from work",
+            "The company hired temporary workers to cover the missing day",
+            "Staff were offered a bonus to make up for the shorter week",
+            "Managers began supervising staff more closely than before"
           ]
         },
         {
           "id": "5e6bc457-6cef-462a-ba20-76440af01f41",
-          "position": 16,
-          "answer_format": "multiple_choice",
-          "question_text": "According to the text, why have some companies created \"quiet zones\"?",
+          "question_text": "What does the text suggest about the companies that volunteered for these trials?",
           "options": [
-            "To give staff a way to concentrate without interruptions",
-            "To reduce the total number of desks in the office",
-            "To encourage more group meetings among different teams"
+            "They were struggling financially and hoping for a fast solution",
+            "They were mostly well organised beforehand",
+            "They were picked at random by a team of researchers",
+            "They were obliged by new regulation to take part"
           ]
         },
         {
           "id": "a08e0d3c-8a5b-4ddb-a0ca-76a3f1932418",
-          "position": 17,
-          "answer_format": "multiple_choice",
-          "question_text": "What is the writer's main point?",
+          "question_text": "What point is the text making by contrasting roles that can be \"reorganised around output\" with roles requiring \"continuous coverage\"?",
           "options": [
-            "Open-plan offices work well for teamwork but poorly for focused, individual tasks.",
-            "The real problem may be workplace culture, not the office layout.",
-            "Quiet zones have reduced distractions for some staff, though the wider culture hasn't changed."
+            "Coverage-based jobs matter less than output-based ones",
+            "The new arrangement fits some jobs more easily",
+            "Staff in healthcare oppose the four-day week",
+            "Retail and healthcare roles cannot be changed at all"
           ]
-        }
-      ]
-    },
-    {
-      "title": "Remote Work and Communication",
-      "cefr_level": "B2",
-      "passage_text": "Since remote work became widespread, many companies have had to rethink how they communicate internally. Face-to-face conversations, once the default way to resolve misunderstandings quickly, have largely been replaced by written messages and video calls. While this shift has given employees greater flexibility, it has also introduced new challenges.\n\nWritten communication, for instance, can easily be misread, since tone and body language are absent. Consequently, some organisations now train staff specifically in written communication skills, encouraging them to be clear, concise, and mindful of how a message might be interpreted by someone who cannot see their face. Others have adopted stricter rules about which topics should be discussed by call rather than by chat, precisely to avoid this kind of ambiguity.",
-      "questions": [
+        },
         {
           "id": "e8342dd7-9d35-4b9f-9211-8aba1a56a825",
-          "position": 18,
-          "answer_format": "multiple_choice",
-          "question_text": "\"Ambiguity\" in this context is closest in meaning to:",
+          "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
-            "strong disagreement",
-            "a controversy that divides opinion",
-            "unclear meaning"
+            "The evidence shows the four-day week fails in most sectors",
+            "Every business should switch to four days without delay",
+            "The trials seem promising but mainly show which firms adapt",
+            "The four-day week only works when wages are reduced"
           ]
         },
         {
           "id": "b94c874c-92a2-465d-a834-5928429b9a78",
-          "position": 19,
-          "answer_format": "multiple_choice",
-          "question_text": "According to the text, why do some organisations now train staff specifically in written communication skills?",
+          "question_text": "What is the writer mainly doing in the second paragraph?",
           "options": [
-            "Because written messages are easily misread without tone or body language to clarify them",
-            "Because employees asked for fewer video calls during the week",
-            "Because remote work removed the need to write anything formally"
+            "Showing that the people running the trials were not honest",
+            "Giving reasons to read the results with caution",
+            "Insisting that the four-day week should be dropped altogether",
+            "Explaining the exact procedure followed in each trial"
           ]
         },
         {
           "id": "245e0816-0a6e-4693-85c0-2ff3c86277b7",
-          "position": 20,
-          "answer_format": "multiple_choice",
-          "question_text": "Which sentence best captures the main idea of the text?",
+          "question_text": "Which sentence best paraphrases: \"None of this means the four-day week does not work; it means the trials so far tell us more about which organisations can adopt it easily than about whether it would succeed everywhere\"?",
           "options": [
-            "Remote work has eliminated the need for regular team meetings.",
-            "Remote work has reshaped internal communication, raising the need for clearer writing.",
-            "Companies have stopped allowing employees to make phone calls."
+            "The trials confirm the four-day week suits every type of business",
+            "Only companies above a certain size can make this work",
+            "No organisation has tested the four-day week properly so far",
+            "The trials mainly show who adapts easily, not whether it works"
           ]
         }
       ]
     },
     {
-      "title": "The Limits of Self-Reported Data",
       "cefr_level": "C1",
-      "passage_text": "Self-reported data — information provided directly by participants about their own behaviour, symptoms, or habits — remains all-important in social and medical research, largely because certain experiences, such as pain or motivation, cannot be measured by any external instrument. Nevertheless, researchers have long acknowledged that such data are vulnerable to several forms of bias.\n\nRecall bias, for example, occurs when participants inaccurately remember past events, often unintentionally reconstructing them in ways that are more coherent or favourable than what actually happened. Social desirability bias, meanwhile, leads respondents to underreport behaviours they consider embarrassing and overreport those they believe will be viewed positively.\n\nRather than abandoning self-report methods altogether, most researchers now combine them with objective measures — wearable devices, clinical records, or third-party observation — so that any discrepancy between what is reported and what is observed becomes itself a source of insight, rather than simply a limitation to be corrected.",
+      "title": "Cutting Your Losses",
+      "passage_text": "Economists have a blunt phrase for a mistake most of us have made at least once: throwing good money after bad. The sunk cost fallacy describes the pull toward carrying on with something — a project, a renovation, a doomed relationship — simply because so much has already gone into it, not because carrying on is actually the wiser course. Had the idea been drilled into every manager at business school, a good many companies would be in far better shape today; as things stand, it tends to surface only once the losses are already piling up.\n\nRarely does anyone pause to ask whether the money is recoverable at all. Once it's sunk, it's sunk, and no amount of wishful thinking will claw it back. Yet walking away from a failing venture can feel like an admission of defeat, so people would rather prop it up a little longer than own up to having got it wrong. Cutting your losses, as the saying goes, is a great deal easier said than done.\n\nBoards of directors are no better at spotting the signs. A project that ought to have been written off years earlier is instead handed yet another round of funding, on the grounds that pulling the plug now would waste everything spent so far — which is, of course, precisely the fallacy at work. Only when the losses become too large to explain away does anyone finally read the writing on the wall.",
       "questions": [
         {
           "id": "e3c0ade5-68ea-4f94-9086-e507e9d234bb",
-          "position": 21,
-          "answer_format": "multiple_choice",
-          "question_text": "\"All-important\" means:",
+          "question_text": "The idiom \"throwing good money after bad\" is closest in meaning to:",
           "options": [
-            "unreliable",
-            "rarely used",
-            "absolutely necessary"
+            "spending carelessly on things nobody really needed",
+            "putting more money into something that is already failing",
+            "lending money to people known for not repaying debts",
+            "giving money to a cause without checking how it's used"
           ]
         },
         {
           "id": "1a54a107-33d3-4965-88e6-b66738de63bf",
-          "position": 22,
-          "answer_format": "multiple_choice",
-          "question_text": "Which statement best paraphrases: \"Rather than abandoning self-report methods altogether, most researchers now combine them with objective measures\"?",
+          "question_text": "What does the sentence \"Had the idea been drilled into every manager at business school, a good many companies would be in far better shape today\" suggest?",
           "options": [
-            "Most researchers have stopped using self-reported data completely.",
-            "Most researchers now use self-reported data alongside other verification methods.",
-            "Objective measures have proven unreliable compared to self-reports."
+            "Many companies are worse off today because this idea went largely untaught",
+            "Business schools currently teach this idea to every manager",
+            "Most managers ignored this idea when they were taught it in school",
+            "Companies that studied this idea in the past have since forgotten it"
           ]
         },
         {
           "id": "a588b5cc-0e7a-4677-9c17-8caaec2c88bc",
-          "position": 23,
-          "answer_format": "multiple_choice",
-          "question_text": "Which title best fits this passage?",
+          "question_text": "The opening of paragraph 2, \"Rarely does anyone pause to ask whether the money is recoverable at all,\" implies that:",
           "options": [
-            "Understanding and Managing the Limitations of Self-Reported Data",
-            "Self-Reported Data: A Method Researchers Are Slowly Abandoning",
-            "A Brief History of Data Collection Methods in Social Science"
+            "People frequently double-check whether their money can be recovered",
+            "Recovering the money is usually simple once someone looks into it",
+            "Very few people ever ask if the money can be saved",
+            "Nobody has ever managed to recover money lost this way"
           ]
         },
         {
           "id": "482f7fd6-f61a-4a2d-8777-d45a9d38b22d",
-          "position": 24,
-          "answer_format": "multiple_choice",
-          "question_text": "Based on the text, what can be inferred about researchers' attitude toward self-reported data, despite its limitations?",
+          "question_text": "In the text, choosing to \"prop it up a little longer\" rather than \"own up to having got it wrong\" means a person would rather:",
           "options": [
-            "They believe objective measures are generally more accurate, so self-reports should play a smaller role.",
-            "They believe the biases described mean self-reported data mainly reflects social pressure, not real behaviour.",
-            "They consider it valuable enough to keep using, but pair it with other methods to manage its weaknesses."
+            "sell the project quickly than wait for it to improve",
+            "keep a failing project going than admit their mistake",
+            "blame someone else than accept responsibility publicly",
+            "ask a colleague for help than solve the problem alone"
           ]
-        }
-      ]
-    },
-    {
-      "title": "Extract from an HR policy: offboarding planning",
-      "cefr_level": "C1",
-      "passage_text": "Effective offboarding planning should begin as early as possible once an employee has given notice, rather than being treated as a task reserved for their final day. Delays are frequently caused not by the departing employee but by administrative factors, such as returning equipment, revoking system access, or confirming final pay calculations.\n\nManagers are therefore encouraged to identify likely offboarding tasks at the point notice is given and to communicate these to HR and IT without delay. Where a role is likely to require a handover period, briefing a colleague should be initiated well in advance, since preparing training materials often takes longer than expected and is entirely independent of the employee's departure date.",
-      "questions": [
+        },
         {
           "id": "8893f4aa-a173-4095-b810-ae987e76c4a8",
-          "position": 25,
-          "answer_format": "multiple_choice",
-          "question_text": "\"Notice\" (as in \"once an employee has given notice\") most likely means:",
+          "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
-            "news about a company event",
-            "advance notice that someone plans to leave",
-            "a legal document confirming employment"
+            "People keep funding failure because stopping feels worse than losing more",
+            "Most organisations recover their losses eventually if they wait long enough",
+            "Boards of directors are less rational than individual investors",
+            "Financial mistakes are usually caused by a lack of proper training"
           ]
         },
         {
           "id": "6ad9d175-9499-4eca-866e-b8ed29872b7e",
-          "position": 26,
-          "answer_format": "multiple_choice",
-          "question_text": "\"...rather than being treated as a task reserved for their final day\" — what does this suggest about how offboarding is often handled in practice?",
+          "question_text": "What is the writer mainly doing in the final paragraph?",
           "options": [
-            "It is often left until an employee's last day, which the writer considers too late",
-            "It is shared equally between the departing employee and HR, which the writer sees as a fair balance",
-            "It already starts on the day notice is given, which the writer considers the ideal approach"
+            "Proving that boards of directors are dishonest with shareholders",
+            "Recommending a new method for approving company funding",
+            "Showing that the same pattern happens in organisations too",
+            "Arguing that projects should never be given a second round of funding"
           ]
         },
         {
           "id": "128cc7ee-0fa9-4cac-ba79-a7ee7660f358",
-          "position": 27,
-          "answer_format": "multiple_choice",
-          "question_text": "Which statement best summarises the text?",
+          "question_text": "Which statement best paraphrases \"which is, of course, precisely the fallacy at work\"?",
           "options": [
-            "Offboarding works best when HR decides the timeline and the departing employee simply follows it.",
-            "Offboarding should start early since most delays are administrative.",
-            "Employees are usually ready to leave before HR finishes paperwork."
+            "This decision is completely different from the fallacy described earlier",
+            "This is a clear case of the very mistake just described",
+            "The fallacy only applies to individuals, never to a whole board",
+            "Nobody has ever proven that this decision is actually a mistake"
           ]
         },
         {
           "id": "d64fea9a-6ab2-4784-a993-45eca4a8a561",
-          "position": 28,
-          "answer_format": "multiple_choice",
-          "question_text": "\"...preparing training materials often takes longer than expected and is entirely independent of the employee's departure date\" most nearly means:",
+          "question_text": "What does it mean for a board to finally \"read the writing on the wall\"?",
           "options": [
-            "Preparing training materials takes its own time, regardless of the departure date.",
-            "Training materials can only be prepared once the employee has left.",
-            "Employees must stay longer whenever training materials are not ready."
+            "They publish a public report explaining what went wrong",
+            "They discover a written warning that had been hidden from them",
+            "They decide to write off the entire company as a loss",
+            "They finally accept an outcome they can no longer avoid"
           ]
         }
       ]
