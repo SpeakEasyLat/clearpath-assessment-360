@@ -1,20 +1,18 @@
 {
   "_meta": {
     "module": "nivel1_reading",
-    "version": 5,
-    "revisionNote": "v5 (30/08/2026): unificacion de Reading Nivel 1 en un solo banco sin contenido clinico para todos (antes habia rama por track entre nivel1_reading y nivel1_reading_general). A1/A2/B1 pasan a los textos no clinicos (biblioteca / clase) con las correcciones de calibracion del 27/08 (cognados, longitud de opciones, distractores). El B2/C1 anterior (dos textos con contenido clinico) se reemplaza por un unico Set aprobado por Diana: 'The Four-Day Work Week' (B2, 8 preguntas, 4 opciones) y 'Cutting Your Losses' (C1, 10 preguntas, 4 opciones), verificado contra CEFR oficial y sin que la opcion correcta sea la unica mas larga. Total: 5 textos, 32 preguntas (antes 7 textos, 28). Cronometro subido a 25 min (1500s) por las 4 preguntas extra. IDs reusados de question_bank (module=nivel1_reading) para no romper el historial de intentos ya respondidos; nivel1_reading_general queda sin usarse, no se borra."
+    "version": 6,
+    "revisionNote": "v6 (30/08/2026): recalibracion de Reading Nivel 1. FULL_360 mantiene tematica clinica en A1 (Notice: Clinic Opening Hours) y A2 (Appointment Reminder). B1 (The Importance of Sleep for Learning) y el nuevo set B2/C1 (The Four-Day Work Week / Cutting Your Losses) son compartidos con nivel1_reading_general (mismo texto y preguntas). Distribucion final: A1=4, A2=4, B1=4, B2=8, C1=8 = 28 preguntas (antes intentos de 32 y 18 en B2/C1 se recortaron a pedido de Diana, para que el % threshold se calcule igual en todas las bandas -- B2/C1 necesitan el doble de correctas). IDs de question_bank reusados de las 28 preguntas originales para no romper el historial de intentos ya respondidos. Cronometro de vuelta a 20 min (1200s), igual que la version anterior de 28 preguntas."
   },
-  "time_limit_seconds": 1500,
+  "time_limit_seconds": 1200,
   "texts": [
     {
-      "title": "Notice: Library Opening Hours",
       "cefr_level": "A1",
-      "passage_text": "The library is open from Monday to Friday, from 9 a.m. to 6 p.m. It is closed on Saturdays and Sundays.\n\nIf you need a book urgently on the weekend, you can read it online on our website.\n\nDo not enter the library without your student card.",
+      "title": "Notice: Clinic Opening Hours",
+      "passage_text": "The clinic is open from Monday to Friday, from 8 a.m. to 5 p.m. It is closed on Saturdays and Sundays.\n\nIf you need urgent care on the weekend, please go to the nearest emergency room.\n\nDo not go to the clinic without an appointment.",
       "questions": [
         {
           "id": "934056f9-a855-42e1-9e88-c6685e89c14d",
-          "position": 1,
-          "answer_format": "multiple_choice",
           "question_text": "In this text, \"closed\" means:",
           "options": [
             "not open",
@@ -24,110 +22,83 @@
         },
         {
           "id": "07dbc6ba-f953-4fe2-9b07-fd82b49e42e4",
-          "position": 2,
-          "answer_format": "multiple_choice",
-          "question_text": "Is the library open on Sundays?",
+          "question_text": "Is the clinic open on Sundays?",
           "options": [
-            "Yes, from 9 a.m. to 6 p.m.",
+            "Yes, from 8 a.m. to 5 p.m.",
             "No, it is closed.",
             "Only in an emergency."
           ]
         },
         {
           "id": "442beb96-fba2-416b-a24f-017ef2dea86a",
-          "position": 3,
-          "answer_format": "multiple_choice",
-          "question_text": "What do you need to enter the library?",
+          "question_text": "According to the notice, what do you need before going to the clinic?",
           "options": [
-            "A staff badge",
-            "A library book",
-            "A student card"
+            "A referral letter from another doctor",
+            "Proof of insurance",
+            "An appointment"
           ]
         },
         {
           "id": "d97187da-031a-40e8-a4e0-68bd2499433e",
-          "position": 4,
-          "answer_format": "multiple_choice",
           "question_text": "What is this notice mainly about?",
           "options": [
-            "When the library is open and what students can do outside those hours",
-            "The reason the library recently changed its weekend opening hours",
-            "The process for renewing or replacing a lost library card"
+            "When the clinic is open and what to do outside those hours",
+            "How patients can book a clinic appointment by phone or through the website",
+            "The names, specialties, and weekly schedules of all the clinic's doctors"
           ]
         }
       ]
     },
     {
-      "title": "Class Reminder",
       "cefr_level": "A2",
-      "passage_text": "Dear Ms. Alvarez,\n\nThis is a reminder about your English class with Mr. Kim on Thursday, August 13, at 6:30 p.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this class, please call us at least 24 hours before, so we can give the spot to another student. Remember to bring your notebook and a pen.\n\nThank you,\nRiverside Language School",
+      "title": "Appointment Reminder",
+      "passage_text": "Dear Mr. Ortiz,\n\nThis is a reminder about your appointment with Dr. Reyes on Thursday, August 13, at 10:30 a.m. Please arrive 15 minutes early because you will need to complete a short form.\n\nIf you cannot come to this appointment, please call us at least 24 hours before, so we can give the spot to another patient. Remember to bring your ID card and insurance information.\n\nThank you,\nRiverside Family Clinic",
       "questions": [
         {
           "id": "13400d9b-117c-4639-b850-0aba4879c653",
-          "position": 5,
-          "answer_format": "multiple_choice",
-          "question_text": "In this message, \"spot\" most nearly means:",
+          "question_text": "At what time should Mr. Ortiz arrive at the clinic?",
           "options": [
-            "a small stain or mark on clothing",
-            "a place reserved for someone in a class",
-            "a short break between activities"
+            "10:30 a.m.",
+            "10:45 a.m.",
+            "10:15 a.m."
           ]
         },
         {
           "id": "a222117d-2195-4ea4-9459-ec940922c490",
-          "position": 6,
-          "answer_format": "multiple_choice",
-          "question_text": "At what time should the student arrive at the school?",
+          "question_text": "According to the message, what should Mr. Ortiz do if he cannot come to his appointment?",
           "options": [
-            "6:30 p.m.",
-            "6:45 p.m.",
-            "6:15 p.m."
+            "Call the clinic at least 24 hours before",
+            "Give the appointment to another patient himself",
+            "Bring his ID card and insurance information now"
           ]
         },
         {
           "id": "84a403d4-d452-4cf7-92cb-a41bdec0e0a6",
-          "position": 7,
-          "answer_format": "multiple_choice",
-          "question_text": "According to the message, what should the student do if she cannot come to the class?",
+          "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
           "options": [
-            "Call the school at least 24 hours before",
-            "Give her spot to another student herself",
-            "Bring her notebook and a pen to the next class"
+            "Come to the clinic 15 minutes after your appointment.",
+            "Come to the clinic a quarter of an hour before your appointment.",
+            "You are free to arrive whenever you like, with no fixed time."
           ]
         },
         {
           "id": "c0b90898-9e45-4b79-b9c5-cecf383a20a6",
-          "position": 8,
-          "answer_format": "multiple_choice",
-          "question_text": "Which sentence means the same as \"Please arrive 15 minutes early\"?",
-          "options": [
-            "Come to the school 15 minutes after your class.",
-            "Come to the school a quarter of an hour before your class.",
-            "Arrive at the school whenever is convenient, with no fixed time."
-          ]
-        },
-        {
-          "id": "a980b738-63f3-439c-8033-d35a16181056",
-          "position": 9,
-          "answer_format": "multiple_choice",
           "question_text": "What is the main purpose of this message?",
           "options": [
-            "To cancel the student's next scheduled class because of low enrollment",
-            "To request payment for a class that already took place",
-            "To remind the student about their class and explain what to bring"
+            "To cancel the patient's appointment because of a scheduling conflict",
+            "To request payment for a treatment received earlier",
+            "To remind the patient about their appointment and explain what to bring"
           ]
         }
       ]
     },
     {
-      "title": "The Importance of Sleep for Learning",
       "cefr_level": "B1",
+      "title": "The Importance of Sleep for Learning",
       "passage_text": "Getting enough sleep is essential for learning new skills, including languages. During deep sleep, the brain organizes the information gathered throughout the day and stores it in long-term memory. However, many students underestimate how much rest they need, especially before an exam or an important class. As a result, they may study for hours but remember very little the next day.\n\nExperts recommend at least seven hours of sleep per night for adults, although this can vary depending on age and lifestyle. Interestingly, taking a short nap after studying can also improve memory, as long as it does not replace a full night's sleep.",
       "questions": [
         {
-          "id": "9843e263-ffdb-4a3c-b813-400980b31817",
-          "position": 10,
-          "answer_format": "multiple_choice",
+          "id": "a980b738-63f3-439c-8033-d35a16181056",
           "question_text": "\"Underestimate\" means:",
           "options": [
             "to think something is less important or serious than it really is",
@@ -136,20 +107,7 @@
           ]
         },
         {
-          "id": "81c28a17-38c3-4588-83af-e507fb7659c1",
-          "position": 11,
-          "answer_format": "multiple_choice",
-          "question_text": "\"As a result, they may study for hours but remember very little\" — \"as a result\" shows:",
-          "options": [
-            "a surprising contrast",
-            "a consequence",
-            "a supporting example"
-          ]
-        },
-        {
-          "id": "6011707d-cc78-4446-851a-c3ac7964942b",
-          "position": 12,
-          "answer_format": "multiple_choice",
+          "id": "9843e263-ffdb-4a3c-b813-400980b31817",
           "question_text": "According to the text, a short nap can help memory, but only under what condition?",
           "options": [
             "if it happens right before an exam",
@@ -158,9 +116,7 @@
           ]
         },
         {
-          "id": "684abaea-b108-4c64-bf23-fd5f87c3035d",
-          "position": 13,
-          "answer_format": "multiple_choice",
+          "id": "81c28a17-38c3-4588-83af-e507fb7659c1",
           "question_text": "What is this passage mainly about?",
           "options": [
             "The connection between sleep and memory",
@@ -169,9 +125,7 @@
           ]
         },
         {
-          "id": "fcdb5eeb-6efd-4777-8351-e2981170b2fb",
-          "position": 14,
-          "answer_format": "multiple_choice",
+          "id": "6011707d-cc78-4446-851a-c3ac7964942b",
           "question_text": "Which sentence best summarises the text?",
           "options": [
             "Sleep matters mainly the night before an exam, not as a regular habit.",
@@ -182,14 +136,12 @@
       ]
     },
     {
-      "title": "The Four-Day Work Week",
       "cefr_level": "B2",
+      "title": "The Four-Day Work Week",
       "passage_text": "Over the past few years, a number of companies around the world have experimented with a four-day working week, usually with staff working the same number of hours over four days instead of five, or in some cases working genuinely fewer hours for the same pay. Early trials reported few negative effects on productivity: some companies even found that output stayed the same or improved, a result that may have been due to employees arriving less tired and taking fewer short absences.\n\nIt is often argued that these results should be read with some caution. Many of the companies that volunteered for the trials were already flexible, well-managed organisations that were likely to adapt successfully to almost any change in working patterns; a result from this group cannot simply be assumed to apply to a struggling company with rigid processes. There is also a difference between roles that can be reorganised around output — where finishing a task matters more than the exact hours logged — and roles built around continuous coverage, such as retail or healthcare, where someone still has to be there on the fifth day regardless of how efficient anyone becomes.\n\nNone of this means the four-day week does not work; it means the trials so far tell us more about which organisations can adopt it easily than about whether it would succeed everywhere.",
       "questions": [
         {
-          "id": "5ecc7a4a-f59a-4f45-88a6-6094a5386d51",
-          "position": 15,
-          "answer_format": "multiple_choice",
+          "id": "684abaea-b108-4c64-bf23-fd5f87c3035d",
           "question_text": "\"Output\" (as in \"output stayed the same or improved\") most nearly means:",
           "options": [
             "how much work actually gets done",
@@ -199,9 +151,7 @@
           ]
         },
         {
-          "id": "9a2615cc-5744-49a1-bdf0-c2564d9b6e25",
-          "position": 16,
-          "answer_format": "multiple_choice",
+          "id": "fcdb5eeb-6efd-4777-8351-e2981170b2fb",
           "question_text": "\"Coverage\" (as in \"roles built around continuous coverage\") is closest in meaning to:",
           "options": [
             "attention from journalists and the news",
@@ -211,9 +161,7 @@
           ]
         },
         {
-          "id": "b3d30926-ce44-40a2-bb49-337c35d77a62",
-          "position": 17,
-          "answer_format": "multiple_choice",
+          "id": "5ecc7a4a-f59a-4f45-88a6-6094a5386d51",
           "question_text": "According to the text, why did some companies see output stay the same or improve during the trials?",
           "options": [
             "Staff arrived more rested and took fewer short breaks from work",
@@ -223,9 +171,7 @@
           ]
         },
         {
-          "id": "ff8020af-b992-4df1-b69a-19ca257480ad",
-          "position": 18,
-          "answer_format": "multiple_choice",
+          "id": "9a2615cc-5744-49a1-bdf0-c2564d9b6e25",
           "question_text": "What does the text suggest about the companies that volunteered for these trials?",
           "options": [
             "They were struggling financially and hoping for a fast solution",
@@ -235,9 +181,7 @@
           ]
         },
         {
-          "id": "5e1ee938-15e2-43fc-baf2-90213d979d10",
-          "position": 19,
-          "answer_format": "multiple_choice",
+          "id": "b3d30926-ce44-40a2-bb49-337c35d77a62",
           "question_text": "What point is the text making by contrasting roles that can be \"reorganised around output\" with roles requiring \"continuous coverage\"?",
           "options": [
             "Coverage-based jobs matter less than output-based ones",
@@ -247,9 +191,7 @@
           ]
         },
         {
-          "id": "7c6c0337-ce28-4de2-8495-080fc54985ff",
-          "position": 20,
-          "answer_format": "multiple_choice",
+          "id": "ff8020af-b992-4df1-b69a-19ca257480ad",
           "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
             "The evidence shows the four-day week fails in most sectors",
@@ -259,9 +201,7 @@
           ]
         },
         {
-          "id": "423875f9-a65d-41ec-9d6e-b2b28861f5d9",
-          "position": 21,
-          "answer_format": "multiple_choice",
+          "id": "5e1ee938-15e2-43fc-baf2-90213d979d10",
           "question_text": "What is the writer mainly doing in the second paragraph?",
           "options": [
             "Showing that the people running the trials were not honest",
@@ -271,9 +211,7 @@
           ]
         },
         {
-          "id": "9123fb90-bb0c-48d9-88f6-729a007ff225",
-          "position": 22,
-          "answer_format": "multiple_choice",
+          "id": "7c6c0337-ce28-4de2-8495-080fc54985ff",
           "question_text": "Which sentence best paraphrases: \"None of this means the four-day week does not work; it means the trials so far tell us more about which organisations can adopt it easily than about whether it would succeed everywhere\"?",
           "options": [
             "The trials confirm the four-day week suits every type of business",
@@ -285,14 +223,12 @@
       ]
     },
     {
-      "title": "Cutting Your Losses",
       "cefr_level": "C1",
+      "title": "Cutting Your Losses",
       "passage_text": "Economists have a blunt phrase for a mistake most of us have made at least once: throwing good money after bad. The sunk cost fallacy describes the pull toward carrying on with something — a project, a renovation, a doomed relationship — simply because so much has already gone into it, not because carrying on is actually the wiser course. Had the idea been drilled into every manager at business school, a good many companies would be in far better shape today; as things stand, it tends to surface only once the losses are already piling up.\n\nRarely does anyone pause to ask whether the money is recoverable at all. Once it's sunk, it's sunk, and no amount of wishful thinking will claw it back. Yet walking away from a failing venture can feel like an admission of defeat, so people would rather prop it up a little longer than own up to having got it wrong. Cutting your losses, as the saying goes, is a great deal easier said than done.\n\nBoards of directors are no better at spotting the signs. A project that ought to have been written off years earlier is instead handed yet another round of funding, on the grounds that pulling the plug now would waste everything spent so far — which is, of course, precisely the fallacy at work. Only when the losses become too large to explain away does anyone finally read the writing on the wall.",
       "questions": [
         {
-          "id": "b7f8d544-d176-458b-bc9b-f31279200012",
-          "position": 23,
-          "answer_format": "multiple_choice",
+          "id": "423875f9-a65d-41ec-9d6e-b2b28861f5d9",
           "question_text": "The idiom \"throwing good money after bad\" is closest in meaning to:",
           "options": [
             "spending carelessly on things nobody really needed",
@@ -302,21 +238,7 @@
           ]
         },
         {
-          "id": "f65b64c2-4702-4330-a6ff-e72db1e8e6fc",
-          "position": 24,
-          "answer_format": "multiple_choice",
-          "question_text": "In \"no amount of wishful thinking will claw it back,\" \"claw back\" is closest in meaning to:",
-          "options": [
-            "increase the value of something over time",
-            "hide something so nobody notices it is missing",
-            "exchange one loss for a completely different one",
-            "recover something slowly and with difficulty"
-          ]
-        },
-        {
-          "id": "788f0a5e-40d6-4cd4-9d47-382cd5593b62",
-          "position": 25,
-          "answer_format": "multiple_choice",
+          "id": "9123fb90-bb0c-48d9-88f6-729a007ff225",
           "question_text": "What does the sentence \"Had the idea been drilled into every manager at business school, a good many companies would be in far better shape today\" suggest?",
           "options": [
             "Many companies are worse off today because this idea went largely untaught",
@@ -326,9 +248,7 @@
           ]
         },
         {
-          "id": "082126cf-61d2-4dbc-ab84-375515c60199",
-          "position": 26,
-          "answer_format": "multiple_choice",
+          "id": "b7f8d544-d176-458b-bc9b-f31279200012",
           "question_text": "The opening of paragraph 2, \"Rarely does anyone pause to ask whether the money is recoverable at all,\" implies that:",
           "options": [
             "People frequently double-check whether their money can be recovered",
@@ -338,9 +258,7 @@
           ]
         },
         {
-          "id": "4bbced0a-d126-45df-b53c-b32c3484098b",
-          "position": 27,
-          "answer_format": "multiple_choice",
+          "id": "f65b64c2-4702-4330-a6ff-e72db1e8e6fc",
           "question_text": "In the text, choosing to \"prop it up a little longer\" rather than \"own up to having got it wrong\" means a person would rather:",
           "options": [
             "sell the project quickly than wait for it to improve",
@@ -350,21 +268,7 @@
           ]
         },
         {
-          "id": "1571ed84-993e-4d07-aaf9-b2a5fca5f09f",
-          "position": 28,
-          "answer_format": "multiple_choice",
-          "question_text": "The comment that cutting your losses \"is a great deal easier said than done\" suggests that:",
-          "options": [
-            "very few people actually understand what this phrase means",
-            "experts disagree about whether this is good financial advice",
-            "this approach works well only for very small amounts of money",
-            "doing this is much harder than simply talking about it"
-          ]
-        },
-        {
-          "id": "4c67aac1-c2a3-4c19-82e1-7501788a4de9",
-          "position": 29,
-          "answer_format": "multiple_choice",
+          "id": "788f0a5e-40d6-4cd4-9d47-382cd5593b62",
           "question_text": "Which sentence best captures the main idea of the text?",
           "options": [
             "People keep funding failure because stopping feels worse than losing more",
@@ -374,9 +278,7 @@
           ]
         },
         {
-          "id": "5d106e3b-2e9e-4b88-a608-861fef1d55c6",
-          "position": 30,
-          "answer_format": "multiple_choice",
+          "id": "082126cf-61d2-4dbc-ab84-375515c60199",
           "question_text": "What is the writer mainly doing in the final paragraph?",
           "options": [
             "Proving that boards of directors are dishonest with shareholders",
@@ -386,9 +288,7 @@
           ]
         },
         {
-          "id": "d2880714-16ec-4440-a893-64454cfa3e21",
-          "position": 31,
-          "answer_format": "multiple_choice",
+          "id": "4bbced0a-d126-45df-b53c-b32c3484098b",
           "question_text": "Which statement best paraphrases \"which is, of course, precisely the fallacy at work\"?",
           "options": [
             "This decision is completely different from the fallacy described earlier",
@@ -398,9 +298,7 @@
           ]
         },
         {
-          "id": "63d0763a-1c98-484e-95ea-14ced8e9643c",
-          "position": 32,
-          "answer_format": "multiple_choice",
+          "id": "1571ed84-993e-4d07-aaf9-b2a5fca5f09f",
           "question_text": "What does it mean for a board to finally \"read the writing on the wall\"?",
           "options": [
             "They publish a public report explaining what went wrong",
