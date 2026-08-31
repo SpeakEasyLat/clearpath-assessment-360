@@ -1,8 +1,8 @@
 {
   "_meta": {
     "module": "nivel1_listening_general",
-    "version": 3,
-    "revisionNote": "v3 (12/08/2026): ajustes de Q4/Q7/Q11/Q16/Q17/Q20 segun informe pedagogico de listening (equivalencia con la version medica, anclaje de distractores, inferencia C1 real)."
+    "version": 4,
+    "revisionNote": "v4 (31/08/2026): fix urgente Q14 (id 338f0728) -- este JSON tenia la redaccion vieja de la pregunta/opciones, sin sincronizar con el fix aplicado en question_bank el 21/08/2026. Ningun estudiante podia acertar Q14 desde el 21/08 porque ninguna opcion mostrada coincidia con el correct_answer del servidor. question_text y options actualizados 1:1 contra question_bank. v3 (12/08/2026): ajustes de Q4/Q7/Q11/Q16/Q17/Q20 segun informe pedagogico de listening (equivalencia con la version medica, anclaje de distractores, inferencia C1 real)."
   },
   "audios": [
     {
@@ -182,11 +182,11 @@
           "id": "338f0728-6bf8-4d29-8480-b513483ea085",
           "position": 14,
           "answer_format": "multiple_choice",
-          "question_text": "Why does he doubt the ticket was properly resolved?",
+          "question_text": "According to him, what did the person who closed the ticket check?",
           "options": [
-            "Only the first of two charges was checked",
-            "The ticket was closed without any review",
-            "The customer had complained too many times"
+            "Only the first charge, not the second",
+            "Both charges on the account",
+            "Neither of the two charges"
           ]
         },
         {
