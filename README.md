@@ -16,10 +16,10 @@ Lo que ya funciona:
   - Reading: timer de 20 minutos. Revisión pedagógica completa aplicada el 11/08/2026.
   - Writing: 1 tarea (email, 120-180 palabras), timer de 20 minutos, calificación por IA con rúbrica anclada al CEFR (placement 0-10 + nivel A1-C1) — ver detalle de la rúbrica más abajo.
 - **Lógica de desbloqueo ("unlock") para OET** (`js/scoring.js`, triplicada en `submit-response`/`submit-writing`): la decisión se toma recién cuando existen los 4 sub-scores de Nivel 1 (grammar, listening, writing, reading), y son **tres rutas mutuamente excluyentes** (nunca se combinan STEPS 2 y OET):
-  - Si los 4 llegan a B2 → ruta **OET** → módulo OET Skills → Speaking Assessment tipo OET.
+  - Cada destreza tiene un **nivel efectivo**: la banda CEFR más alta aprobada con ≥70% (`highestPassingBand`), que puede quedar por encima del ceiling mostrado si hubo un traspié puntual en una banda intermedia.
+  - Si **al menos 3 de las 4** destrezas llegan a B2+ en su nivel efectivo, **y las 4** llegan al menos a B1 → ruta **OET** → módulo OET Skills → Speaking Assessment tipo OET. (Regla nueva desde el 31/08/2026 — antes exigía las 4 en B2+; ver Brief, sección 3.4/3.5, para el detalle y el caso que la motivó.)
   - Si no, pero reading solo llega a B2 → ruta **STEPS 2** → Speaking Assessment tipo English.
   - Si reading tampoco llega → ruta **English** → Speaking Assessment tipo English directo, sin STEPS 2 ni OET.
-  - **Rescate de OET para Listening** (agregado 23-24/08/2026, pedido de Diana): si Listening quedó con un "traspié" en una banda intermedia pero el estudiante sacó ≥75% específicamente en las preguntas de nivel B2, igual se desbloquea OET en esa destreza aunque el nivel CEFR mostrado (ceiling) haya quedado más abajo — queda una nota visible en el reporte cuando esto pasa. Solo aplica a Listening, no a Grammar/Reading. Ver Brief, sección 3.4/3.5.
 
   El router `siguiente.html` le pregunta a la Edge Function `get-unlock-state` a qué pantalla mandar al estudiante después de cada módulo, en vez de que cada pantalla tenga la siguiente URL escrita a mano.
 - **Rúbrica de calificación de Writing** (IA, `submit-writing`): juicio holístico 0-10 (desarrollo del tema, claridad, organización, control del lenguaje, precisión, rango) + nivel CEFR anclado a los descriptores oficiales, con una regla explícita para la frontera B1/B2 (la que decide el ingreso a OET) y la regla de Diana "la duda favorece al estudiante" — si la evidencia queda repartida entre dos niveles, se asigna el alto. Desde el 23-24/08/2026 esa regla se **fuerza en el código** (antes dependía de que la IA la aplicara sola, y en un caso real no lo hizo). Desde el 21-22/08/2026, el feedback llega en español y se agrega "Correcciones para llegar a B2": hasta 7 errores concretos del propio texto del estudiante, con su corrección y explicación — se muestra en el reporte, no en vivo. Ver Brief, sección 3.5, para el detalle completo (incluida la rúbrica de 9 criterios de OET Speaking y la tabla de rangos oficiales de puntaje OET).
@@ -49,7 +49,8 @@ Lo que falta (backlog):
 - Limpiar los módulos "archivo" de `question_bank` (`nivel1_grammar_archivo`, `nivel1_listening_archivo`, `nivel1_reading_archivo_v1`) — contenido reemplazado, sin usar.
 - Definir si un estudiante puede reintentar el assessment completo (hoy no existe ningún mecanismo de reintento).
 - Revisar las 6 advertencias de seguridad de severidad baja (`search_path` mutable en funciones internas) que quedaron anotadas tras la auditoría del 12/08/2026.
-- Actualizar `js/scoring.test.mjs` y `test-flow.mjs` para cubrir el rescate de OET de Listening (ver más arriba) — los tests actuales no lo prueban.
+- Actualizar `js/scoring.test.mjs` y `test-flow.mjs` para cubrir la regla generalizada de rescate/desbloqueo de OET (ver más arriba) — los tests actuales no la prueban.
+- Subir a GitHub el código actualizado de `submit-response` y `submit-writing` (volvieron a desactualizarse en el repo el 31/08/2026 con el cambio de regla de OET).
 
 ## ⚠️ Nota de seguridad importante
 
