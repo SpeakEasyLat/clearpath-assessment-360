@@ -1,8 +1,9 @@
 // Edge Function: generate-report
 //
-// Genera el "reporte de resultados" (PDF) de un attempt y lo manda por correo a Diana
-// (info@speakeasy.lat) vía Resend. NO se lo manda al estudiante -- es Diana quien
-// decide, después, si se lo reenvía ella misma.
+// Genera el "reporte de resultados" (PDF) de un attempt, lo manda por correo a Diana
+// (info@speakeasy.lat) vía Resend y lo sube (best-effort) a una carpeta de Google
+// Drive -- ver v15 más abajo. NO se lo manda al estudiante -- es Diana quien decide,
+// después, si se lo reenvía ella misma.
 //
 // Se llama de dos formas:
 //   1. Automáticamente, fire-and-forget, desde submit-response, submit-writing y
@@ -14,14 +15,11 @@
 //
 // "Completo" significa:
 //   - NIVEL1_ONLY: existen los 4 sub_scores de Nivel 1 (grammar, listening, writing,
-//     reading). No hay Speaking que esperar -- el track nunca pasa por ahí en cuanto a
-//     scoring (sí agenda Speaking, pero eso no bloquea el reporte).
+//     reading) Y el evaluator_score de Speaking (ver v7 más abajo).
 //   - FULL_360: además de los 4 de Nivel 1, si assigned_route es STEPS2 u OET hacen
 //     falta también esos sub_scores adicionales (steps2_reading, o
-//     oet_listening+oet_reading+oet_writing). Y en cualquier caso de FULL_360, hace
-//     falta que speaking_assessment_bookings tenga un evaluator_score cargado (Diana
-//     lo carga desde admin-speaking-score.html después de la sesión en vivo) -- si no
-//     está, el reporte espera.
+//     oet_listening+oet_reading+oet_writing). Y en cualquier caso, hace falta el
+//     evaluator_score de Speaking.
 //
 // report_sent_at (columna en attempts) evita reenviar el mismo reporte cada vez que se
 // dispara esta función de más (es idempotente por diseño, justamente para poder
@@ -31,6 +29,195 @@
 // proyecto):
 //   - NIVEL1_ONLY -> "Assessment Speak Easy"
 //   - FULL_360    -> "Assessment 360"
+//
+// v18 (01/09/2026, reportado por Diana): OET Writing no mostraba ni el ensayo ni su
+// evaluación en el reporte -- se armaba con el mismo template que oet_listening/
+// oet_reading (preguntas de opción múltiple), así que salía como "OET Writing 3/10 --
+// Resultado informativo: 30% de respuestas correctas" sin texto, sin comentario de la
+// IA y sin correcciones. Se le da a oet_writing el mismo tratamiento que ya tenía
+// Writing de Nivel 1 (tarjeta con el ensayo, el comentario de la IA y "Correcciones
+// para llegar a B2"), y se agrega además una "Evaluación por criterio" con las 6
+// dimensiones que ya calculaba submit-writing (topic_development, clarity_of_purpose,
+// organization, language_control, accuracy, range) pero que ningún reporte mostraba --
+// ni siquiera el de Nivel 1, que también las gana con este cambio. De paso se corrige
+// un bug de datos: la consulta a writing_submissions no traía el módulo del prompt, así
+// que el bloque "Writing" de Nivel 1 mostraba TODAS las writing_submissions del attempt
+// sin filtrar -- para un estudiante en la ruta OET, el ensayo de OET aparecía mezclado
+// ahí también. Ahora se filtra explícitamente por module (nivel1_writing / oet_writing).
+// Espejo de este mismo fix en generate-partial-report.ts v7.
+//
+// v17 (31/08/2026, pedido de Diana): la nota de rescate OET (band_detail.oet_unlock_note)
+// ya no es exclusiva de listening -- desde submit-response.ts v21 puede venir de
+// grammar, listening o reading (ver highestPassingBand alla). Antes esta funcion solo
+// mostraba la nota cuando sk === "listening", asi que un rescate en grammar o reading
+// quedaba calculado pero invisible en el reporte. Se generaliza a cualquier destreza,
+// igual que en generate-partial-report.ts v6.
+//
+// v16 (29/08/2026, pedido de Diana): OET Speaking mostraba solo la letra de grade (y,
+// en el resumen del encabezado, el rango oficial estático de esa letra, ej.
+// "B (350–440)") -- nunca el número real calculado. Desde submit-speaking-score v3 se
+// guarda overall_score_500 (el puntaje ya escalado a 0-500, antes se descartaba) --
+// ahora se usa ese número real, igual que Listening/Reading muestran su propio puntaje
+// en la misma escala. Bookings viejos (cargados antes de este cambio, sin
+// overall_score_500) siguen mostrando el rango oficial de la letra como antes.
+//
+// v15 (26/08/2026, pedido de Diana): además de mandarse por correo a Diana, el PDF
+// ahora se sube (best-effort) a una carpeta de Google Drive -- misma lógica de
+// uploadPdfToDrive/getGoogleAccessToken que ya tenía generate-partial-report.ts (v1,
+// 24/08/2026), copiada acá tal cual (queda duplicada entre las dos funciones a
+// propósito, mismo criterio que el resto del armado del PDF), MISMA service account
+// (GOOGLE_SERVICE_ACCOUNT_JSON / GOOGLE_IMPERSONATE_EMAIL) pero carpeta propia --
+// GOOGLE_DRIVE_FINAL_FOLDER_ID, no GOOGLE_DRIVE_FOLDER_ID (esa sigue siendo solo del
+// parcial), porque Diana pidió que el reporte final vaya a una carpeta distinta a la
+// del parcial. Si GOOGLE_DRIVE_FINAL_FOLDER_ID no está cargado, el upload se omite sin
+// romper el envío del correo (mismo comportamiento que ya tenía el reporte parcial).
+// También cambia el nombre del archivo (adjunto del correo y nombre en Drive): de
+// "Reporte - {nombre}.pdf" pasa a "Resultados {assessmentLabel} - {nombre}.pdf" -- ej.
+// "Resultados Assessment 360 - Nombre Apellido.pdf" en FULL_360, "Resultados
+// Assessment Speak Easy - Nombre Apellido.pdf" en NIVEL1_ONLY (se usa el mismo
+// assessmentLabel que ya decide el logo/título del reporte, para no reintroducir
+// "ClearPath" ni inconsistencias de naming -- ver nota de naming más arriba).
+//
+// v14 (24/08/2026, pedido de Diana): skillCommentFromBandDetail y los mensajes de
+// STEP CK 2 estaban redactados en tercera persona ("Alcanzó...", "Aprobó con...")
+// mientras el resto del reporte (y ahora también oet_unlock_note, ver
+// submit-response.ts v21/v22) está en tuteo -- quedaba una mezcla de tonos dentro del
+// mismo comentario de una destreza (ej. Listening: "Alcanzó nivel A2..." seguido de
+// "...tu nivel funcional quedó en A2..."). Se pasan a segunda persona
+// ("Alcanzaste...", "Aprobaste con...", "No alcanzaste..."), mismo criterio que v4:
+// nada de lenguaje que no sea directo al estudiante. Espejo de este mismo fix en
+// generate-partial-report.ts v3.
+//
+// v13 (22/08/2026, pedido de Diana): en la tarjeta de Writing de Nivel 1, debajo del
+// feedback general de siempre (writingCommentFromRubric), se agrega "Correcciones para
+// llegar a B2" -- la lista que ya calcula submit-writing (ai_rubric_scores.
+// correcciones_para_b2, hasta 7 items) citando fragmentos concretos del propio texto del
+// estudiante, con su corrección y una explicación breve de la regla gramatical. Si la
+// lista viene vacía (texto ya sólido en B2+, o un writing_submission de antes de que
+// existiera este campo) no se imprime nada. Por ahora esto solo aplica a la tarjeta de
+// Writing de Nivel 1 (writingTaskHtml) -- OET Writing todavía se muestra en el reporte
+// solo como banda/puntaje aproximado (ver más abajo), sin el detalle del ensayo.
+//
+// v11 (21/08/2026, pedido de Diana): se agrega al final del reporte, antes del footer,
+// un bloque invitando a reservar la Q&A Session de 30 min -- NO es opcional, ya viene
+// incluida con la evaluación, así que el copy invita a reservar, no a "sumarse" a algo
+// extra. Incluye el link de booking (Google Calendar) fijo en QA_BOOKING_URL.
+//
+// v10 (21/08/2026, reportado por Diana): la tarjeta de Writing se veia partida en el
+// PDF de Fer -- el encabezado (nombre, puntaje, CEFR) en una pagina, un hueco enorme
+// vacio despues, y el texto del email + el comentario apareciendo sueltos en la pagina
+// siguiente. Es el mismo bug que v6 ya habia arreglado en .skill-row (un bloque con
+// page-break-inside: avoid que no entra en lo que queda de la pagina se empuja entero a
+// la siguiente, dejando un hueco en la anterior) -- pero .writing-essay se habia
+// quedado con ese avoid. Se saca, igual que en v6.
+//
+// v9 (21/08/2026, pedido de Diana): el encabezado ahora muestra primero el detalle por
+// destreza y DESPUÉS el resumen global -- antes solo aparecía el resumen global.
+//   1. Nueva lista "Resultados por destreza" con Grammar/Listening/Writing/Reading (las
+//      4 de Nivel 1, con su CEFR) + Speaking (con su propio nivel, que puede ser CEFR o,
+//      si el tipo es OET, un rango de puntaje OET -- ver punto 3).
+//   2. El resumen global ("Nivel funcional") queda igual que en v8 (rango de las 2
+//      destrezas más bajas de Nivel 1) pero con la explicación reescrita para nombrar el
+//      principio: la comunicación real queda limitada por la destreza más débil, no por
+//      el promedio -- es el mismo criterio que usan Cambridge/ALTE y el Council of
+//      Europe cuando tienen que resumir un perfil con destrezas mixtas en un solo nivel.
+//      Solo entran acá las destrezas con CEFR (Nivel 1 + Speaking tipo English); OET y
+//      STEP CK 2 miden otra cosa (ver punto 3) y no se mezclan en este cálculo.
+//   3. Cuando la ruta es OET o STEPS2, se agregan filas propias con la escala nativa de
+//      cada prueba en vez de forzarlas a CEFR:
+//      - OET Listening / OET Reading (módulos diagnósticos propios, no el banco oficial
+//        de OET): el % de aciertos se escala linealmente a 0-500 (percent * 5) y se
+//        muestra el RANGO oficial de la banda de grado donde cae ese puntaje (ver
+//        OET_GRADE_RANGES) -- es una aproximación explícita, no un puntaje oficial de
+//        OET (que se calibra con su propio banco de ítems vía IRT).
+//      - OET Writing: nuestro sub_score guarda un cefr_estimate (A1-C1, mismo rubric
+//        genérico que Nivel 1 Writing), no un grade oficial de OET -- se convierte ese
+//        CEFR al rango OET más cercano vía CEFR_TO_OET_RANGE_APPROX, misma salvedad de
+//        aproximación.
+//      - OET Speaking: Diana carga el grade real (A/B/C+/C/D/E) en
+//        admin-speaking-score.html -- ese sí es el grade oficial, se mapea directo a su
+//        rango sin aproximar.
+//      - STEP CK 2: se muestra el % de aciertos tal cual (ya se calculaba en
+//        band_detail.percent), sin inventar una escala nueva.
+//      Los rangos de OET_GRADE_RANGES están verificados (21/08/2026, geniusclass.co.uk/
+//      oet-calculator) contra la tabla oficial de OET vigente desde septiembre 2018.
+//
+// v8 (21/08/2026, pedido de Diana): dos ajustes al reporte que acaba de ver en el
+// reenvío de prueba (Fer RPS):
+//   1. Se saca la frase "...guardados en la plataforma" del subtítulo -- lenguaje que
+//      suena a backend/interno, el mismo tipo de cosa que ya se había sacado en v4.
+//      Nueva frase, sin mencionar "la plataforma" ni "documento generado
+//      automáticamente".
+//   2. El nivel CEFR general ya NO es un solo nivel (el más bajo de las 4 destrezas de
+//      Nivel 1) -- ahora muestra el RANGO entre las dos destrezas con el resultado más
+//      bajo (ej. si dos destrezas dan A1 y A2, y las otras dos dan más alto, sale
+//      "A1-A2"). Si las dos más bajas coinciden en el mismo nivel, se muestra un solo
+//      nivel (no "A1-A1"). overallNote ahora nombra esos niveles en vez de hablar de
+//      "el criterio usado en la plataforma".
+//
+// v7 (21/08/2026, pedido de Diana):
+//   1. Speaking ahora se espera e incluye en LOS DOS TRACKS. Antes, NIVEL1_ONLY
+//      (Assessment Speak Easy) mandaba el reporte apenas Nivel 1 estaba completo, sin
+//      esperar ni incluir el resultado de Speaking -- aunque el estudiante sí lo rinde
+//      después y Diana sí lo carga vía admin-speaking-score.html. Se detectó con dos
+//      casos reales (Laura Noguera, "Flaco") cuyo reporte ya había salido sin Speaking
+//      y sin ninguna fila en speaking_assessment_bookings. Se alimenta igual que
+//      siempre: mismo formulario, mismo submit-speaking-score, sin cambios ahí.
+//   2. El bloque de Speaking (tipo "English") ya no usa el estilo rojo de alerta
+//      (.skill-flag) para nada -- pedido explícito de Diana de que Speaking nunca se
+//      vea en rojo.
+//   3. En vez de listar solo los ítems débiles del checklist de pronunciación, ahora
+//      se muestra el resumen completo de los 17 ítems en tres grupos neutros (bullets,
+//      sin color de alerta): 5 = "Logrado (nivel nativo)", 3-4 = "En desarrollo",
+//      1-2 = "A reforzar". pronunciation_notes (el "overall impression & recommended
+//      focus" que escribe Diana) se sigue mostrando, ahora como texto normal aparte,
+//      no como flag. El desglose de OET Speaking (4 criterios lingüísticos 0-6 + 5 de
+//      comunicación clínica 0-3 + overall_grade) es un schema totalmente distinto y no
+//      se toca en esta versión.
+//
+// v6 (20/08/2026, reportado por Diana): con el detalle de preguntas de v5, algunos
+// bloques (Grammar/Listening/Reading con 20-28 preguntas c/u) se volvieron mucho más
+// altos que una página -- eso rompió el formato de dos formas:
+//   1. .skill-row tenía page-break-inside: avoid. Cuando el bloque entero no entraba en
+//      lo que quedaba de la página, Chromium (el motor de impresión detrás de PDFShift)
+//      dejaba un hueco en blanco enorme antes de empujar todo el bloque a la página
+//      siguiente -- el "espacio en blanco larguísimo" que vio Diana en la página 1. Se
+//      saca ese avoid de .skill-row (las filas cortas como Speaking no lo necesitan
+//      igual, y las largas ahora pueden partirse entre página y página con normalidad,
+//      cada .qa-item individual sigue con su propio avoid para no partir una pregunta
+//      a la mitad).
+//   2. Los márgenes de página dependían solo del padding del <body> -- eso funciona
+//      para un documento de una sola página (el padding queda arriba/abajo de TODO el
+//      documento, no de cada página), pero con muchas páginas las páginas del medio
+//      quedaban sin margen arriba/abajo ("no hay márgenes en las páginas"). Se agrega
+//      el parámetro margin de PDFShift (aplica el mismo margen a CADA página
+//      generada, sin importar cuántas sean) y se saca el padding del <body> para no
+//      duplicar el espaciado.
+//
+// v5 (20/08/2026, pedido de Diana): el reporte ahora muestra el detalle real, no solo
+// el puntaje agregado:
+//   - Grammar/Listening/Reading (y STEP CK 2, OET Listening/Reading cuando aplican):
+//     cada pregunta se lista con la respuesta que eligió el estudiante y la respuesta
+//     correcta (student_responses + question_bank), marcada visualmente como
+//     correcta/incorrecta. Antes el estudiante solo veía "9/20" sin saber cuáles.
+//   - Writing: se muestra el texto que escribió el estudiante (writing_submissions.
+//     response_text) y, debajo, el feedback (antes solo se veía el feedback, nunca lo
+//     que él mismo había escrito).
+//
+// v4 (20/08/2026, pedido de Diana): el reporte -- pensado originalmente solo para uso
+// interno de Diana -- terminó llegando al estudiante (ella lo reenvía tal cual). Se
+// sacó todo texto redactado para uso interno/QA que no debía ser visible para el
+// estudiante:
+//   - skillCommentFromBandDetail ya NO menciona "inconsistencia entre bandas -- revisar
+//     el detalle antes de confirmar el resultado" (era una nota para que Diana revisara
+//     antes de confirmar, no un comentario para el estudiante). La bandera
+//     pattern_inconsistent sigue guardada en sub_scores.band_detail para consulta de
+//     Diana en Supabase, simplemente ya no se imprime en el PDF.
+//   - writingCommentFromRubric ya NO dice "falla técnica al momento de la corrección...
+//     Requiere revisión manual" -- se reemplaza por un mensaje neutro para el
+//     estudiante. IMPORTANTE: si esto pasa, el resultado de Writing puede no estar
+//     confiable todavía y Diana debería revisarlo en Supabase antes de que el reporte
+//     salga (ver aviso en el código de submit-writing / sub_scores).
 //
 // v3 (12/08/2026, pedido de Diana): antes, el bloque de Speaking Assessment solo
 // mostraba evaluator_score.cefr_estimate + comment, formato genérico que no reflejaba
@@ -42,7 +229,7 @@
 //   - English: muestra el sublevel CEFR asignado y, si el checklist de pronunciación
 //     marcó ítems débiles (rating <=2), los lista como flag en vez de volcar las 17
 //     filas del checklist completo en el PDF (esas quedan guardadas en la base para
-//     consulta, pero no saturan el reporte).
+//     consulta, pero no saturan el reporte). [Reemplazado en v7 -- ver arriba.]
 // Además, esta versión se agrega por primera vez al repo (antes solo vivía desplegada
 // en Supabase, sin respaldo en git).
 //
@@ -87,6 +274,98 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+type QaItem = {
+  questionText: string;
+  selectedAnswer: string | null;
+  correctAnswer: string;
+  isCorrect: boolean;
+};
+
+type WritingCorrection = {
+  error: string;
+  correccion: string;
+  explicacion: string;
+};
+
+type WritingDimension = {
+  label: string;
+  text: string;
+};
+
+type WritingTask = {
+  title: string;
+  essayText: string;
+  comment: string;
+  correccionesParaB2: WritingCorrection[];
+  dimensions: WritingDimension[];
+  // v (01/09/2026): OET Writing usa un encabezado distinto para esta lista -- ya no son
+  // "correcciones para llegar a B2" (ese umbral es de Nivel 1), son correcciones
+  // sugeridas contra los criterios oficiales de OET. Opcional: si no se pasa, se usa el
+  // encabezado de siempre (Nivel 1).
+  correccionesHeading?: string;
+};
+
+// v5 (20/08/2026): una fila "correcta" (verde) muestra solo la respuesta del
+// estudiante; una "incorrecta" (roja) muestra también cuál era la correcta -- no hace
+// falta repetirla cuando ya acertó.
+function qaItemHtml(qa: QaItem): string {
+  const mark = qa.isCorrect ? "✓" : "✗";
+  const selected = qa.selectedAnswer && qa.selectedAnswer.trim() ? qa.selectedAnswer : "(sin responder)";
+  const answerLine = qa.isCorrect
+    ? `<div class="qa-answer">Tu respuesta: <strong>${escapeHtml(selected)}</strong></div>`
+    : `<div class="qa-answer">Tu respuesta: <strong>${escapeHtml(selected)}</strong> · Respuesta correcta: <strong>${escapeHtml(qa.correctAnswer)}</strong></div>`;
+  return `
+    <div class="qa-item ${qa.isCorrect ? "correct" : "incorrect"}">
+      <div class="qa-question"><span class="qa-mark">${mark}</span>${escapeHtml(qa.questionText)}</div>
+      ${answerLine}
+    </div>`;
+}
+
+// v13 (22/08/2026, pedido de Diana): agrega, debajo del feedback general de Writing
+// (el mismo párrafo de siempre, generado por writingCommentFromRubric), la lista de
+// "correcciones_para_b2" que ya calcula submit-writing (ver ese archivo, v18/v19) --
+// puntos concretos de gramática/estructura citando el propio texto del estudiante, con
+// su corrección y una explicación breve, pensados para el umbral B2 que habilita OET.
+// Si la lista viene vacía (texto ya sólido en B2+, o un writing_submission viejo de
+// antes de que existiera este campo) no se imprime nada -- no hay placeholder.
+function writingCorrectionHtml(c: WritingCorrection): string {
+  return `
+    <div class="wcorr-item">
+      <div class="wcorr-error">"${escapeHtml(c.error)}"</div>
+      <div class="wcorr-fix">→ ${escapeHtml(c.correccion)}</div>
+      <div class="wcorr-exp">${escapeHtml(c.explicacion)}</div>
+    </div>`;
+}
+
+function writingTaskHtml(t: WritingTask): string {
+  // v (01/09/2026, pedido de Diana): agrega la evaluación por criterio (las 6
+  // "dimensions" que ya calcula submit-writing pero que ningún reporte mostraba antes).
+  const dimensionsHtml =
+    t.dimensions && t.dimensions.length > 0
+      ? `
+      <div class="skill-bullets">
+        <div class="skill-bullets-heading">Evaluación por criterio</div>
+        <ul>${t.dimensions.map((d) => `<li><strong>${escapeHtml(d.label)}:</strong> ${escapeHtml(d.text)}</li>`).join("")}</ul>
+      </div>`
+      : "";
+  const correccionesHtml =
+    t.correccionesParaB2 && t.correccionesParaB2.length > 0
+      ? `
+      <div class="wcorr-block">
+        <div class="wcorr-heading">${escapeHtml(t.correccionesHeading || "Correcciones para llegar a B2")}</div>
+        ${t.correccionesParaB2.map(writingCorrectionHtml).join("")}
+      </div>`
+      : "";
+  return `
+    <div class="writing-task">
+      <div class="writing-task-title">${escapeHtml(t.title)}</div>
+      <div class="writing-essay">${escapeHtml(t.essayText || "(no se guardó el texto de esta respuesta)")}</div>
+      <p class="skill-comment">${escapeHtml(t.comment)}</p>
+      ${dimensionsHtml}
+      ${correccionesHtml}
+    </div>`;
+}
+
 function skillRowHtml(s: {
   name: string;
   raw: number | null;
@@ -94,6 +373,10 @@ function skillRowHtml(s: {
   cefr: string | null;
   comment: string;
   flag?: string | null;
+  extraNote?: string | null;
+  bulletGroups?: Array<{ heading: string; items: string[] }>;
+  qaList?: QaItem[];
+  writingTasks?: WritingTask[];
 }): string {
   const scoreHtml =
     s.raw !== null && s.max !== null
@@ -101,6 +384,33 @@ function skillRowHtml(s: {
       : "";
   const cefrHtml = s.cefr ? `<span class="skill-cefr">${escapeHtml(s.cefr)}</span>` : "";
   const flagHtml = s.flag ? `<div class="skill-flag">${escapeHtml(s.flag)}</div>` : "";
+  const commentHtml = s.comment ? `<p class="skill-comment">${escapeHtml(s.comment)}</p>` : "";
+  // v7: nota aparte (ej. "overall impression & recommended focus" de Speaking),
+  // siempre en estilo neutro -- nunca como flag/rojo.
+  const extraNoteHtml = s.extraNote
+    ? `<p class="skill-comment"><strong>Enfoque recomendado:</strong> ${escapeHtml(s.extraNote)}</p>`
+    : "";
+  // v7: grupos de bullets neutros (nunca rojo) -- se omite cada grupo que quede vacío,
+  // para no imprimir un encabezado sin ítems debajo.
+  const bulletGroupsHtml =
+    s.bulletGroups && s.bulletGroups.length
+      ? s.bulletGroups
+          .filter((g) => g.items.length > 0)
+          .map(
+            (g) => `
+      <div class="skill-bullets">
+        <div class="skill-bullets-heading">${escapeHtml(g.heading)}</div>
+        <ul>${g.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+      </div>`,
+          )
+          .join("\n")
+      : "";
+  const writingTasksHtml = s.writingTasks && s.writingTasks.length
+    ? s.writingTasks.map(writingTaskHtml).join("\n")
+    : "";
+  const qaHtml = s.qaList && s.qaList.length
+    ? `<div class="qa-list">${s.qaList.map(qaItemHtml).join("\n")}</div>`
+    : "";
   return `
     <div class="skill-row">
       <div class="skill-row-header">
@@ -108,10 +418,17 @@ function skillRowHtml(s: {
         ${scoreHtml}
         ${cefrHtml}
       </div>
-      <p class="skill-comment">${escapeHtml(s.comment)}</p>
+      ${commentHtml}
+      ${extraNoteHtml}
       ${flagHtml}
+      ${bulletGroupsHtml}
+      ${writingTasksHtml}
+      ${qaHtml}
     </div>`;
 }
+
+// v11: booking page de la Q&A Session de 30 min incluida con la evaluación (pedido de Diana).
+const QA_BOOKING_URL = "https://calendar.app.google/dp6uX1VWqh8WnVXK7";
 
 function buildReportHtml(params: {
   studentName: string;
@@ -120,6 +437,9 @@ function buildReportHtml(params: {
   reportDate: string;
   overallCefr: string | null;
   overallNote: string;
+  // v9: fila por destreza que va ANTES del resumen global -- puede llevar un badge CEFR
+  // (nivel) o un badge de rango de puntaje (OET, STEPS2), según qué escala corresponda.
+  skillLevels: Array<{ label: string; value: string; note?: string | null }>;
   blocks: Array<{
     title: string;
     skills: Array<{
@@ -129,10 +449,30 @@ function buildReportHtml(params: {
       cefr: string | null;
       comment: string;
       flag?: string | null;
+      extraNote?: string | null;
+      bulletGroups?: Array<{ heading: string; items: string[] }>;
+      qaList?: QaItem[];
+      writingTasks?: WritingTask[];
     }>;
   }>;
 }): string {
   const reportTitle = `Reporte de resultados — ${params.assessmentLabel}`;
+  const skillLevelsHtml = params.skillLevels.length
+    ? `
+  <div class="skill-levels-title">Resultados por destreza</div>
+  <div class="skill-levels-grid">
+    ${params.skillLevels
+      .map(
+        (s) => `
+    <div class="skill-level-chip">
+      <span class="chip-label">${escapeHtml(s.label)}</span>
+      <span class="chip-value">${escapeHtml(s.value)}</span>
+      ${s.note ? `<span class="chip-note">${escapeHtml(s.note)}</span>` : ""}
+    </div>`,
+      )
+      .join("\n")}
+  </div>`
+    : "";
   const blocksHtml = params.blocks
     .map(
       (block) => `
@@ -158,6 +498,9 @@ function buildReportHtml(params: {
     --gray-300: #e2e0dc;
     --gray-600: #767676;
     --bad: #c62828;
+    --bad-bg: #fdecea;
+    --good: #2e7d32;
+    --good-bg: #eaf5ea;
     --radius: 14px;
     --font-heading: 'Quicksand', sans-serif;
     --font-body: 'Nunito', sans-serif;
@@ -168,7 +511,9 @@ function buildReportHtml(params: {
     color: var(--charcoal-dark);
     background: #ffffff;
     margin: 0;
-    padding: 36px 44px;
+    /* v6: el margen de página ahora lo pone PDFShift (parámetro margin, aplicado a
+       cada página generada) -- se saca el padding de acá para no duplicar el
+       espaciado ni dejar sin margen las páginas del medio. */
   }
   .header {
     display: flex;
@@ -195,6 +540,50 @@ function buildReportHtml(params: {
     margin: 0 0 4px;
   }
   .subtitle { color: var(--gray-600); font-size: 13px; margin: 0 0 20px; }
+  /* v9: fila de niveles por destreza, antes del resumen global -- chips compactos, un
+     badge por destreza (CEFR o, para OET/STEPS2, su propia escala). */
+  .skill-levels-title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 8px;
+  }
+  .skill-levels-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .skill-level-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    border-radius: 10px;
+    padding: 8px 12px;
+    min-width: 90px;
+  }
+  .skill-level-chip .chip-label {
+    font-size: 10.5px;
+    color: var(--gray-600);
+    font-weight: 600;
+  }
+  .skill-level-chip .chip-value {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--teal-dark);
+    white-space: nowrap;
+  }
+  .skill-level-chip .chip-note {
+    font-size: 9.5px;
+    color: var(--gray-600);
+  }
   .overall-box {
     background: var(--teal-light);
     border: 1px solid var(--teal);
@@ -210,9 +599,10 @@ function buildReportHtml(params: {
   .overall-cefr {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 40px;
+    font-size: 32px;
     color: var(--teal-dark);
     line-height: 1;
+    white-space: nowrap;
   }
   .overall-text { font-size: 13px; color: var(--charcoal-dark); }
   .overall-text .label {
@@ -231,8 +621,6 @@ function buildReportHtml(params: {
     margin: 22px 0 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    /* Evita que el titulo de la seccion quede solo al final de una pagina, separado
-       de la primera tarjeta que le sigue. */
     page-break-after: avoid;
     break-after: avoid;
   }
@@ -243,13 +631,11 @@ function buildReportHtml(params: {
     padding: 14px 18px;
     margin-bottom: 12px;
     background: var(--gray-100);
-    /* Evita que PDFShift corte la tarjeta a la mitad entre dos paginas del PDF (eso
-       se veia como una banda oscura horizontal atravesando la tarjeta -- el limite
-       de pagina del PDF, no un bug visual del HTML). page-break-inside es la
-       propiedad que realmente respeta el motor de impresion de Chromium/PDFShift;
-       break-inside es el equivalente moderno, se agregan los dos por compatibilidad. */
-    page-break-inside: avoid;
-    break-inside: avoid;
+    /* v6: se saca avoid de acá -- con el detalle de preguntas (v5) una fila puede medir
+       varias páginas, y "avoid" empujaba el bloque entero a la página siguiente
+       dejando un hueco enorme en la anterior. Ahora puede partirse con normalidad;
+       cada .qa-item y .writing-essay individual sigue con su propio avoid para no
+       partir una pregunta o un párrafo a la mitad. */
   }
   .skill-row-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
   .skill-name {
@@ -281,6 +667,25 @@ function buildReportHtml(params: {
     padding: 3px 9px;
     border-radius: 999px;
   }
+  /* v7: bullets neutros para el resumen de Speaking -- deliberadamente sin rojo ni
+     verde de alerta, mismo tono teal que el resto de la marca. */
+  .skill-bullets { margin-top: 8px; }
+  .skill-bullets-heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--teal-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin: 8px 0 3px;
+  }
+  .skill-bullets ul { margin: 0; padding-left: 18px; }
+  .skill-bullets li {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--charcoal-dark);
+    margin-bottom: 2px;
+  }
   .footer {
     margin-top: 28px;
     padding-top: 14px;
@@ -290,6 +695,114 @@ function buildReportHtml(params: {
     text-align: center;
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+  .writing-task { margin-top: 4px; }
+  .writing-task + .writing-task {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--gray-300);
+  }
+  .writing-task-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--charcoal-dark);
+    margin-bottom: 6px;
+  }
+  .writing-essay {
+    white-space: pre-wrap;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--charcoal-dark);
+    background: #fff;
+    border: 1px solid var(--gray-300);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    /* v10 (pedido de Diana, vio el bug en el PDF de Fer): mismo problema que v6 arreglo
+       en .skill-row, pero acá seguia el avoid -- un ensayo largo que no entraba en lo
+       que quedaba de la pagina se empujaba entero a la pagina siguiente, dejando la
+       tarjeta "Writing" con un hueco enorme vacio en la pagina anterior. Se saca el
+       avoid para que el texto largo pueda partirse con normalidad entre paginas, igual
+       que ya se permite en .skill-row. */
+  }
+  .wcorr-block {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--gray-300);
+  }
+  .wcorr-heading {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--teal-dark);
+    margin-bottom: 6px;
+  }
+  .wcorr-item {
+    border-left: 3px solid var(--teal-dark);
+    background: var(--gray-100);
+    border-radius: 0 8px 8px 0;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .wcorr-error { font-size: 11px; color: var(--bad); }
+  .wcorr-fix { font-size: 11px; color: var(--good); margin-top: 2px; }
+  .wcorr-exp { font-size: 10.5px; color: var(--gray-600); line-height: 1.4; margin-top: 3px; }
+  .qa-list { margin-top: 10px; }
+  .qa-item {
+    font-size: 11.5px;
+    line-height: 1.45;
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .qa-item.correct { background: var(--good-bg); }
+  .qa-item.incorrect { background: var(--bad-bg); }
+  .qa-question { font-weight: 600; }
+  .qa-mark { display: inline-block; width: 14px; }
+  .qa-item.correct .qa-mark { color: var(--good); }
+  .qa-item.incorrect .qa-mark { color: var(--bad); }
+  .qa-answer { color: var(--gray-600); margin-top: 2px; }
+  .qa-answer strong { color: var(--charcoal-dark); }
+  /* v11 (pedido de Diana): bloque de cierre invitando a reservar la Q&A Session de 30
+     min que ya viene incluida con la evaluación. Sin avoid: es corto y fijo, no debería
+     partirse, pero evitamos repetir el mismo bug de .skill-row/.writing-essay si el
+     texto llegara a crecer. */
+  .qa-cta {
+    margin-top: 26px;
+    padding: 18px 20px;
+    background: var(--teal-light);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    text-align: center;
+  }
+  .qa-cta-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--teal-dark);
+    margin-bottom: 8px;
+  }
+  .qa-cta-text {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--charcoal-dark);
+    margin-bottom: 14px;
+  }
+  .qa-cta-button {
+    display: inline-block;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    background: var(--teal-dark);
+    padding: 10px 22px;
+    border-radius: 999px;
+    text-decoration: none;
   }
 </style>
 </head>
@@ -304,17 +817,29 @@ function buildReportHtml(params: {
   </div>
 
   <h1>${escapeHtml(reportTitle)}</h1>
-  <p class="subtitle">Documento generado automáticamente a partir de los resultados guardados en la plataforma.</p>
+  <p class="subtitle">Aquí tienes el detalle de tu desempeño en cada destreza evaluada.</p>
+
+  ${skillLevelsHtml}
 
   <div class="overall-box">
     <div class="overall-cefr">${params.overallCefr ? escapeHtml(params.overallCefr) : "—"}</div>
     <div class="overall-text">
-      <span class="label">Nivel CEFR general</span>
+      <span class="label">Nivel funcional</span>
       ${escapeHtml(params.overallNote)}
     </div>
   </div>
 
   ${blocksHtml}
+
+  <div class="qa-cta">
+    <div class="qa-cta-title">Termina tu Assessment con la Q&amp;A Session</div>
+    <div class="qa-cta-text">
+      Como parte de tu evaluación, tienes una sesión de 30 minutos en vivo con uno de
+      nuestros tutores. Ahí repasamos tus resultados con más detalle y armamos juntos
+      un plan de trabajo para llegar a tus objetivos.
+    </div>
+    <a class="qa-cta-button" href="${QA_BOOKING_URL}">Reservar mi sesión →</a>
+  </div>
 
   <div class="footer">
     ${escapeHtml(params.assessmentLabel)} · Speak Easy Online · Reporte generado automáticamente
@@ -323,39 +848,136 @@ function buildReportHtml(params: {
 </html>`;
 }
 
-// --- Comentarios cualitativos por skill, generados a partir de lo ya calculado -----
-// (no se vuelve a llamar a la IA de evaluación -- solo se resume lo que ya está en
-// band_detail / ai_rubric_scores).
-
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 
-function skillCommentFromBandDetail(skillName: string, raw: number, max: number, cefr: string | null, bandDetail: any): string {
-  if (!cefr) {
-    return `No se pudo determinar un nivel CEFR a partir de las respuestas guardadas en ${skillName}.`;
-  }
-  if (bandDetail && bandDetail.perBand) {
-    const inconsistent = bandDetail.pattern_inconsistent === true;
-    const base = `Alcanzó nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
-    return inconsistent
-      ? `${base} El patrón de respuestas mostró alguna inconsistencia entre bandas -- revisar el detalle antes de confirmar el resultado.`
-      : `${base} Desempeño consistente en todas las bandas evaluadas hasta ese nivel.`;
-  }
-  return `Alcanzó nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
+// v9: rangos oficiales de puntaje OET (escala 0-500, vigente desde septiembre 2018) por
+// grade. Verificados el 21/08/2026 contra geniusclass.co.uk/oet-calculator.
+const OET_GRADE_RANGES: Record<string, string> = {
+  "A": "450–500",
+  "B": "350–440",
+  "C+": "300–340",
+  "C": "200–290",
+  "D": "100–190",
+  "E": "0–90",
+};
+const OET_GRADE_ORDER = ["A", "B", "C+", "C", "D", "E"];
+
+// Grade oficial (el que carga Diana a mano en admin-speaking-score.html para OET
+// Speaking) -> su rango de puntaje. Sin aproximar, es el dato real.
+function oetRangeFromGrade(grade: string | null | undefined): { grade: string; range: string } | null {
+  if (!grade) return null;
+  const normalized = grade.trim().toUpperCase().replace(/\s+/g, "");
+  if (!OET_GRADE_RANGES[normalized]) return null;
+  return { grade: normalized, range: OET_GRADE_RANGES[normalized] };
 }
 
+// v9: OET Listening/Reading en este sistema son módulos diagnósticos propios (no el
+// banco oficial de OET, que se calibra vía IRT) -- se aproxima escalando % de aciertos
+// linealmente a 0-500 y devolviendo el rango de la banda donde cae ese puntaje.
+function oetRangeFromPercent(percent: number): { grade: string; range: string } {
+  const score = Math.round(percent * 5);
+  if (score >= 450) return { grade: "A", range: OET_GRADE_RANGES["A"] };
+  if (score >= 350) return { grade: "B", range: OET_GRADE_RANGES["B"] };
+  if (score >= 300) return { grade: "C+", range: OET_GRADE_RANGES["C+"] };
+  if (score >= 200) return { grade: "C", range: OET_GRADE_RANGES["C"] };
+  if (score >= 100) return { grade: "D", range: OET_GRADE_RANGES["D"] };
+  return { grade: "E", range: OET_GRADE_RANGES["E"] };
+}
+
+// v9: OET Writing en este sistema se califica con el mismo rubric genérico CEFR que
+// Nivel 1 Writing (ver submit-writing) -- no produce un grade oficial de OET. Se
+// aproxima convirtiendo el CEFR resultante al rango OET más cercano. Correspondencia
+// aproximada, sujeta a la misma salvedad que OET_GRADE_RANGES arriba.
+const CEFR_TO_OET_RANGE_APPROX: Record<string, { grade: string; range: string }> = {
+  "C1": { grade: "B", range: OET_GRADE_RANGES["B"] },
+  "B2": { grade: "C+", range: OET_GRADE_RANGES["C+"] },
+  "B1": { grade: "D", range: OET_GRADE_RANGES["D"] },
+  "A2": { grade: "E", range: OET_GRADE_RANGES["E"] },
+  "A1": { grade: "E", range: OET_GRADE_RANGES["E"] },
+};
+function oetRangeFromCefrApprox(cefr: string | null): { grade: string; range: string } | null {
+  if (!cefr) return null;
+  return CEFR_TO_OET_RANGE_APPROX[cefr] || null;
+}
+
+// v (01/09/2026, pedido de Diana): desde submit-writing.ts v21, oet_writing guarda
+// overall_grade + overall_score_500 (A/B/C+/C/D/E sobre 0-500, ya calculados en el
+// servidor contra los 6 criterios oficiales de OET -- ver parseOetWritingGrading). Este
+// es el dato real y debe preferirse siempre que exista; solo se cae a la aproximación
+// vieja (oetRangeFromCefrApprox sobre el placeholder cefr_estimate) para submissions de
+// antes de este cambio. Se usa tanto en la tarjeta de la tarea como en el chip de
+// skillLevels del encabezado -- una sola función para no repetir la lógica dos veces.
+function oetWritingGradeBadgeFromSubs(subs: any[]): string | null {
+  const withGrade = (subs || []).find((w) => w?.ai_rubric_scores && typeof w.ai_rubric_scores.overall_grade === "string");
+  if (!withGrade) return null;
+  const grade = withGrade.ai_rubric_scores.overall_grade;
+  const scaled = withGrade.ai_rubric_scores.overall_score_500;
+  return typeof scaled === "number" ? `${grade} (${scaled}/500)` : grade;
+}
+
+// v4 (20/08/2026): este comentario es lo que lee el ESTUDIANTE en el PDF final -- ya no
+// menciona la bandera interna pattern_inconsistent ("revisar antes de confirmar", una
+// nota para Diana, no para el estudiante). Esa bandera sigue disponible en
+// sub_scores.band_detail para que Diana la consulte en Supabase si quiere revisar el
+// detalle de bandas antes de reenviar un reporte puntual.
+function skillCommentFromBandDetail(skillName: string, raw: number, max: number, cefr: string | null): string {
+  if (!cefr) {
+    return `No se pudo determinar un nivel CEFR a partir de tus respuestas guardadas en ${skillName}.`;
+  }
+  return `Alcanzaste nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
+}
+
+// v4 (20/08/2026): mensaje neutro para el estudiante cuando la corrección automática de
+// Writing falló -- antes decía "falla técnica... Requiere revisión manual", lenguaje
+// interno que no corresponda mostrarle al estudiante. Diana sigue viendo el detalle
+// real (ai_rubric_scores.grading_failed) en Supabase.
 function writingCommentFromRubric(promptTitle: string, rubric: any, cefr: string | null): string {
   if (!rubric) {
     return `Sin calificación disponible para "${promptTitle}".`;
   }
   if (rubric.grading_failed) {
-    return `No se pudo calificar automáticamente "${promptTitle}" (falla técnica al momento de la corrección). Requiere revisión manual.`;
+    return `Resultado de "${promptTitle}" pendiente de confirmación.`;
   }
   const overall = typeof rubric.overall_comment === "string" ? rubric.overall_comment : "";
   return overall || `Nivel estimado: ${cefr || "no determinado"}.`;
 }
 
-// --- Bloque de Speaking Assessment --------------------------------------------------
-// Los 4 criterios lingüísticos oficiales de OET Speaking (0-6 cada uno).
+// v (01/09/2026, pedido de Diana): antes solo se leía "overall_comment" del rubric de
+// Writing -- las 6 evaluaciones por criterio que la IA ya calcula en "dimensions"
+// (desarrollo del tema, claridad de propósito, organización, control del lenguaje,
+// precisión, rango; ver submit-writing.ts) se descartaban sin mostrarse en ningún
+// reporte. Este helper las expone como "Evaluación por criterio" en la tarjeta de cada
+// tarea de writing (Nivel 1 y, desde ahora, también OET).
+const WRITING_DIMENSION_LABELS: Record<string, string> = {
+  topic_development: "Desarrollo del tema",
+  clarity_of_purpose: "Claridad de propósito",
+  organization: "Organización",
+  language_control: "Control del lenguaje",
+  accuracy: "Precisión",
+  range: "Rango",
+  // v (01/09/2026, pedido de Diana): OET Writing ya no comparte el rubric CEFR de
+  // arriba -- desde submit-writing.ts v21 se califica contra los 6 criterios oficiales
+  // de OET (Purpose/Content/Conciseness & Clarity/Genre & Style/Organisation &
+  // Layout/Language). Mismos nombres de key que usa parseOetWritingGrading allá.
+  purpose: "Propósito",
+  content: "Contenido",
+  conciseness_clarity: "Concisión y claridad",
+  genre_style: "Género y estilo",
+  organisation_layout: "Organización y presentación",
+  language: "Lenguaje",
+};
+
+function writingDimensionsFromRubric(rubric: any): WritingDimension[] {
+  const dims = rubric?.dimensions;
+  if (!dims || typeof dims !== "object") return [];
+  return Object.entries(WRITING_DIMENSION_LABELS)
+    .map(([key, label]) => {
+      const text = dims[key];
+      return typeof text === "string" && text.trim() ? { label, text } : null;
+    })
+    .filter((d): d is WritingDimension => d !== null);
+}
+
 const LINGUISTIC_LABELS: Record<string, string> = {
   intelligibility: "Intelligibility",
   fluency: "Fluency",
@@ -363,7 +985,6 @@ const LINGUISTIC_LABELS: Record<string, string> = {
   resources_of_grammar_and_expression: "Resources of grammar and expression",
 };
 
-// Los 5 criterios de comunicación clínica oficiales de OET Speaking (0-3 cada uno).
 const CLINICAL_LABELS: Record<string, string> = {
   relationship_building: "Relationship building",
   understanding_patient_perspective: "Understanding and incorporating the patient's perspective",
@@ -372,9 +993,6 @@ const CLINICAL_LABELS: Record<string, string> = {
   information_giving: "Information giving",
 };
 
-// Los 17 ítems del Reading & Pronunciation Diagnostic Checklist -- acá solo se usan
-// para nombrar los que salieron débiles (rating <=2) como flag; el detalle completo
-// queda en la base, no se vuelca fila por fila en el PDF.
 const PRONUNCIATION_LABELS: Record<string, string> = {
   unstressed_vowel_reduction: "Reducción de vocales átonas (schwa)",
   fleece_kit_contrast: "Contraste FLEECE/KIT",
@@ -414,6 +1032,9 @@ function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score:
   }
 
   if (score.type === "OET") {
+    // OET Speaking: schema totalmente distinto al de English (ver v7 arriba) -- 4
+    // criterios lingüísticos 0-6 + 5 de comunicación clínica 0-3 + overall_grade, sin
+    // checklist de pronunciación ni bullets. No se toca en v7.
     const linguistic = score.linguistic || {};
     const clinical = score.clinical_communication || {};
     const skills = [];
@@ -427,10 +1048,15 @@ function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score:
         skills.push({ name: CLINICAL_LABELS[key], raw: clinical[key], max: 3, cefr: null, comment: "" });
       }
     }
+    // v16 (29/08/2026): raw/max ahora muestran el puntaje real en escala 0-500
+    // (overall_score_500, guardado por submit-speaking-score v3) cuando existe, en vez
+    // de quedar vacíos. Bookings cargados antes de ese cambio no tienen ese campo y
+    // simplemente no muestran raw/max, como antes.
+    const hasScaled = typeof score.overall_score_500 === "number";
     skills.push({
       name: "OET Speaking — Resultado general",
-      raw: null,
-      max: null,
+      raw: hasScaled ? score.overall_score_500 : null,
+      max: hasScaled ? 500 : null,
       cefr: score.overall_grade || null,
       comment: score.comment || "Evaluado en vivo por Diana.",
     });
@@ -438,10 +1064,23 @@ function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score:
   }
 
   if (score.type === "English") {
+    // v7 (21/08/2026, pedido de Diana): antes solo se listaba lo débil, en una frase
+    // roja (flag). Ahora se muestra el resumen completo de los 17 ítems del checklist
+    // en tres grupos neutros: 5 = nivel nativo, 3-4 = en desarrollo, 1-2 = a reforzar.
+    // pronunciation_notes se muestra aparte, como texto normal (extraNote), nunca como
+    // flag/rojo.
     const checklist = score.pronunciation_checklist || {};
-    const weakItems = Object.keys(PRONUNCIATION_LABELS)
-      .filter((key) => typeof checklist[key] === "number" && checklist[key] <= 2)
-      .map((key) => PRONUNCIATION_LABELS[key]);
+    const mastered: string[] = [];
+    const developing: string[] = [];
+    const toReinforce: string[] = [];
+    for (const key of Object.keys(PRONUNCIATION_LABELS)) {
+      const rating = checklist[key];
+      if (typeof rating !== "number") continue;
+      const label = PRONUNCIATION_LABELS[key];
+      if (rating >= 5) mastered.push(label);
+      else if (rating >= 3) developing.push(label);
+      else toReinforce.push(label);
+    }
     return {
       title: "Speaking Assessment",
       skills: [
@@ -451,15 +1090,17 @@ function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score:
           max: null,
           cefr: score.cefr_sublevel || score.cefr_estimate || null,
           comment: score.comment || "Evaluado en vivo por Diana.",
-          flag: weakItems.length
-            ? `Puntos de pronunciación a reforzar: ${weakItems.join(", ")}.`
-            : (score.pronunciation_notes || null),
+          extraNote: score.pronunciation_notes || null,
+          bulletGroups: [
+            { heading: "Logrado (nivel nativo)", items: mastered },
+            { heading: "En desarrollo", items: developing },
+            { heading: "A reforzar", items: toReinforce },
+          ],
         },
       ],
     };
   }
 
-  // Formato desconocido/legado -- fallback conservador (compatibilidad hacia atrás).
   return {
     title: "Speaking Assessment",
     skills: [
@@ -473,8 +1114,6 @@ function buildSpeakingBlock(booking: { assessment_type: string; evaluator_score:
     ],
   };
 }
-
-// --- PDFShift --------------------------------------------------------------------
 
 async function htmlToPdf(html: string): Promise<Uint8Array> {
   const apiKey = Deno.env.get("PDFSHIFT_API_KEY");
@@ -491,6 +1130,9 @@ async function htmlToPdf(html: string): Promise<Uint8Array> {
       source: html,
       landscape: false,
       use_print: false,
+      // v6: margen fijo en CADA página generada (antes dependia del padding del
+      // <body>, que solo se aplicaba arriba/abajo del documento entero).
+      margin: { top: "30px", right: "35px", bottom: "30px", left: "35px" },
     }),
   });
   if (!res.ok) {
@@ -510,18 +1152,149 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-// --- Resend (con adjunto) ---------------------------------------------------------
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  const total = parts.reduce((sum, p) => sum + p.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const p of parts) {
+    result.set(p, offset);
+    offset += p.length;
+  }
+  return result;
+}
+
+// --- Google Drive (opcional) -----------------------------------------------------
+//
+// v15: copiado tal cual de generate-partial-report.ts (v1-v2, 24/08/2026), MISMA
+// service account (GOOGLE_SERVICE_ACCOUNT_JSON / GOOGLE_IMPERSONATE_EMAIL, ya
+// cargados y funcionando desde el reporte parcial) pero CARPETA PROPIA: el reporte
+// final usa GOOGLE_DRIVE_FINAL_FOLDER_ID (no GOOGLE_DRIVE_FOLDER_ID, que sigue siendo
+// solo del reporte parcial) -- pedido de Diana el 26/08/2026, la carpeta del reporte
+// final es distinta a la del parcial. Requiere en Supabase (Project Settings > Edge
+// Functions > Secrets):
+//   GOOGLE_SERVICE_ACCOUNT_JSON: el mismo que ya usa generate-partial-report.
+//   GOOGLE_DRIVE_FINAL_FOLDER_ID: el ID de la carpeta de Drive del reporte final (de
+//     la URL de la carpeta), que debe estar accesible por la cuenta que se impersona
+//     (ver GOOGLE_IMPERSONATE_EMAIL más abajo) -- si no, Drive devuelve 404/403 al
+//     intentar escribir ahí.
+//
+// Mientras GOOGLE_DRIVE_FINAL_FOLDER_ID no exista, uploadPdfToDrive() se auto-omite
+// sin romper el envío del correo -- se activa solo, sin redeploy, en cuanto Diana lo
+// cargue.
+async function getGoogleAccessToken(serviceAccountJson: string): Promise<string> {
+  const creds = JSON.parse(serviceAccountJson);
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  // Domain-wide delegation: la service account se hace pasar por un usuario real del
+  // Workspace (Diana, por default) vía el claim "sub" del JWT -- así el archivo se
+  // crea COMO ella y cuenta contra su propia cuota (las service accounts no tienen
+  // cuota propia). El secret GOOGLE_IMPERSONATE_EMAIL es opcional -- si no está, cae a
+  // NOTIFY_EMAIL (info@speakeasy.lat).
+  const impersonateEmail = Deno.env.get("GOOGLE_IMPERSONATE_EMAIL") || NOTIFY_EMAIL;
+  const claimSet = {
+    iss: creds.client_email,
+    scope: "https://www.googleapis.com/auth/drive.file",
+    aud: "https://oauth2.googleapis.com/token",
+    sub: impersonateEmail,
+    exp: now + 3600,
+    iat: now,
+  };
+  const encoder = new TextEncoder();
+  const base64url = (bytes: Uint8Array) =>
+    btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const headerB64 = base64url(encoder.encode(JSON.stringify(header)));
+  const claimB64 = base64url(encoder.encode(JSON.stringify(claimSet)));
+  const signingInput = `${headerB64}.${claimB64}`;
+
+  const pemBody = String(creds.private_key)
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s+/g, "");
+  const binaryDer = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer.buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    encoder.encode(signingInput),
+  );
+  const sigB64 = base64url(new Uint8Array(signature));
+  const jwt = `${signingInput}.${sigB64}`;
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Google token endpoint respondió ${res.status}: ${errText.slice(0, 400)}`);
+  }
+  const data = await res.json();
+  return data.access_token;
+}
+
+async function uploadPdfToDrive(
+  pdfBytes: Uint8Array,
+  fileName: string,
+): Promise<{ uploaded: boolean; reason?: string; fileId?: string; webViewLink?: string }> {
+  const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
+  const folderId = Deno.env.get("GOOGLE_DRIVE_FINAL_FOLDER_ID");
+  if (!serviceAccountJson || !folderId) {
+    return { uploaded: false, reason: "Drive no configurado todavía (falta GOOGLE_DRIVE_FINAL_FOLDER_ID)" };
+  }
+  try {
+    const accessToken = await getGoogleAccessToken(serviceAccountJson);
+    const metadata = { name: fileName, parents: [folderId] };
+    const boundary = "reportboundary" + crypto.randomUUID().replace(/-/g, "");
+    const encoder = new TextEncoder();
+    const pre = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: application/pdf\r\n\r\n`;
+    const post = `\r\n--${boundary}--`;
+    const body = concatBytes([encoder.encode(pre), pdfBytes, encoder.encode(post)]);
+
+    const res = await fetch(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": `multipart/related; boundary=${boundary}`,
+        },
+        body,
+      },
+    );
+    if (!res.ok) {
+      const errText = await res.text();
+      return { uploaded: false, reason: `Drive API respondió ${res.status}: ${errText.slice(0, 400)}` };
+    }
+    const data = await res.json();
+    return { uploaded: true, fileId: data.id, webViewLink: data.webViewLink };
+  } catch (err) {
+    return { uploaded: false, reason: String(err) };
+  }
+}
 
 async function sendReportEmail(params: {
   studentName: string;
   assessmentLabel: string;
   pdfBytes: Uint8Array;
   fileName: string;
+  driveLink?: string | null;
 }) {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
     throw new Error("Falta el secret RESEND_API_KEY en Supabase.");
   }
+  const driveLine = params.driveLink ? `\n\nTambién se subió a Drive: ${params.driveLink}` : "";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -532,7 +1305,7 @@ async function sendReportEmail(params: {
       from: NOTIFY_FROM,
       to: [NOTIFY_EMAIL],
       subject: `Reporte de resultados: ${params.studentName} (${params.assessmentLabel})`,
-      text: `Adjunto el reporte de resultados de ${params.studentName} (${params.assessmentLabel}), generado automáticamente al completar el assessment.`,
+      text: `Adjunto el reporte de resultados de ${params.studentName} (${params.assessmentLabel}), generado automáticamente al completar el assessment.${driveLine}`,
       attachments: [
         {
           filename: params.fileName,
@@ -547,13 +1320,10 @@ async function sendReportEmail(params: {
   }
 }
 
-// --- Lógica principal --------------------------------------------------------------
-
 async function buildAndSendReport(
   supabase: ReturnType<typeof createClient>,
   attemptId: string,
 ): Promise<{ sent: boolean; reason?: string }> {
-  // 1. Attempt + student + track + report_sent_at.
   const { data: attempt, error: attemptError } = await supabase
     .from("attempts")
     .select("id, track, status, report_sent_at, student_id")
@@ -579,7 +1349,6 @@ async function buildAndSendReport(
     return { sent: false, reason: "student no encontrado" };
   }
 
-  // 2. unlock_state (para saber assigned_route en FULL_360).
   const { data: unlock } = await supabase
     .from("unlock_state")
     .select("assigned_route")
@@ -588,7 +1357,6 @@ async function buildAndSendReport(
 
   const assignedRoute = unlock ? unlock.assigned_route : null;
 
-  // 3. sub_scores del attempt.
   const { data: subScores, error: subScoresError } = await supabase
     .from("sub_scores")
     .select("skill, raw_score, max_score, cefr_estimate, band_detail")
@@ -605,8 +1373,6 @@ async function buildAndSendReport(
     return { sent: false, reason: "Nivel 1 todavía no está completo" };
   }
 
-  // 4. Si FULL_360, verificar módulos adicionales según assigned_route, y el
-  // evaluator_score de Speaking (Diana lo carga desde admin-speaking-score.html).
   if (track === "FULL_360") {
     if (assignedRoute === "STEPS2" && !byskill["steps2_reading"]) {
       return { sent: false, reason: "STEP CK 2 todavía no está completo" };
@@ -617,18 +1383,22 @@ async function buildAndSendReport(
         return { sent: false, reason: "OET todavía no está completo" };
       }
     }
-    const { data: booking } = await supabase
-      .from("speaking_assessment_bookings")
-      .select("evaluator_score")
-      .eq("attempt_id", attemptId)
-      .maybeSingle();
-
-    if (!booking || !booking.evaluator_score) {
-      return { sent: false, reason: "falta el evaluator_score de Speaking" };
-    }
   }
 
-  // 5. Armar los bloques del reporte.
+  // v7 (21/08/2026, pedido de Diana): Speaking ahora se espera en LOS DOS TRACKS --
+  // antes este chequeo vivía dentro del "if (track === 'FULL_360')" de arriba, así que
+  // NIVEL1_ONLY nunca esperaba ni incluía Speaking. Se alimenta igual que siempre:
+  // mismo formulario admin-speaking-score.html -> submit-speaking-score.
+  const { data: speakingBooking } = await supabase
+    .from("speaking_assessment_bookings")
+    .select("assessment_type, evaluator_score")
+    .eq("attempt_id", attemptId)
+    .maybeSingle();
+
+  if (!speakingBooking || !speakingBooking.evaluator_score) {
+    return { sent: false, reason: "falta el evaluator_score de Speaking" };
+  }
+
   const skillLabels: Record<string, string> = {
     grammar: "Grammar",
     listening: "Listening",
@@ -640,40 +1410,107 @@ async function buildAndSendReport(
     oet_writing: "OET Writing",
   };
 
+  // v (01/09/2026): se agrega "module" al join -- hace falta para separar el ensayo de
+  // Nivel 1 (nivel1_writing) del de OET (oet_writing) más abajo. Antes esta consulta no
+  // lo traía y el bloque de Nivel 1 mostraba TODAS las writing_submissions del attempt
+  // sin filtrar, mezclando el ensayo de OET bajo "Writing" (Nivel 1).
   const { data: writingSubs } = await supabase
     .from("writing_submissions")
-    .select("prompt_id, ai_rubric_scores, cefr_estimate, writing_prompts(title)")
+    .select("prompt_id, response_text, ai_rubric_scores, cefr_estimate, writing_prompts(title, module)")
     .eq("attempt_id", attemptId);
+
+  // v5 (20/08/2026, pedido de Diana): trae todas las respuestas de opción múltiple /
+  // note-completion del attempt, con la pregunta y la respuesta correcta (que el
+  // estudiante nunca vio en vivo -- ver comentario de submit-response), para mostrarlas
+  // en el reporte. module (question_bank) -> skill (sub_scores), mismo mapa que usan
+  // submit-response/submit-writing -- mantener sincronizado si se agregan módulos.
+  const RESPONSE_MODULE_TO_SKILL: Record<string, string> = {
+    nivel1_grammar: "grammar",
+    nivel1_listening: "listening",
+    nivel1_listening_general: "listening",
+    nivel1_reading: "reading",
+    nivel1_reading_general: "reading",
+    steps2: "steps2_reading",
+    oet_listening: "oet_listening",
+    oet_reading: "oet_reading",
+  };
+
+  const { data: responseRows } = await supabase
+    .from("student_responses")
+    .select("selected_answer, is_correct, question_bank(module, position, question_text, correct_answer)")
+    .eq("attempt_id", attemptId);
+
+  const qaBySkill: Record<string, Array<QaItem & { position: number }>> = {};
+  for (const r of (responseRows || []) as any[]) {
+    const qb = r.question_bank;
+    if (!qb) continue;
+    const skill = RESPONSE_MODULE_TO_SKILL[qb.module];
+    if (!skill) continue;
+    if (!qaBySkill[skill]) qaBySkill[skill] = [];
+    qaBySkill[skill].push({
+      position: qb.position ?? 0,
+      questionText: qb.question_text,
+      selectedAnswer: r.selected_answer,
+      correctAnswer: qb.correct_answer,
+      isCorrect: r.is_correct === true,
+    });
+  }
+  for (const skill of Object.keys(qaBySkill)) {
+    qaBySkill[skill].sort((a, b) => a.position - b.position);
+  }
 
   const nivel1Block = {
     title: "Nivel 1",
     skills: nivel1Skills.map((sk) => {
       const row = byskill[sk];
       if (sk === "writing") {
-        // Comentario por cada tarea de writing enviada, si hay más de una.
-        const subs = (writingSubs || []).filter((w: any) => w);
+        // v (01/09/2026): filtra a nivel1_writing -- antes tomaba TODAS las
+        // writing_submissions del attempt sin filtrar por módulo, así que el ensayo de
+        // OET Writing (para un estudiante en esa ruta) aparecía mezclado acá, bajo
+        // "Writing" (Nivel 1). oet_writing arma su propia tarjeta más abajo, dentro del
+        // bloque OET.
+        const subs = (writingSubs || []).filter((w: any) => w && w.writing_prompts?.module === "nivel1_writing");
         if (subs.length > 0) {
-          const comments = subs
-            .map((w: any) => {
-              const title = w.writing_prompts?.title || "tarea";
-              return writingCommentFromRubric(title, w.ai_rubric_scores, w.cefr_estimate);
-            })
-            .join(" ");
+          const writingTasks: WritingTask[] = subs.map((w: any) => {
+            const title = w.writing_prompts?.title || "Tarea";
+            const correcciones = Array.isArray(w.ai_rubric_scores?.correcciones_para_b2)
+              ? (w.ai_rubric_scores.correcciones_para_b2 as any[]).filter(
+                  (c) => c && typeof c.error === "string" && typeof c.correccion === "string",
+                )
+              : [];
+            return {
+              title,
+              essayText: w.response_text || "",
+              comment: writingCommentFromRubric(title, w.ai_rubric_scores, w.cefr_estimate),
+              correccionesParaB2: correcciones,
+              dimensions: writingDimensionsFromRubric(w.ai_rubric_scores),
+            };
+          });
           return {
             name: skillLabels[sk],
             raw: row.raw_score,
             max: row.max_score,
             cefr: row.cefr_estimate,
-            comment: comments,
+            comment: "",
+            writingTasks,
           };
         }
       }
+      // v (24/08/2026, pedido de Diana, caso de Juan Sebastian): si listening tuvo el
+      // rescate OET por >=75% en banda B2 (ver LISTENING_B2_RESCUE_THRESHOLD en
+      // submit-response.ts / submit-writing.ts), la nota queda guardada en
+      // band_detail.oet_unlock_note -- se agrega al comentario de esta destreza para que
+      // quede visible en el reporte final, igual que en generate-partial-report.ts.
+      const baseComment = skillCommentFromBandDetail(skillLabels[sk], row.raw_score, row.max_score, row.cefr_estimate);
+      const oetUnlockNote = row.band_detail?.oet_unlock_note || null;
+      const comment = oetUnlockNote ? `${baseComment} ${oetUnlockNote}` : baseComment;
       return {
         name: skillLabels[sk],
         raw: row.raw_score,
         max: row.max_score,
         cefr: row.cefr_estimate,
-        comment: skillCommentFromBandDetail(skillLabels[sk], row.raw_score, row.max_score, row.cefr_estimate, row.band_detail),
+        comment,
+        qaList: qaBySkill[sk] || [],
       };
     }),
   };
@@ -693,44 +1530,175 @@ async function buildAndSendReport(
             max: row.max_score,
             cefr: null,
             comment: passed
-              ? `Aprobó con ${row.band_detail.percent}% (umbral mínimo ${row.band_detail.threshold}%).`
-              : `No alcanzó el umbral mínimo: ${row.band_detail.percent}% (se requiere ${row.band_detail.threshold}%).`,
+              ? `Aprobaste con ${row.band_detail.percent}% (umbral mínimo ${row.band_detail.threshold}%).`
+              : `No alcanzaste el umbral mínimo: ${row.band_detail.percent}% (se requiere ${row.band_detail.threshold}%).`,
+            qaList: qaBySkill["steps2_reading"] || [],
           },
         ],
       });
     } else if (assignedRoute === "OET") {
+      // v (01/09/2026, pedido de Diana): oet_writing es una tarea de escritura, no
+      // opción múltiple -- antes se armaba con el mismo template que oet_listening/
+      // oet_reading ("Resultado informativo: X% de respuestas correctas"), así que
+      // nunca se veía el ensayo, el comentario de la IA, la evaluación por criterio ni
+      // las correcciones para B2 (y su qaList quedaba siempre vacío, porque
+      // oet_writing no tiene preguntas de opción múltiple). Se le da el mismo
+      // tratamiento que ya tiene Writing de Nivel 1 más arriba.
+      const oetWritingSubs = (writingSubs || []).filter(
+        (w: any) => w && w.writing_prompts?.module === "oet_writing",
+      );
+      // v (01/09/2026, pedido de Diana): sub_scores.cefr_estimate para oet_writing es
+      // SOLO un placeholder técnico (ver oetWritingPlaceholderCefr en
+      // submit-writing.ts), nunca el dato real -- el badge de esta tarjeta debe mostrar
+      // el overall_grade real (ver oetWritingGradeBadgeFromSubs arriba).
+      const oetWritingGradeBadge = oetWritingGradeBadgeFromSubs(oetWritingSubs);
       blocks.push({
         title: "OET",
         skills: ["oet_listening", "oet_reading", "oet_writing"].map((sk) => {
           const row = byskill[sk];
+          if (sk === "oet_writing" && oetWritingSubs.length > 0) {
+            const writingTasks: WritingTask[] = oetWritingSubs.map((w: any) => {
+              const title = w.writing_prompts?.title || "OET Writing";
+              const correcciones = Array.isArray(w.ai_rubric_scores?.correcciones_para_b2)
+                ? (w.ai_rubric_scores.correcciones_para_b2 as any[]).filter(
+                    (c) => c && typeof c.error === "string" && typeof c.correccion === "string",
+                  )
+                : [];
+              return {
+                title,
+                essayText: w.response_text || "",
+                comment: writingCommentFromRubric(title, w.ai_rubric_scores, w.cefr_estimate),
+                correccionesParaB2: correcciones,
+                dimensions: writingDimensionsFromRubric(w.ai_rubric_scores),
+                correccionesHeading: "Correcciones sugeridas",
+              };
+            });
+            return {
+              name: skillLabels[sk],
+              raw: row.raw_score,
+              max: row.max_score,
+              cefr: oetWritingGradeBadge || row.cefr_estimate,
+              comment: "",
+              writingTasks,
+            };
+          }
           return {
             name: skillLabels[sk],
             raw: row.raw_score,
             max: row.max_score,
             cefr: null,
             comment: `Resultado informativo: ${row.band_detail?.percent ?? Math.round((row.raw_score / row.max_score) * 100)}% de respuestas correctas.`,
+            qaList: qaBySkill[sk] || [],
           };
         }),
       });
     }
+  }
 
-    const { data: booking } = await supabase
-      .from("speaking_assessment_bookings")
-      .select("assessment_type, evaluator_score")
-      .eq("attempt_id", attemptId)
-      .maybeSingle();
+  // v7: Speaking se agrega siempre -- ya se validó arriba (para los dos tracks) que
+  // speakingBooking existe y tiene evaluator_score.
+  blocks.push(buildSpeakingBlock(speakingBooking as any));
 
-    if (booking) {
-      blocks.push(buildSpeakingBlock(booking as any));
+  // v9: lista de niveles por destreza para el encabezado (ANTES del resumen global) --
+  // Grammar/Listening/Writing/Reading con su CEFR, Speaking con su nivel (CEFR o, si es
+  // OET, su rango de puntaje), y si la ruta es OET/STEPS2, sus propias filas en su
+  // propia escala. Ver comentario largo de v9 al inicio del archivo para el porqué de
+  // cada conversión.
+  const skillLevels: Array<{ label: string; value: string; note?: string | null }> = [];
+  for (const sk of nivel1Skills) {
+    const row = byskill[sk];
+    skillLevels.push({ label: skillLabels[sk], value: row?.cefr_estimate || "—" });
+  }
+
+  const speakingScore = speakingBooking ? (speakingBooking as any).evaluator_score : null;
+  if (speakingScore?.type === "OET") {
+    // v16 (29/08/2026): usa el número real (overall_score_500) cuando existe, en vez
+    // del rango oficial estático de la letra -- ver comentario largo de v16 al inicio
+    // del archivo. Si el booking es viejo y no tiene overall_score_500, se cae al
+    // comportamiento anterior (rango oficial de la letra).
+    const grade = speakingScore.overall_grade || null;
+    const scaled = typeof speakingScore.overall_score_500 === "number" ? speakingScore.overall_score_500 : null;
+    let value: string;
+    if (grade && scaled !== null) {
+      value = `${grade} (${scaled}/500)`;
+    } else {
+      const oetSpeaking = oetRangeFromGrade(grade);
+      value = oetSpeaking ? `${oetSpeaking.grade} (${oetSpeaking.range})` : (grade || "—");
+    }
+    skillLevels.push({
+      label: "Speaking",
+      value,
+      note: "puntaje OET real, calculado a partir de los 9 criterios cargados por Diana",
+    });
+  } else {
+    const speakingCefr = speakingScore?.cefr_sublevel || speakingScore?.cefr_estimate || null;
+    skillLevels.push({ label: "Speaking", value: speakingCefr || "—" });
+  }
+
+  if (track === "FULL_360" && assignedRoute === "OET") {
+    for (const sk of ["oet_listening", "oet_reading"]) {
+      const row = byskill[sk];
+      if (!row) continue;
+      const percent = row.band_detail?.percent ?? Math.round((row.raw_score / row.max_score) * 100);
+      const band = oetRangeFromPercent(percent);
+      skillLevels.push({
+        label: skillLabels[sk],
+        value: `${band.grade} (${band.range})`,
+        note: "puntaje OET aproximado",
+      });
+    }
+    const writingRow = byskill["oet_writing"];
+    if (writingRow) {
+      // v (01/09/2026): preferir el overall_grade real (ver oetWritingGradeBadgeFromSubs)
+      // sobre la aproximación CEFR vieja, que solo se conserva como fallback para
+      // submissions de antes de este cambio.
+      const realBadge = oetWritingGradeBadgeFromSubs(
+        (writingSubs || []).filter((w: any) => w && w.writing_prompts?.module === "oet_writing"),
+      );
+      const band = oetRangeFromCefrApprox(writingRow.cefr_estimate);
+      skillLevels.push({
+        label: "OET Writing",
+        value: realBadge || (band ? `${band.grade} (${band.range})` : (writingRow.cefr_estimate || "—")),
+        note: realBadge ? "puntaje OET real, calculado a partir de los 6 criterios oficiales" : "puntaje OET aproximado",
+      });
     }
   }
 
-  // 6. Nivel CEFR general: el más bajo entre los skills de Nivel 1 (nivel de piso).
-  const nivel1Cefrs = nivel1Skills.map((sk) => byskill[sk]?.cefr_estimate).filter(Boolean) as string[];
-  const overallCefr = nivel1Cefrs.length
-    ? nivel1Cefrs.reduce((lowest, c) => (CEFR_ORDER.indexOf(c) < CEFR_ORDER.indexOf(lowest) ? c : lowest))
-    : null;
-  const overallNote = "El nivel general queda determinado por la skill más baja de Nivel 1, siguiendo el criterio de nivel de piso usado en la plataforma.";
+  if (track === "FULL_360" && assignedRoute === "STEPS2") {
+    const row = byskill["steps2_reading"];
+    if (row) {
+      const percent = row.band_detail?.percent ?? Math.round((row.raw_score / row.max_score) * 100);
+      skillLevels.push({ label: "STEP CK 2", value: `${percent}%` });
+    }
+  }
+
+  // v8 (21/08/2026, pedido de Diana): el nivel general ya no es un solo nivel (el más
+  // bajo de las 4 destrezas) -- ahora es el RANGO entre las dos destrezas con el
+  // resultado más bajo, para mostrar dónde está el mayor margen de mejora. Si las dos
+  // más bajas coinciden en el mismo nivel, se muestra un solo nivel (no "A1-A1"). v9:
+  // esto sigue calculándose SOLO con las 4 destrezas de Nivel 1 (no con Speaking ni con
+  // OET/STEPS2, que miden otra cosa) -- es el principio de "destreza funcional": la
+  // comunicación real queda limitada por la destreza más débil, no por el promedio.
+  const nivel1CefrsSorted = nivel1Skills
+    .map((sk) => byskill[sk]?.cefr_estimate)
+    .filter(Boolean)
+    .sort((a: string, b: string) => CEFR_ORDER.indexOf(a) - CEFR_ORDER.indexOf(b)) as string[];
+  const lowestCefr = nivel1CefrsSorted[0] ?? null;
+  const secondLowestCefr = nivel1CefrsSorted[1] ?? null;
+  const overallCefr = !lowestCefr
+    ? null
+    : secondLowestCefr && secondLowestCefr !== lowestCefr
+      ? `${lowestCefr}-${secondLowestCefr}`
+      : lowestCefr;
+  const otherScalesNote =
+    track === "FULL_360" && (assignedRoute === "OET" || assignedRoute === "STEPS2")
+      ? " OET y STEP CK 2 se reportan aparte, con su propia escala."
+      : "";
+  const overallNote = !lowestCefr
+    ? "Todavía no hay suficientes resultados de Nivel 1 para calcular un nivel funcional."
+    : secondLowestCefr && secondLowestCefr !== lowestCefr
+      ? `Tu nivel funcional resume tus dos resultados más bajos de Nivel 1 (${lowestCefr} y ${secondLowestCefr}): la destreza más débil es la que limita la comunicación real, aunque tengas otras más altas.${otherScalesNote}`
+      : `Tu nivel funcional resume tu resultado más bajo de Nivel 1 (${lowestCefr}): la destreza más débil es la que limita la comunicación real, aunque tengas otras más altas.${otherScalesNote}`;
 
   const assessmentLabel = track === "NIVEL1_ONLY" ? "Assessment Speak Easy" : "Assessment 360";
   const logoUrl = track === "NIVEL1_ONLY" ? LOGO_GENERIC_URL : LOGO_CLEARPATH_URL;
@@ -743,21 +1711,26 @@ async function buildAndSendReport(
     reportDate,
     overallCefr,
     overallNote,
+    skillLevels,
     blocks,
   });
 
-  // 7. HTML -> PDF -> correo.
   const pdfBytes = await htmlToPdf(html);
-  const fileName = `Reporte - ${(student.full_name || "estudiante").replace(/[^a-zA-Z0-9 ]/g, "")}.pdf`;
+  const fileName = `Resultados ${assessmentLabel} - ${(student.full_name || "Estudiante").replace(/[^a-zA-Z0-9 ]/g, "")}.pdf`;
+
+  const driveResult = await uploadPdfToDrive(pdfBytes, fileName);
+  if (!driveResult.uploaded) {
+    console.log(`generate-report: Drive omitido (${driveResult.reason})`);
+  }
 
   await sendReportEmail({
     studentName: student.full_name || "Estudiante",
     assessmentLabel,
     pdfBytes,
     fileName,
+    driveLink: driveResult.uploaded ? driveResult.webViewLink : null,
   });
 
-  // 8. Marcar enviado.
   await supabase
     .from("attempts")
     .update({ report_sent_at: new Date().toISOString() })
