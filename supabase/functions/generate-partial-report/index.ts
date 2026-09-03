@@ -28,6 +28,11 @@
 //   2. Manualmente, con POST { attempt_id: "..." } directo a esta función -- útil para
 //      pruebas o para regenerar un reporte parcial a pedido.
 //
+// v9 (03/09/2026, pedido de Diana): se saca la nota chiquita debajo del puntaje en los
+// chips de "Resultados por destreza" (ej. "puntaje OET real, calculado a partir de los 9
+// criterios cargados por Diana", "puntaje OET aproximado") -- espejo exacto del mismo
+// cambio en generate-report.ts v20.
+//
 // v7 (01/09/2026, reportado por Diana): OET Writing no mostraba ni el ensayo ni su
 // evaluación en el reporte -- se armaba con el mismo template que oet_listening/
 // oet_reading (preguntas de opción múltiple), así que salía como "OET Writing 3/10 --
@@ -301,7 +306,6 @@ function buildReportHtml(params: {
     <div class="skill-level-chip">
       <span class="chip-label">${escapeHtml(s.label)}</span>
       <span class="chip-value">${escapeHtml(s.value)}</span>
-      ${s.note ? `<span class="chip-note">${escapeHtml(s.note)}</span>` : ""}
     </div>`,
       )
       .join("\n")}
