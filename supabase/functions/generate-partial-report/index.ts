@@ -28,6 +28,12 @@
 //   2. Manualmente, con POST { attempt_id: "..." } directo a esta función -- útil para
 //      pruebas o para regenerar un reporte parcial a pedido.
 //
+// v10 (03/09/2026, pedido de Diana): OET Writing vuelve a mostrar el RANGO oficial de su
+// letra (ej. "B (350-440)") en vez del puntaje exacto (ej. "B (384/500)") -- espejo
+// exacto del mismo cambio en generate-report.ts v21 (ahí también aplica a OET Speaking,
+// que este reporte parcial no incluye). Guión normal "-" en vez del en dash "–" en
+// OET_GRADE_RANGES.
+//
 // v9 (03/09/2026, pedido de Diana): se saca la nota chiquita debajo del puntaje en los
 // chips de "Resultados por destreza" (ej. "puntaje OET real, calculado a partir de los 9
 // criterios cargados por Diana", "puntaje OET aproximado") -- espejo exacto del mismo
@@ -650,14 +656,25 @@ const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 
 // v9 de generate-report: rangos oficiales de puntaje OET (escala 0-500, vigente desde
 // septiembre 2018) por grade. Verificados el 21/08/2026 contra geniusclass.co.uk/oet-calculator.
+// Guión normal "-" (no en dash "–") desde v10 -- pedido explícito de Diana para que no se
+// confunda con una barra "/".
 const OET_GRADE_RANGES: Record<string, string> = {
-  "A": "450–500",
-  "B": "350–440",
-  "C+": "300–340",
-  "C": "200–290",
-  "D": "100–190",
-  "E": "0–90",
+  "A": "450-500",
+  "B": "350-440",
+  "C+": "300-340",
+  "C": "200-290",
+  "D": "100-190",
+  "E": "0-90",
 };
+
+// v21 de generate-report (03/09/2026): normaliza un grade letra (A/B/C+/C/D/E) al rango
+// oficial de OET_GRADE_RANGES -- espejo exacto de oetRangeFromGrade en generate-report.ts.
+function oetRangeFromGrade(grade: string | null | undefined): { grade: string; range: string } | null {
+  if (!grade) return null;
+  const normalized = grade.trim().toUpperCase().replace(/\s+/g, "");
+  if (!OET_GRADE_RANGES[normalized]) return null;
+  return { grade: normalized, range: OET_GRADE_RANGES[normalized] };
+}
 
 function oetRangeFromPercent(percent: number): { grade: string; range: string } {
   const score = Math.round(percent * 5);
@@ -684,16 +701,19 @@ function oetRangeFromCefrApprox(cefr: string | null): { grade: string; range: st
 // v (01/09/2026, pedido de Diana): desde submit-writing.ts v21, oet_writing guarda
 // overall_grade + overall_score_500 (A/B/C+/C/D/E sobre 0-500, ya calculados en el
 // servidor contra los 6 criterios oficiales de OET -- ver parseOetWritingGrading). Este
-// es el dato real y debe preferirse siempre que exista; solo se cae a la aproximación
+// es el grade real y debe preferirse siempre que exista; solo se cae a la aproximación
 // vieja (oetRangeFromCefrApprox sobre el placeholder cefr_estimate) para submissions de
 // antes de este cambio. Se usa tanto en la tarjeta de la tarea como en el chip de
 // skillLevels del encabezado -- una sola función para no repetir la lógica dos veces.
+// v10 (03/09/2026, pedido de Diana): el VALOR mostrado vuelve a ser el rango oficial de
+// la letra (oetRangeFromGrade), no el overall_score_500 exacto -- ver comentario largo de
+// v10 al inicio del archivo.
 function oetWritingGradeBadgeFromSubs(subs: any[]): string | null {
   const withGrade = (subs || []).find((w) => w?.ai_rubric_scores && typeof w.ai_rubric_scores.overall_grade === "string");
   if (!withGrade) return null;
   const grade = withGrade.ai_rubric_scores.overall_grade;
-  const scaled = withGrade.ai_rubric_scores.overall_score_500;
-  return typeof scaled === "number" ? `${grade} (${scaled}/500)` : grade;
+  const band = oetRangeFromGrade(grade);
+  return band ? `${band.grade} (${band.range})` : grade;
 }
 
 // v3 (24/08/2026, pedido de Diana): antes decía "Alcanzó..." (tercera persona) -- pasa a
