@@ -425,13 +425,20 @@ async function loadPending() {
     bookings.forEach((b) => {
       const row = document.createElement('div');
       row.className = 'booking-row';
-      const dateStr = b.scheduled_at
-        ? new Date(b.scheduled_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
-        : 'sin fecha agendada';
+      // NUEVO (03/09/2026, pedido de Diana): se saca "sin fecha agendada" -- todavía no
+      // hay integración con Google Calendar que traiga la fecha real elegida (el botón
+      // "Agendar" solo registra el clic, ver register-speaking-booking), así que ese
+      // mensaje salía siempre, para todos, sin aportar nada. Si scheduled_at existe (el
+      // día que se cargue esa integración) se sigue mostrando con normalidad.
+      const metaParts = [];
+      if (b.student_email) metaParts.push(escapeHtml(b.student_email));
+      if (b.scheduled_at) {
+        metaParts.push(new Date(b.scheduled_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' }));
+      }
       row.innerHTML = `
         <div>
           <div class="name">${escapeHtml(b.student_name || 'Sin nombre')}</div>
-          <div class="meta">${escapeHtml(b.student_email || '')} · ${dateStr}</div>
+          <div class="meta">${metaParts.join(' · ')}</div>
         </div>
         <span class="badge ${b.assessment_type === 'OET' ? 'oet' : ''}">${escapeHtml(b.assessment_type)}</span>
       `;
