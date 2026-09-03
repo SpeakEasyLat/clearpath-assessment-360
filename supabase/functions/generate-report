@@ -30,6 +30,16 @@
 //   - NIVEL1_ONLY -> "Assessment Speak Easy"
 //   - FULL_360    -> "Assessment 360"
 //
+// v21 (03/09/2026, pedido de Diana): OET Writing y OET Speaking volvieron a mostrar el
+// RANGO oficial de su letra (ej. "B (350-440)") en vez del puntaje exacto calculado (ej.
+// "B (384/500)") -- Diana pidió consistencia visual con Listening/Reading, que siempre
+// mostraron el rango. También se pidió el guión normal "-" en vez del en dash "–" que
+// traía OET_GRADE_RANGES, para que no se confunda con una barra "/". El puntaje exacto
+// (overall_score_500) se sigue calculando y guardando en Supabase como antes -- esto es
+// solo un cambio de qué se IMPRIME en el PDF, no de cómo se califica. Revierte el
+// comportamiento de v16/v19 de abajo. Espejo de este mismo cambio en
+// generate-partial-report.ts.
+//
 // v20 (03/09/2026, pedido de Diana): se saca la nota chiquita debajo del puntaje en los
 // chips de "Resultados por destreza" (ej. "puntaje OET real, calculado a partir de los 9
 // criterios cargados por Diana", "puntaje OET aproximado") -- sonaba a nota interna/QA,
@@ -856,14 +866,16 @@ function buildReportHtml(params: {
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 
 // v9: rangos oficiales de puntaje OET (escala 0-500, vigente desde septiembre 2018) por
-// grade. Verificados el 21/08/2026 contra geniusclass.co.uk/oet-calculator.
+// grade. Verificados el 21/08/2026 contra geniusclass.co.uk/oet-calculator. Guión normal
+// "-" (no en dash "–") desde v21 -- pedido explícito de Diana para que no se confunda con
+// una barra "/".
 const OET_GRADE_RANGES: Record<string, string> = {
-  "A": "450–500",
-  "B": "350–440",
-  "C+": "300–340",
-  "C": "200–290",
-  "D": "100–190",
-  "E": "0–90",
+  "A": "450-500",
+  "B": "350-440",
+  "C+": "300-340",
+  "C": "200-290",
+  "D": "100-190",
+  "E": "0-90",
 };
 const OET_GRADE_ORDER = ["A", "B", "C+", "C", "D", "E"];
 
@@ -908,16 +920,19 @@ function oetRangeFromCefrApprox(cefr: string | null): { grade: string; range: st
 // v (01/09/2026, pedido de Diana): desde submit-writing.ts v21, oet_writing guarda
 // overall_grade + overall_score_500 (A/B/C+/C/D/E sobre 0-500, ya calculados en el
 // servidor contra los 6 criterios oficiales de OET -- ver parseOetWritingGrading). Este
-// es el dato real y debe preferirse siempre que exista; solo se cae a la aproximación
+// es el grade real y debe preferirse siempre que exista; solo se cae a la aproximación
 // vieja (oetRangeFromCefrApprox sobre el placeholder cefr_estimate) para submissions de
 // antes de este cambio. Se usa tanto en la tarjeta de la tarea como en el chip de
 // skillLevels del encabezado -- una sola función para no repetir la lógica dos veces.
+// v21 (03/09/2026, pedido de Diana): el VALOR mostrado vuelve a ser el rango oficial de
+// la letra (oetRangeFromGrade), no el overall_score_500 exacto -- ver comentario largo de
+// v21 al inicio del archivo.
 function oetWritingGradeBadgeFromSubs(subs: any[]): string | null {
   const withGrade = (subs || []).find((w) => w?.ai_rubric_scores && typeof w.ai_rubric_scores.overall_grade === "string");
   if (!withGrade) return null;
   const grade = withGrade.ai_rubric_scores.overall_grade;
-  const scaled = withGrade.ai_rubric_scores.overall_score_500;
-  return typeof scaled === "number" ? `${grade} (${scaled}/500)` : grade;
+  const band = oetRangeFromGrade(grade);
+  return band ? `${band.grade} (${band.range})` : grade;
 }
 
 // v4 (20/08/2026): este comentario es lo que lee el ESTUDIANTE en el PDF final -- ya no
@@ -1617,19 +1632,12 @@ async function buildAndSendReport(
 
   const speakingScore = speakingBooking ? (speakingBooking as any).evaluator_score : null;
   if (speakingScore?.type === "OET") {
-    // v16 (29/08/2026): usa el número real (overall_score_500) cuando existe, en vez
-    // del rango oficial estático de la letra -- ver comentario largo de v16 al inicio
-    // del archivo. Si el booking es viejo y no tiene overall_score_500, se cae al
-    // comportamiento anterior (rango oficial de la letra).
+    // v21 (03/09/2026): vuelve a mostrar el rango oficial estático de la letra (no el
+    // overall_score_500 exacto) -- ver comentario largo de v21 al inicio del archivo.
+    // Revierte v16, que mostraba el número real cuando existía.
     const grade = speakingScore.overall_grade || null;
-    const scaled = typeof speakingScore.overall_score_500 === "number" ? speakingScore.overall_score_500 : null;
-    let value: string;
-    if (grade && scaled !== null) {
-      value = `${grade} (${scaled}/500)`;
-    } else {
-      const oetSpeaking = oetRangeFromGrade(grade);
-      value = oetSpeaking ? `${oetSpeaking.grade} (${oetSpeaking.range})` : (grade || "—");
-    }
+    const oetSpeaking = oetRangeFromGrade(grade);
+    const value = oetSpeaking ? `${oetSpeaking.grade} (${oetSpeaking.range})` : (grade || "—");
     skillLevels.push({
       label: "Speaking",
       value,
