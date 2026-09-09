@@ -161,8 +161,18 @@ function renderAudioGroup() {
   const used = playsUsed[group.audio_asset_id] || 0;
   const remaining = group.max_plays - used;
   const isCaseNotes = group.questions[0] && group.questions[0].answer_format === 'note_completion';
-  let numberOffset = 0;
-  for (let i = 0; i < currentAudioIndex; i++) numberOffset += listeningData.audios[i].questions.length;
+  // El número que se muestra junto a cada pregunta debe coincidir con el número que
+  // dice el audio real de OET (Part A: 1-12, Part B: 25-28 -- no sigue de corrido
+  // después de Part A --, Part C: no se menciona en el audio, se deja el que sigue
+  // visualmente). display_number_start en data/oet-listening.json manda; si algún
+  // audio no lo trae, se cae de vuelta al cálculo acumulado anterior.
+  let numberOffset;
+  if (typeof group.display_number_start === 'number') {
+    numberOffset = group.display_number_start - 1;
+  } else {
+    numberOffset = 0;
+    for (let i = 0; i < currentAudioIndex; i++) numberOffset += listeningData.audios[i].questions.length;
+  }
   quizArea.innerHTML = `
     <div class="card question-card">
       <div class="q-text">${escapeHtml(group.title)}</div>
