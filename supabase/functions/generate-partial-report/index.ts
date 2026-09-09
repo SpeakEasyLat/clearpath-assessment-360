@@ -28,6 +28,14 @@
 //   2. Manualmente, con POST { attempt_id: "..." } directo a esta función -- útil para
 //      pruebas o para regenerar un reporte parcial a pedido.
 //
+// v12 (09/09/2026, pedido de Diana -- "no se estan subiendo los resultados completos
+// del assessment al Drive"): uploadPdfToDrive() decía siempre "faltan los secrets" sin
+// nombrar cuál -- ahora el mensaje dice explícitamente si falta GOOGLE_DRIVE_FOLDER_ID,
+// GOOGLE_SERVICE_ACCOUNT_JSON, o ambos. Espejo exacto del mismo fix en
+// generate-report.ts v31 (ahí el diagnóstico real: GOOGLE_DRIVE_FINAL_FOLDER_ID -- un
+// secret distinto de este, propio del reporte final -- está vacío o fue borrado en
+// Supabase; no es un bug de código).
+//
 // v10 (03/09/2026, pedido de Diana): OET Writing vuelve a mostrar el RANGO oficial de su
 // letra (ej. "B (350-440)") en vez del puntaje exacto (ej. "B (384/500)") -- espejo
 // exacto del mismo cambio en generate-report.ts v21 (ahí también aplica a OET Speaking,
@@ -905,7 +913,14 @@ async function uploadPdfToDrive(
   const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
   const folderId = Deno.env.get("GOOGLE_DRIVE_FOLDER_ID");
   if (!serviceAccountJson || !folderId) {
-    return { uploaded: false, reason: "Drive no configurado todavía (faltan los secrets)" };
+    // v12 (09/09/2026, espejo del mismo fix en generate-report.ts v31): el mensaje antes
+    // decía siempre "faltan los secrets" sin decir cuál -- ahora nombra el/los que
+    // realmente falten, para diagnosticar desde los logs sin adivinar.
+    const faltantes = [
+      !serviceAccountJson ? "GOOGLE_SERVICE_ACCOUNT_JSON" : null,
+      !folderId ? "GOOGLE_DRIVE_FOLDER_ID" : null,
+    ].filter(Boolean).join(", ");
+    return { uploaded: false, reason: `Drive no configurado todavía (falta ${faltantes})` };
   }
   try {
     const accessToken = await getGoogleAccessToken(serviceAccountJson);
@@ -1338,7 +1353,7 @@ async function buildAndSendPartialReport(
   });
 
   const pdfBytes = await htmlToPdf(html);
-  const fileName = `Reporte parcial - ${(student.full_name || "estudiante").replace(/[^a-zA-Z0-9 ]/g, "")}.pdf`;
+  const fileName = `Reporte parcial - ${(student.full_name || "estudiante").replace(/[^\p{L}\p{N} ]/gu, "")}.pdf`;
 
   const driveResult = await uploadPdfToDrive(pdfBytes, fileName);
   if (!driveResult.uploaded) {
