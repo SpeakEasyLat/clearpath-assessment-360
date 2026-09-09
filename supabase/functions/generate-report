@@ -30,6 +30,18 @@
 //   - NIVEL1_ONLY -> "Assessment Speak Easy"
 //   - FULL_360    -> "Assessment 360"
 //
+// v31 (09/09/2026, pedido de Diana -- "no se estan subiendo los resultados completos
+// del assessment al Drive"): uploadPdfToDrive() venia devolviendo SIEMPRE el mismo
+// mensaje "falta GOOGLE_DRIVE_FINAL_FOLDER_ID" cuando el upload se omitia, aunque en
+// realidad pudiera ser GOOGLE_SERVICE_ACCOUNT_JSON el que faltara -- ahora el mensaje
+// nombra el/los secret(s) que de verdad esten vacios. Diagnostico real de por que no
+// subia nada HOY: los logs de las ultimas invocaciones (Gianmarco Scarpa, Luis Padilla,
+// Juan Sebastian Estrada Reyna, Araceli Guido Ramos) muestran "falta
+// GOOGLE_DRIVE_FINAL_FOLDER_ID" -- ese secret de Supabase (Project Settings > Edge
+// Functions > Secrets) esta vacio o fue borrado; NO es un bug de este codigo. El correo
+// a Diana por Resend SI salio normalmente en los 4 casos (Drive es best-effort y nunca
+// bloquea el envio) -- lo que faltó fue solo la copia en Drive.
+//
 // v21 (03/09/2026, pedido de Diana): OET Writing y OET Speaking volvieron a mostrar el
 // RANGO oficial de su letra (ej. "B (350-440)") en vez del puntaje exacto calculado (ej.
 // "B (384/500)") -- Diana pidió consistencia visual con Listening/Reading, que siempre
@@ -1270,7 +1282,14 @@ async function uploadPdfToDrive(
   const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
   const folderId = Deno.env.get("GOOGLE_DRIVE_FINAL_FOLDER_ID");
   if (!serviceAccountJson || !folderId) {
-    return { uploaded: false, reason: "Drive no configurado todavía (falta GOOGLE_DRIVE_FINAL_FOLDER_ID)" };
+    // v31 (09/09/2026): el mensaje antes decía siempre "falta GOOGLE_DRIVE_FINAL_FOLDER_ID"
+    // aunque el que faltara fuera GOOGLE_SERVICE_ACCOUNT_JSON -- ahora nombra el/los que
+    // realmente falten, para poder diagnosticar desde los logs sin adivinar.
+    const faltantes = [
+      !serviceAccountJson ? "GOOGLE_SERVICE_ACCOUNT_JSON" : null,
+      !folderId ? "GOOGLE_DRIVE_FINAL_FOLDER_ID" : null,
+    ].filter(Boolean).join(", ");
+    return { uploaded: false, reason: `Drive no configurado todavía (falta ${faltantes})` };
   }
   try {
     const accessToken = await getGoogleAccessToken(serviceAccountJson);
@@ -1638,8 +1657,12 @@ async function buildAndSendReport(
     const grade = speakingScore.overall_grade || null;
     const oetSpeaking = oetRangeFromGrade(grade);
     const value = oetSpeaking ? `${oetSpeaking.grade} (${oetSpeaking.range})` : (grade || "—");
+    // v23 (09/09/2026, pedido de Diana): el chip debe decir "OET Speaking" (como los
+    // demás chips de OET: OET Listening/OET Reading/OET Writing), no solo "Speaking" --
+    // antes solo el bloque de detalle más abajo (buildSpeakingBlock) decía "OET
+    // Speaking"; el chip resumen del encabezado se había quedado con el label genérico.
     skillLevels.push({
-      label: "Speaking",
+      label: "OET Speaking",
       value,
       note: "puntaje OET real, calculado a partir de los 9 criterios cargados por Diana",
     });
