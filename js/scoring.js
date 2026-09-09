@@ -124,12 +124,22 @@ export function detectPatternInconsistency(perBand, ceilingLevel) {
  * traspié puntual (ej. aprobó A1/A2/B1/C1 pero falló B2), devuelve el nivel más alto real
  * (C1 en ese ejemplo) -- ese es el "beneficio de la duda" que pidió Diana: si aprobó
  * todos los niveles salvo un traspié puntual en una banda intermedia, hay consistencia
- * suficiente como para darle el nivel más alto que sacó. Se usa SOLO para decidir
- * elegibilidad a OET/STEPS2 (ver decideUnlocks más abajo) -- el ceilingLevel que se
- * muestra en el reporte sigue siendo el de computeGrammarCefr(), sin cambios. Aplica por
- * igual a grammar, listening y reading (antes el rescate era exclusivo de listening).
- * Debe mantenerse sincronizada con highestPassingBand() en submit-response.ts /
- * submit-writing.ts.
+ * suficiente como para darle el nivel más alto que sacó.
+ *
+ * v22 (09/09/2026, pedido de Diana): este nivel YA NO se usa solo para decidir
+ * elegibilidad a OET/STEPS2 -- también es el nivel que se muestra en el reporte
+ * (cefr_estimate), con una nota explicando la inconsistencia cuando hubo un traspié.
+ * Antes (31/08/2026) el ceilingLevel de computeGrammarCefr() era siempre el que se
+ * mostraba y este resultado solo alimentaba decideUnlocks(); Diana aclaró que el
+ * rescate también debe reflejarse en el nivel mostrado, nunca "silenciarlo" -- pero
+ * tampoco penalizar con el nivel más bajo cuando el estudiante demostró
+ * consistentemente un nivel más alto (>=70%) en una banda superior. Cuando no hay
+ * traspié, esta función da exactamente el mismo resultado que computeGrammarCefr(),
+ * así que el caso normal no cambia. Aplica por igual a grammar, listening y reading
+ * (antes el rescate era exclusivo de listening). Debe mantenerse sincronizada con
+ * highestPassingBand() en submit-response.ts / submit-writing.ts (donde vive la
+ * lógica real -- este archivo es un espejo de referencia, no está conectado al
+ * runtime de calificación).
  *
  * @param {Record<string, {correct:number, total:number, percent:number}>} perBand
  * @returns {string|null}
