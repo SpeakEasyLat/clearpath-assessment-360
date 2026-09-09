@@ -19,6 +19,45 @@
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
 // y recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH).
 //
+// v22 (09/09/2026, pedido de Diana): el nivel MOSTRADO en el reporte (cefr_estimate)
+// ahora es el nivel rescatado por highestPassingBand() cuando hubo un traspie puntual
+// en una banda intermedia -- antes (v21) el rescate SOLO afectaba la elegibilidad a
+// OET/STEPS2 (band_detail.oet_effective_level), y el reporte seguia mostrando el
+// ceiling bottom-up de siempre (computeCeiling). Diana aclaro que el nivel rescatado
+// tambien debe ser el que se muestra, con una nota explicando la inconsistencia --
+// nunca "silenciar" el traspie, pero tampoco penalizar con el nivel mas bajo cuando el
+// estudiante demostro consistentemente un nivel mas alto (>=70%) en una banda superior.
+// Cuando NO hay traspie, highestPassingBand() da exactamente el mismo resultado que
+// computeCeiling() (ver comentario de esa funcion), asi que este cambio no afecta el
+// caso normal. El ceiling bottom-up viejo se sigue calculando y ahora se guarda aparte,
+// en band_detail.ceiling_level, solo para auditoria de Diana -- ya no es el nivel
+// mostrado. Ver highestPassingBand() y el bloque de calculo mas abajo. DUPLICADO en
+// js/scoring.js (comentario alli tambien corregido) -- submit-writing.ts no necesita
+// cambios, porque solo LEE cefr_estimate/oet_effective_level ya calculados aca, nunca
+// los calcula el mismo. Recalculo retroactivo para los 3 casos reales ya afectados
+// (Carlos Diaz Arizmendi, Juan Sebastian Estrada Reyna, Luis Padilla) hecho por SQL
+// directo el mismo dia, no por este codigo -- ver memoria de proyecto.
+//
+// v21 (31/08/2026, pedido de Diana, caso de Luis Padilla): reemplaza el rescate de OET
+// que antes existia SOLO para Listening (LISTENING_B2_RESCUE_THRESHOLD = 75% especifico
+// en la banda B2) por una regla general, aplicada a las 3 destrezas con banda (grammar,
+// listening, reading): si el estudiante aprobo (>=70%, el mismo PERCENT_THRESHOLD de
+// siempre) una banda POR ENCIMA de donde se corto el ceiling -- sin importar si esa
+// banda es B2 o C1 -- se le da el beneficio de la duda del NIVEL MAS ALTO que aprobo,
+// pero SOLO para efectos de elegibilidad a OET/STEPS2 (el ceiling mostrado en el
+// reporte, cefr_estimate, NO cambia -- sigue siendo el resultado bottom-up de siempre).
+// [ESTO ULTIMO YA NO ES ASI DESDE v22 DE ARRIBA -- cefr_estimate ahora SI refleja el
+// rescate.] Ver highestPassingBand() mas abajo. Ademas, la regla para abrir OET deja de
+// exigir que las 4 destrezas dan B2+ -- ahora alcanza con que 3 de las 4 lo hagan
+// (usando este nivel "efectivo"), siempre que la restante no sea inferior a B1. Ver
+// recomputeRouteAndPersist. DUPLICADO en submit-writing.ts, mantener sincronizados; y
+// generate-report.ts / generate-partial-report.ts ya no filtran la nota a "solo
+// listening", la muestran para cualquier destreza que traiga oet_unlock_note.
+//
+// v14 (14/08/2026): recomputeRouteAndPersist ahora lee attempts.track y fuerza la
+// ruta ENGLISH para NIVEL1_ONLY sin evaluar los niveles CEFR -- bug real encontrado
+// antes de que ningun estudiante lo pisara (ver comentario en la funcion).
+//
 // v11 (06/08/2026): agrega OET Listening y OET Reading (Fase 4, module ===
 // 'oet_listening' | 'oet_reading'). Decision de Diana: estos dos modulos son SOLO
 // puntaje informativo -- los estudiantes que llegan aca ya calificaron para OET en el
@@ -86,6 +125,16 @@ const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1"];
 const PERCENT_THRESHOLD = 70;
 const MIN_LEVEL_FOR_OET = "B2";
 const MIN_LEVEL_FOR_STEPS2 = "B2";
+// Minimo absoluto para la destreza "floja" cuando se abre OET por la regla de 3-de-4
+// (ver recomputeRouteAndPersist v21 mas abajo) -- nunca deja pasar una destreza
+// genuinamente A1/A2 solo porque las otras tres compensan.
+const MIN_LEVEL_FLOOR_FOR_OET = "B1";
+
+const SKILL_LABELS_ES = {
+grammar: "Grammar",
+listening: "Listening",
+reading: "Reading",
+};
 
 // STEP CK 2 (Fase 3): pass/fail puro, sin bandas CEFR. Decision de Diana (05/08/2026):
 // ">=75% correcto para aprobar". Con 8 preguntas eso era exactamente 6/8 (75.0%).
@@ -163,6 +212,28 @@ return true;
 return false;
 }
 
+// v21 (31/08/2026, pedido de Diana, caso de Luis Padilla): a diferencia de
+// computeCeiling() (que se DETIENE en la primera banda reprobada, aunque una banda mas
+// arriba se haya aprobado), esta funcion recorre TODAS las bandas de A1 a C1 y devuelve
+// la MAS ALTA que haya superado el umbral -- sin cortar en el primer traspie. Cuando no
+// hay ningun traspie de por medio, da exactamente el mismo resultado que computeCeiling
+// (porque todas las bandas por debajo del ceiling, por construccion, ya lo superaron).
+// Cuando SI hay un traspie puntual (ej. aprobo A1/A2/B1/C1 pero fallo B2), devuelve el
+// nivel mas alto real (C1 en ese ejemplo) -- ese es el "beneficio de la duda" que pidio
+// Diana. v22 (09/09/2026): este es ahora tambien el nivel MOSTRADO (cefr_estimate) --
+// ver comentario largo de v22 al inicio del archivo. Antes (v21) se usaba solo para
+// decidir elegibilidad a OET/STEPS2.
+function highestPassingBand(perBand) {
+let best = null;
+for (const level of CEFR_ORDER) {
+const band = perBand[level];
+if (band && band.total > 0 && band.percent >= PERCENT_THRESHOLD) {
+best = level;
+}
+}
+return best;
+}
+
 // Normaliza para comparar respuestas de forma insensible a mayusculas/espacios
 // (ej. " Four " === "four", "38.5" === "38.5 "). No toca acentos porque las
 // respuestas de Listening/Reading son en ingles.
@@ -191,9 +262,28 @@ return normalizedSelected === normalizeAnswer(question.correct_answer);
 // el resultado por si el llamador lo necesita (no se usa hoy, pero deja la funcion
 // reutilizable). Debe mantenerse identica a la version en submit-writing.
 async function recomputeRouteAndPersist(supabase, attemptId) {
+// v14 (14/08/2026, bug real encontrado antes de que ningun estudiante lo pisara):
+// falta esta lectura de track, un estudiante de NIVEL1_ONLY que sacara B2 en las 4
+// destrezas de Nivel 1 quedaba asignado a la ruta OET o STEPS2 igual que uno de
+// FULL_360, y get-unlock-state lo mandaba a oet-listening.html/steps2.html --
+// modulos con contenido medico que no existen para este producto. NIVEL1_ONLY debe
+// quedar SIEMPRE en la ruta ENGLISH (Speaking breve tipo English), sin importar el
+// resultado -- ver seccion 1 del Brief. Mantener sincronizado con submit-writing.
+const { data: attemptRow, error: attemptTrackError } = await supabase
+.from("attempts")
+.select("track")
+.eq("id", attemptId)
+.maybeSingle();
+
+if (attemptTrackError) {
+console.error("submit-response: error leyendo track del attempt", attemptTrackError);
+return { error: "Error interno. Intenta de nuevo en un momento." };
+}
+const track = attemptRow ? attemptRow.track : null;
+
 const { data: allSubScores, error: allSubScoresError } = await supabase
 .from("sub_scores")
-.select("skill, cefr_estimate")
+.select("skill, cefr_estimate, band_detail")
 .eq("attempt_id", attemptId);
 
 if (allSubScoresError) {
@@ -206,12 +296,26 @@ return { error: "Error interno. Intenta de nuevo en un momento." };
 // "completo" se determina por la PRESENCIA de la fila en sub_scores (skillsPresent),
 // nunca por si cefr_estimate es truthy. Confundir esto fue un bug real: un estudiante
 // con reading por debajo de A1 se quedaba con assignedRoute = null para siempre.
-const bySkill = Object.fromEntries(allSubScores.map((s) => [s.skill, s.cefr_estimate]));
+const bySkill = Object.fromEntries(allSubScores.map((s) => [s.skill, s]));
 const skillsPresent = new Set(allSubScores.map((s) => s.skill));
-const grammarLevel = bySkill.grammar ?? null;
-const listeningLevel = bySkill.listening ?? null;
-const writingLevel = bySkill.writing ?? null;
-const readingLevel = bySkill.reading ?? null;
+
+// v21 (31/08/2026, pedido de Diana, caso de Luis Padilla): nivel "efectivo" por
+// destreza para decidir OET/STEPS2 -- usa band_detail.oet_effective_level (el
+// highestPassingBand guardado mas abajo) cuando existe, que puede ser mas alto que el
+// cefr_estimate mostrado si hubo un traspie puntual en una banda intermedia. Writing
+// no tiene bandas (rubrica IA holistica), asi que cae directo a su cefr_estimate.
+// v22 (09/09/2026): desde ahora cefr_estimate YA ES el nivel efectivo cuando hubo
+// override, asi que esta funcion da el mismo resultado leyendo cualquiera de los dos
+// campos -- se deja igual, sin tocar, por no romper nada que dependa de ella.
+function effectiveLevel(skillName) {
+const row = bySkill[skillName];
+if (!row) return null;
+return (row.band_detail && row.band_detail.oet_effective_level) || row.cefr_estimate || null;
+}
+const grammarEff = effectiveLevel("grammar");
+const listeningEff = effectiveLevel("listening");
+const readingEff = effectiveLevel("reading");
+const writingEff = effectiveLevel("writing");
 
 const nivel1Complete =
 skillsPresent.has("grammar") && skillsPresent.has("listening") && skillsPresent.has("writing") && skillsPresent.has("reading");
@@ -222,15 +326,31 @@ let steps2Unlocked = false;
 let speakingAssessmentType = null;
 
 if (nivel1Complete) {
-const allFourOk =
-meetsLevel(grammarLevel, MIN_LEVEL_FOR_OET) &&
-meetsLevel(listeningLevel, MIN_LEVEL_FOR_OET) &&
-meetsLevel(writingLevel, MIN_LEVEL_FOR_OET) &&
-meetsLevel(readingLevel, MIN_LEVEL_FOR_OET);
-const readingOk = meetsLevel(readingLevel, MIN_LEVEL_FOR_STEPS2);
+if (track === "NIVEL1_ONLY") {
+// NIVEL1_ONLY nunca pasa por STEPS2 ni OET, sin importar el resultado (ver
+// comentario mas arriba y seccion 1 del Brief) -- se fuerza ENGLISH sin
+// evaluar los niveles CEFR.
+assignedRoute = "ENGLISH";
+oetUnlocked = false;
+steps2Unlocked = false;
+speakingAssessmentType = "English";
+} else {
+// v21 (31/08/2026, pedido de Diana, caso de Luis Padilla): ya NO hace falta que
+// las 4 destrezas den B2+ para abrir OET -- alcanza con que 3 de las 4 lo hagan
+// (usando el nivel "efectivo" de arriba, que puede incluir el beneficio de la
+// duda de highestPassingBand), siempre que la restante no sea inferior a B1 --
+// eso evita que una destreza genuinamente floja (A1/A2) cuele a alguien a OET
+// solo porque las otras tres compensan. Antes: allFourOk exigia meetsLevel(...,
+// B2) en las 4 destrezas (con un override booleano solo para listening).
+const levels = [grammarEff, listeningEff, writingEff, readingEff];
+const countB2Plus = levels.filter((l) => meetsLevel(l, MIN_LEVEL_FOR_OET)).length;
+const allAtLeastFloor = levels.every((l) => meetsLevel(l, MIN_LEVEL_FLOOR_FOR_OET));
+const allFourOk = countB2Plus >= 3 && allAtLeastFloor;
+const readingOk = meetsLevel(readingEff, MIN_LEVEL_FOR_STEPS2);
 
-// Regla de Diana (claude/flujo-objetivo.md): los 4 >= B2 -> OET; si no, "el
-// reading es la llave de STEPS 2" -- si reading >= B2 -> STEPS2; si no -> ENGLISH.
+// Regla de Diana (claude/flujo-objetivo.md, ajustada 31/08/2026 -- ver arriba):
+// 3 de 4 destrezas en B2+ (con la 4ta en al menos B1) -> OET; si no, "el reading
+// es la llave de STEPS 2" -- si reading >= B2 -> STEPS2; si no -> ENGLISH.
 assignedRoute = allFourOk ? "OET" : (readingOk ? "STEPS2" : "ENGLISH");
 oetUnlocked = assignedRoute === "OET";
 steps2Unlocked = assignedRoute === "STEPS2";
@@ -238,6 +358,7 @@ steps2Unlocked = assignedRoute === "STEPS2";
 // STEPS2 como la ruta ENGLISH agendan el mismo Speaking Assessment breve tipo
 // 'English' (ver diagrama en flujo-objetivo.md: STEPS 2 -> Link English Speaking).
 speakingAssessmentType = assignedRoute === "OET" ? "OET" : "English";
+}
 }
 
 const { error: unlockError } = await supabase
@@ -272,6 +393,30 @@ await checkAndMarkAttemptComplete(supabase, attemptId, assignedRoute);
 }
 
 return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
+}
+
+// Dispara generate-partial-report de forma fire-and-forget para este attempt --
+// pedido de Diana (24/08/2026): quiere el reporte parcial (sin Speaking) apenas
+// termina la parte escrita del assessment, no solo el reporte final (que espera
+// Speaking, ver generate-report). Se llama SOLO desde checkAndMarkAttemptComplete,
+// justo despues de marcar attempts.status = 'completed' -- exactamente el momento en
+// que termina la parte escrita para las 3 rutas (ENGLISH/STEPS2/OET). Es idempotente
+// (attempts.partial_report_sent_at) y nunca bloquea ni falla esta funcion si tiene un
+// problema. DUPLICADA en submit-writing.ts (mismo motivo que checkAndMarkAttemptComplete
+// -- cualquiera de las dos puede ser la que cierre la parte escrita), mantener
+// sincronizada.
+function triggerPartialReport(attemptId) {
+fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-partial-report`, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+"apikey": Deno.env.get("SUPABASE_ANON_KEY"),
+},
+body: JSON.stringify({ attempt_id: attemptId }),
+}).catch((err) => {
+console.error("submit-response: no se pudo disparar generate-partial-report", err);
+});
 }
 
 // Marca attempts.status = 'completed' solo cuando el estudiante ya no tiene NINGUN
@@ -338,7 +483,12 @@ console.error("checkAndMarkAttemptComplete: error marcando attempt completed", a
 // No cortamos la respuesta por esto -- el router (get-unlock-state) sigue
 // funcionando igual de bien con status in_progress. Se puede reintentar/corregir a
 // mano si hace falta.
+return;
 }
+
+// Recien aca el attempt quedo 'completed' de verdad (el .neq de arriba evita
+// disparar esto de nuevo si ya estaba completed de antes). Ver triggerPartialReport.
+triggerPartialReport(attemptId);
 }
 
 Deno.serve(async (req) => {
@@ -559,6 +709,28 @@ perBand[level] = { correct, total, percent };
 const ceilingLevel = computeCeiling(perBand);
 const patternInconsistent = detectPatternInconsistency(perBand, ceilingLevel);
 
+// v21 (31/08/2026, pedido de Diana, caso de Luis Padilla): reemplaza el rescate que
+// antes existia solo para listening (LISTENING_B2_RESCUE_THRESHOLD = 75% especifico
+// en B2) -- ver highestPassingBand() arriba. Se aplica ahora a grammar/listening/
+// reading por igual: si el nivel mas alto realmente aprobado (highestPassingBand)
+// queda por encima del ceiling bottom-up, se guarda ese nivel como
+// oet_effective_level (lo usa recomputeRouteAndPersist para decidir OET/STEPS2) y se
+// deja una nota para el reporte.
+// v22 (09/09/2026, pedido de Diana): el nivel MOSTRADO (cefr_estimate) ahora es
+// displayedLevel (= oetEffectiveLevel cuando hubo override, si no es el mismo
+// ceilingLevel de siempre) -- ver comentario largo de v22 al inicio del archivo. El
+// ceiling bottom-up viejo se guarda aparte, en band_detail.ceiling_level, solo para
+// auditoria de Diana -- ya no es el nivel mostrado. La nota se reescribe para
+// reflejar que el nivel alto SI se muestra, explicando la inconsistencia sin
+// penalizar al estudiante por el traspie puntual.
+const oetEffectiveLevel = highestPassingBand(perBand);
+const oetUnlockOverride =
+!!oetEffectiveLevel && !!ceilingLevel && CEFR_ORDER.indexOf(oetEffectiveLevel) > CEFR_ORDER.indexOf(ceilingLevel);
+const displayedLevel = oetEffectiveLevel || ceilingLevel;
+const oetUnlockNote = oetUnlockOverride
+? `Tu nivel en ${SKILL_LABELS_ES[skill] || skill} quedó en ${oetEffectiveLevel}: hubo un traspié puntual en una banda intermedia (no llegaste al 70% ahí), pero se reconoce el nivel más alto que sí alcanzaste con al menos 70% de aciertos.`
+: null;
+
 const { error: subScoreError } = await supabase
 .from("sub_scores")
 .upsert(
@@ -567,11 +739,20 @@ attempt_id: attemptId,
 skill,
 raw_score: totalCorrect,
 max_score: moduleQuestionIds.length,
-cefr_estimate: ceilingLevel,
+cefr_estimate: displayedLevel,
 computed_at: new Date().toISOString(),
-// Solo diagnostico -- nunca cambia ceilingLevel ni bloquea la ruta. Ver
-// detectPatternInconsistency() y la migracion sub_scores_band_detail.
-band_detail: { perBand, pattern_inconsistent: patternInconsistent },
+// pattern_inconsistent es solo diagnostico -- nunca cambia displayedLevel.
+// ceiling_level es el ceiling bottom-up viejo, solo para auditoria de Diana.
+// oet_effective_level SI se usa en recomputeRouteAndPersist (mas abajo) para
+// decidir OET/STEPS2 -- ver highestPassingBand() y detectPatternInconsistency().
+band_detail: {
+perBand,
+ceiling_level: ceilingLevel,
+pattern_inconsistent: patternInconsistent,
+oet_effective_level: oetEffectiveLevel,
+oet_unlock_override: oetUnlockOverride,
+oet_unlock_note: oetUnlockNote,
+},
 },
 { onConflict: "attempt_id,skill" },
 );
