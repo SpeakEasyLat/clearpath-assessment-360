@@ -3,7 +3,12 @@ import { computeGrammarCefr, decideUnlocks } from './scoring.js';
 import cefrRanges_ from '../data/nivel1-grammar.json' with { type: 'json' };
 
 const grammarData = cefrRanges_;
-const questions = grammarData.questions.map((q) => ({ id: q.id }));
+// v (09/09/2026): el banco real ya no usa `id` como posición numérica -- `id` es un
+// UUID (la clave primaria real de question_bank) y el orden/posición vive en el campo
+// `position`. computeGrammarCefr espera un `id` NUMÉRICO que se pueda comparar contra
+// los rangos de cefrRanges (ej. [1,4], [5,8]...), así que la fixture usa `position`
+// como ese id sintético -- nunca el UUID real, que no sirve para comparar con rangos.
+const questions = grammarData.questions.map((q) => ({ id: q.position }));
 // Asignar cefrLevel a cada pregunta según los rangos (solo para dejar la fixture completa,
 // aunque computeGrammarCefr en realidad solo usa los ids + rangos).
 for (const band of grammarData.cefrRanges) {
@@ -21,30 +26,33 @@ function allCorrectUpTo(maxId) {
   return responses;
 }
 
-// Caso 1: estudiante que responde bien todo hasta B1 (id 24) y falla todo lo demás
+// Caso 1: estudiante que responde bien todo hasta B1 (banco actual: B1 = posiciones
+// 9-12) y falla todo lo demás
 {
-  const responses = allCorrectUpTo(24);
+  const responses = allCorrectUpTo(12);
   const result = computeGrammarCefr(questions, responses, grammarData.cefrRanges);
   assert.equal(result.ceilingLevel, 'B1', `esperaba B1, dio ${result.ceilingLevel}`);
   assert.equal(result.perBand.B2.passed, false);
   console.log('Caso 1 OK: ceiling =', result.ceilingLevel, 'overall% =', result.overallPercent);
 }
 
-// Caso 2: estudiante que responde absolutamente todo bien -> C1
+// Caso 2: estudiante que responde absolutamente todo bien (banco actual: 20 preguntas,
+// C1 termina en la posición 20) -> C1
 {
-  const responses = allCorrectUpTo(44);
+  const responses = allCorrectUpTo(20);
   const result = computeGrammarCefr(questions, responses, grammarData.cefrRanges);
   assert.equal(result.ceilingLevel, 'C1');
   assert.equal(result.overallPercent, 100);
   console.log('Caso 2 OK: ceiling =', result.ceilingLevel, 'overall% =', result.overallPercent);
 }
 
-// Caso 3: "hueco" -- falla toda la banda B1 pero acierta bien B2/C1 (poco realista pero
-// prueba que el ceiling NO debe premiar aciertos sueltos después de un hueco)
+// Caso 3: "hueco" -- falla toda la banda B1 (posiciones 9-12) pero acierta bien B2/C1
+// (poco realista pero prueba que el ceiling NO debe premiar aciertos sueltos después de
+// un hueco)
 {
   const responses = new Map();
   for (const q of questions) {
-    const failB1 = q.id >= 13 && q.id <= 24;
+    const failB1 = q.id >= 9 && q.id <= 12;
     responses.set(q.id, !failB1);
   }
   const result = computeGrammarCefr(questions, responses, grammarData.cefrRanges);
@@ -70,8 +78,12 @@ function allCorrectUpTo(maxId) {
   console.log("Caso 4 OK: ruta OET cuando los 4 sub-scores del Nivel 1 llegan a B2");
 }
 
-// Caso 5a: grammar y listening en B2 pero writing se queda en B1 -> OET NO se desbloquea.
-// Reading (la llave de STEPS 2) SÍ llega a B2 -> ruta STEPS2.
+// Caso 5a (CORREGIDO 09/09/2026 -- esta prueba quedó desactualizada tras el ajuste de
+// regla del 31/08/2026 y hubiera fallado contra el decideUnlocks() actual): grammar,
+// listening y reading en B2, writing se queda EXACTAMENTE en el piso B1
+// (minLevelFloorOet). Bajo la regla vieja (4 de 4 en B2) esto bloqueaba OET; bajo la
+// regla actual (3 de 4 en B2+, con la 4ta no por debajo del piso B1) esto SÍ desbloquea
+// OET -- este es justo el caso que motivó el cambio de regla (ver caso de Luis Padilla).
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
@@ -80,15 +92,33 @@ function allCorrectUpTo(maxId) {
     reading: { ceilingLevel: 'B2' },
   };
   const unlocks = decideUnlocks(subScores);
-  assert.equal(unlocks.oetUnlocked, false, 'writing en B1 debe bloquear OET aunque los otros tres estén bien');
+  assert.equal(unlocks.oetUnlocked, true, '3 de 4 en B2 con la 4ta exactamente en el piso B1 debe desbloquear OET (regla 31/08/2026)');
+  assert.equal(unlocks.assignedRoute, 'OET');
+  assert.equal(unlocks.speakingAssessmentType, 'OET');
+  console.log('Caso 5a OK: 3 de 4 en B2 con writing en el piso B1 -> OET SÍ se desbloquea (regla de 3-de-4)');
+}
+
+// Caso 5b (NUEVO 09/09/2026): mismo patrón que 5a (grammar/listening/reading en B2), pero
+// writing cae POR DEBAJO del piso (A2, no B1) -- acá el piso sí debe bloquear OET aunque
+// 3 destrezas lleguen a B2. Reading (la llave de STEPS 2) sí llega a B2 -> ruta STEPS2.
+{
+  const subScores = {
+    grammar: { ceilingLevel: 'B2' },
+    listening: { ceilingLevel: 'B2' },
+    writing: { cefrEstimate: 'A2' },
+    reading: { ceilingLevel: 'B2' },
+  };
+  const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.oetUnlocked, false, 'writing por debajo del piso B1 debe bloquear OET aunque las otras tres lleguen a B2');
   assert.equal(unlocks.assignedRoute, 'STEPS2');
   assert.equal(unlocks.steps2Ok, true);
   assert.equal(unlocks.steps2Unlocked, true);
   assert.equal(unlocks.speakingAssessmentType, 'English', 'mientras STEPS 2 no exista como módulo, agenda el Speaking Assessment breve English');
-  console.log('Caso 5a OK: writing insuficiente bloquea OET, pero reading alcanza B2 -> ruta STEPS2');
+  console.log('Caso 5b OK: writing bajo el piso B1 bloquea OET, pero reading alcanza B2 -> ruta STEPS2');
 }
 
-// Caso 5b: igual que 5a, pero reading tampoco llega a B2 -> ruta ENGLISH
+// Caso 5c (antes 5b): menos de 3 destrezas llegan a B2, y encima reading tampoco llega ->
+// ruta ENGLISH, sin importar el piso
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
@@ -103,7 +133,7 @@ function allCorrectUpTo(maxId) {
   assert.equal(unlocks.steps2Unlocked, false);
   assert.equal(unlocks.speakingAssessmentType, 'English', 'ni OET ni STEPS2 -> Speaking Assessment breve (English)');
   assert.equal(unlocks.speakingAssessmentUnlocked, true);
-  console.log("Caso 5b OK: reading tampoco alcanza B2 -> ruta ENGLISH, Speaking Assessment tipo 'English'");
+  console.log("Caso 5c OK: menos de 3 destrezas en B2 y reading tampoco alcanza B2 -> ruta ENGLISH, Speaking Assessment tipo 'English'");
 }
 
 // Caso 6: todavía faltan sub-scores del Nivel 1 (reading no existe) -> no se debe
@@ -128,7 +158,7 @@ function allCorrectUpTo(maxId) {
 // ceiling real es null (no "todavía no rindió"). Este es exactamente el bug encontrado
 // en la prueba end-to-end del 05/08/2026: antes, un ceiling null se confundía con
 // "módulo no completado" y assignedRoute se quedaba en null para siempre. Debe asignar
-// ENGLISH igual que si reading hubiera dado A2 (Caso 5b).
+// ENGLISH igual que si reading hubiera dado A2 (Caso 5c).
 {
   const subScores = {
     grammar: { ceilingLevel: 'B2' },
@@ -142,6 +172,28 @@ function allCorrectUpTo(maxId) {
   assert.equal(unlocks.steps2Ok, false);
   assert.equal(unlocks.speakingAssessmentType, 'English');
   console.log('Caso 7 OK: reading completo con ceiling null (por debajo de A1) rutea a ENGLISH en vez de quedar pendiente');
+}
+
+// Caso 8 (NUEVO 09/09/2026, caso real de Luis Padilla, 31/08/2026): el "beneficio de la
+// duda" de highestPassingBand() -- expuesto acá como oetEffectiveLevel -- puede ser lo
+// que termina de desbloquear OET, aunque el ceiling normal de esa destreza se haya
+// quedado más abajo por un traspié puntual en una banda intermedia. Grammar se queda
+// genuinamente en B1 (sin oetEffectiveLevel, sin traspié); Listening tiene ceiling B1
+// pero fue rescatada a C1 (aprobó A1/A2/B1/C1, falló solo B2); Writing B2; Reading C1. 3
+// de 4 en B2+ (listening rescatada, writing, reading) con Grammar exactamente en el piso
+// B1 -> OET se desbloquea.
+{
+  const subScores = {
+    grammar: { ceilingLevel: 'B1' },
+    listening: { ceilingLevel: 'B1', oetEffectiveLevel: 'C1' },
+    writing: { cefrEstimate: 'B2' },
+    reading: { ceilingLevel: 'C1' },
+  };
+  const unlocks = decideUnlocks(subScores);
+  assert.equal(unlocks.oetUnlocked, true, 'el nivel efectivo rescatado de listening (C1) debe contar para el 3-de-4, no su ceiling sin rescatar (B1)');
+  assert.equal(unlocks.assignedRoute, 'OET');
+  assert.equal(unlocks.detail.listeningOk, true, 'listeningOk debe evaluarse sobre oetEffectiveLevel, no sobre ceilingLevel');
+  console.log('Caso 8 OK: listening rescatada a C1 (oetEffectiveLevel) cuenta para el 3-de-4 -> OET se desbloquea (caso Luis Padilla)');
 }
 
 console.log('\nTodos los casos de prueba pasaron.');
