@@ -43,10 +43,22 @@
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
-// Tus dos páginas de reserva de Google Calendar.
-const BOOKING_URLS = {
-  OET: 'https://calendar.app.google/p1r3MXMmRriRLtNNA',
-  CEFR: 'https://calendar.app.google/1Pg4vasqW41JVU1D9',
+// v5 (10/09/2026, pedido de Diana): antes había 2 links compartidos (uno por
+// assessment_type: OET / CEFR), sin distinción de profesor. Ahora hay 3 páginas de
+// reserva, una por profesor -- Ary evalúa English cuando el nivel del estudiante en
+// Grammar, Reading y Listening queda por debajo de B1; Liza evalúa English cuando esos
+// 3 quedan en B1 o más, y evalúa OET siempre. Esa decisión (a qué profesor le toca)
+// la calcula el servidor (recomputeRouteAndPersist en submit-response.ts /
+// submit-writing.ts) y llega acá en data.speaking_teacher_email (ver init() más abajo)
+// -- este archivo NO recalcula nada, solo elige qué link mostrar según ese correo.
+const BOOKING_URLS_BY_TEACHER = {
+  'clearpath@speakeasy.lat': {
+    OET: 'https://calendar.app.google/xakFqWtpGqZdj64j9',
+    English: 'https://calendar.app.google/EJ9MdLdXktWCkzY88',
+  },
+  'teacher@speakeasy.lat': {
+    English: 'https://calendar.app.google/HELZaNBJ9BwtswPX6',
+  },
 };
 
 const content = document.getElementById('content');
@@ -134,15 +146,22 @@ async function init() {
   }
 
   const type = data.speaking_assessment_type;
+  // v5 (10/09/2026): a qué profesor le toca -- ver comentario largo junto a
+  // BOOKING_URLS_BY_TEACHER más arriba. Si por algún motivo atípico no vino (attempt
+  // viejo de antes de este cambio, por ejemplo), se cae de vuelta a Liza para no dejar
+  // al estudiante sin botón -- Liza es quien evaluaba todo antes de este cambio.
+  const teacherEmail = data.speaking_teacher_email || 'clearpath@speakeasy.lat';
+  const bookingUrl = (BOOKING_URLS_BY_TEACHER[teacherEmail] || BOOKING_URLS_BY_TEACHER['clearpath@speakeasy.lat'])[type];
+
   if (type === 'OET') {
     content.innerHTML =
       '<p class="speaking-intro">¡Felicitaciones! Completaste tu evaluación y tu siguiente paso es el <strong>OET Speaking Assessment</strong> (roleplay clínico en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.OET, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET', 'bookBtnOet');
+      bookingButton(bookingUrl, 'Agendar OET Speaking Assessment', 'Roleplay clínico tipo OET', 'bookBtnOet');
     wireBookingRedirect('bookBtnOet');
   } else if (type === 'English') {
     content.innerHTML =
       '<p class="speaking-intro">¡Completaste tu evaluación! Tu siguiente paso es el <strong>CEFR English Speaking Assessment</strong> (conversación de nivel de inglés en vivo). Agenda tu sesión:</p>' +
-      bookingButton(BOOKING_URLS.CEFR, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general', 'bookBtnCefr');
+      bookingButton(bookingUrl, 'Agendar CEFR English Speaking Assessment', 'Conversación de nivel de inglés general', 'bookBtnCefr');
     wireBookingRedirect('bookBtnCefr');
   } else {
     content.innerHTML =
