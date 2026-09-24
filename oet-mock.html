@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mock Test OET - ClearPath</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:,">
+</head>
+<body>
+<!--
+  Mock Test OET (24/09/2026, pedido de Diana).
+  Link directo: https://assessment.speakeasy.lat/oet-mock.html?code=CODIGO
+  Entra con track OET_MOCK: solo OET Listening, Reading y Writing. Sin intake, sin
+  Nivel 1 y sin booking de Speaking (el Speaking se hace en clase y lo carga Liza en
+  admin-speaking-score.html). Si el link no trae ?code=, se pide el codigo a mano.
+-->
+<div class="wrap">
+<img src="assets/logo-speakeasy-clearpath.png" alt="Speak Easy - ClearPath" class="logo">
+<div class="subtitle">Mock Test OET</div>
+<div class="card">
+<p id="statusMsg">Preparando tu mock test...</p>
+<div id="manualBox" style="display:none;">
+<label for="accessCode">Código de acceso</label>
+<input type="text" id="accessCode" placeholder="Ej: MOCK-2026-XXXX" />
+<button class="primary" id="startBtn">Empezar</button>
+</div>
+<p class="note" id="errorMsg" style="color:#c62828; display:none;"></p>
+</div>
+</div>
+<script>
+const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
+const statusMsg = document.getElementById('statusMsg');
+const manualBox = document.getElementById('manualBox');
+const errorMsg = document.getElementById('errorMsg');
+const startBtn = document.getElementById('startBtn');
+
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.style.display = 'block';
+}
+function showManual() {
+  statusMsg.textContent = 'Ingresa el código de acceso que te dio tu profe.';
+  manualBox.style.display = 'block';
+}
+
+async function login(accessCode) {
+  errorMsg.style.display = 'none';
+  startBtn.disabled = true;
+  try {
+    const res = await fetch(`${SUPABASE_FUNCTIONS_BASE}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ access_code: accessCode, track: 'OET_MOCK' }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showManual();
+      showError(data.error || 'No pudimos validar tu código. Intenta de nuevo.');
+      startBtn.disabled = false;
+      return;
+    }
+    if (!data.attempt || data.attempt.track !== 'OET_MOCK') {
+      showManual();
+      showError('Este código no corresponde a un mock test OET. Escríbele a tu profe.');
+      startBtn.disabled = false;
+      return;
+    }
+    sessionStorage.setItem('cp360_session_token', data.session_token);
+    sessionStorage.setItem('cp360_track', 'OET_MOCK');
+    sessionStorage.setItem('cp360_student_name', (data.student && data.student.full_name) || '');
+    // El router (siguiente.html -> get-unlock-state) la lleva al módulo OET que le falte,
+    // o a oet-mock-fin.html si ya terminó.
+    window.location.href = 'siguiente.html';
+  } catch (err) {
+    showManual();
+    showError('No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.');
+    startBtn.disabled = false;
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  const code = document.getElementById('accessCode').value.trim();
+  if (!code) { showError('Ingresa tu código de acceso para continuar.'); return; }
+  login(code);
+});
+
+const codeFromUrl = new URLSearchParams(window.location.search).get('code');
+if (codeFromUrl && codeFromUrl.trim()) {
+  login(codeFromUrl.trim());
+} else {
+  showManual();
+}
+</script>
+</body>
+</html>
