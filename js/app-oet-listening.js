@@ -175,7 +175,6 @@ function renderAudioGroup() {
   }
   quizArea.innerHTML = `
     <div class="card question-card">
-      <div class="q-text">${escapeHtml(group.title)}</div>
       <p class="note">Click "Play audio" now — the recording itself gives you time to read the questions before it starts. You will hear it a maximum of ${group.max_plays} time(s) in total.</p>
       <audio class="player" id="audioPlayer"></audio>
       <div class="audio-controls">
@@ -183,6 +182,7 @@ function renderAudioGroup() {
         <span class="plays-remaining" id="playsRemaining">Plays used: ${used} / ${group.max_plays}</span>
       </div>
       <p class="note" id="audioError" style="color:#c62828; display:none;"></p>
+      <div class="q-text" style="margin-top:1.2rem;">${escapeHtml(group.title)}</div>
       ${isCaseNotes ? renderCaseNotes(group, numberOffset) : renderMultipleChoice(group, numberOffset)}
       <p class="note">Once you continue, you cannot go back to change your answers for this part.</p>
       <div class="nav-row">
