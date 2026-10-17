@@ -19,6 +19,42 @@
 // attempt, calcula el sub_score (ceiling CEFR, igual al algoritmo de js/scoring.js)
 // y recalcula la ruta del Nivel 1 (OET / STEPS2 / ENGLISH).
 //
+// v25 (17/10/2026, pedido de Diana): se suma Bryan como tercer profesor de Speaking.
+// NIVEL1_ONLY sigue siempre con Ary. FULL_360 (English u OET) va a Liza o Bryan, el de
+// MENOR carga (speakings asignados que aun no se realizan, ver computeTeacherLoad);
+// en empate, Liza. La asignacion es PEGAJOSA: solo se asigna si
+// unlock_state.speaking_teacher_email esta vacio, nunca se reasigna. DUPLICADO en
+// submit-writing.ts, mantener sincronizados.
+//
+// v24 (15/09/2026, CORRECCION de Diana): la regla de v23 (de abajo) para elegir
+// profesor de Speaking era la equivocada. La regla real de negocio es por TRACK del
+// attempt, no por nivel CEFR: TODOS los estudiantes de Assessment 360 (track ===
+// "FULL_360", sea cual sea el speakingAssessmentType que les toque -- English u
+// OET) van SIEMPRE a Liza; los que hacen el Assessment Speak Easy no medico (track
+// === "NIVEL1_ONLY") van SIEMPRE a Ary. El umbral B1 por destreza (grammar/reading/
+// listening) que introdujo v23 nunca fue la regla correcta -- se detecto porque
+// Yinessa Toledo (FULL_360, grammar en A1) habia quedado mal asignada a Ary cuando
+// debia ir a Liza. Se corrigen tambien a mano los unlock_state/bookings ya creados
+// con la regla vieja (Yinessa Toledo y Gianmarco Scarpa) -- ver memoria de proyecto.
+// DUPLICADO en submit-writing.ts, mantener sincronizados.
+//
+// v23 (10/09/2026): agrega speaking_teacher_email en unlock_state --
+// a que profesor (por correo de su cuenta de admin-speaking-score.html) le corresponde
+// evaluar el Speaking Assessment de este estudiante. Antes no existia ningun concepto
+// de "profesor asignado": todos los bookings de OET iban a un unico link de Calendar
+// compartido y lo mismo para English, y list-pending-speaking-scores le mostraba TODAS
+// las reservas pendientes a cualquiera que iniciara sesion (Diana o Liza, ver memoria
+// de proyecto "liza_admin_access"). Ahora hay 3 paginas de reserva distintas (Ary
+// Speak Easy, Liza OET, Liza Speak Easy) y cada cuenta de profesor solo debe ver lo
+// suyo. [REGLA REEMPLAZADA POR v24 DE ARRIBA -- se deja el historial para contexto]
+// speaking_teacher_email se persiste en unlock_state (nueva columna, migracion
+// 20260910_speaking_teacher_routing) y lo consume get-unlock-state (se lo pasa a
+// speaking.html para elegir el boton correcto) y register-speaking-booking (lo copia a
+// speaking_assessment_bookings.assigned_teacher_email al crear la reserva, para que
+// list-pending-speaking-scores pueda filtrar por profesor). DUPLICADO en
+// submit-writing.ts (mismo motivo que el resto de recomputeRouteAndPersist -- cualquiera
+// de las dos puede ser la que complete el cuarto sub_score), mantener sincronizados.
+//
 // v22 (09/09/2026, pedido de Diana): el nivel MOSTRADO en el reporte (cefr_estimate)
 // ahora es el nivel rescatado por highestPassingBand() cuando hubo un traspie puntual
 // en una banda intermedia -- antes (v21) el rescate SOLO afectaba la elegibilidad a
@@ -129,6 +165,57 @@ const MIN_LEVEL_FOR_STEPS2 = "B2";
 // (ver recomputeRouteAndPersist v21 mas abajo) -- nunca deja pasar una destreza
 // genuinamente A1/A2 solo porque las otras tres compensan.
 const MIN_LEVEL_FLOOR_FOR_OET = "B1";
+
+// v24 (15/09/2026): a que correo de admin-speaking-score.html se le asigna cada
+// booking de Speaking Assessment -- ver recomputeRouteAndPersist mas abajo. Ya NO
+// depende de nivel CEFR (ver comentario v24 al inicio del archivo), solo de
+// attempts.track.
+const LIZA_EMAIL = "clearpath@speakeasy.lat";
+const ARY_EMAIL = "teacher@speakeasy.lat";
+const BRYAN_EMAIL = "bryan@speakeasy.lat";
+// v25 (17/10/2026): profesores entre los que se reparte FULL_360 (English u OET).
+// El orden es la prioridad de desempate: Liza primero.
+const FULL_360_TEACHERS = [LIZA_EMAIL, BRYAN_EMAIL];
+
+// v25: carga de cada profesor = speakings asignados que aun no se realizan. Se cuenta
+// por attempt (sin duplicar): attempts con speaking_teacher_email = profe en
+// unlock_state, o con booking pending/scheduled asignado a el (cubre bookings viejos
+// cuyo unlock_state no tenga el correo), que NO tengan ningun booking completed ni
+// no_show. Devuelve { load: {email: n} } o { error }.
+async function computeTeacherLoad(supabase, teachers) {
+  const { data: unlockRows, error: unlockErr } = await supabase
+    .from("unlock_state")
+    .select("attempt_id, speaking_teacher_email")
+    .in("speaking_teacher_email", teachers);
+  if (unlockErr) return { error: unlockErr };
+  const { data: bookingRows, error: bookingErr } = await supabase
+    .from("speaking_assessment_bookings")
+    .select("attempt_id, status, assigned_teacher_email");
+  if (bookingErr) return { error: bookingErr };
+
+  const closed = new Set(
+    (bookingRows || []).filter((b) => b.status === "completed" || b.status === "no_show").map((b) => b.attempt_id),
+  );
+  const teacherOf = new Map();
+  for (const u of unlockRows || []) teacherOf.set(u.attempt_id, u.speaking_teacher_email);
+  for (const b of bookingRows || []) {
+    if ((b.status === "pending" || b.status === "scheduled") && teachers.includes(b.assigned_teacher_email) && !teacherOf.has(b.attempt_id)) {
+      teacherOf.set(b.attempt_id, b.assigned_teacher_email);
+    }
+  }
+  const load = Object.fromEntries(teachers.map((t) => [t, 0]));
+  for (const [attemptId, teacher] of teacherOf) {
+    if (!closed.has(attemptId)) load[teacher] += 1;
+  }
+  return { load };
+}
+
+// Menor carga gana; en empate, el primero de la lista (Liza).
+function pickLeastLoaded(teachers, load) {
+  let best = teachers[0];
+  for (const t of teachers) if (load[t] < load[best]) best = t;
+  return best;
+}
 
 const SKILL_LABELS_ES = {
 grammar: "Grammar",
@@ -265,10 +352,10 @@ async function recomputeRouteAndPersist(supabase, attemptId) {
 // v14 (14/08/2026, bug real encontrado antes de que ningun estudiante lo pisara):
 // falta esta lectura de track, un estudiante de NIVEL1_ONLY que sacara B2 en las 4
 // destrezas de Nivel 1 quedaba asignado a la ruta OET o STEPS2 igual que uno de
-// FULL_360, y get-unlock-state lo mandaba a oet-listening.html/steps2.html --
-// modulos con contenido medico que no existen para este producto. NIVEL1_ONLY debe
-// quedar SIEMPRE en la ruta ENGLISH (Speaking breve tipo English), sin importar el
-// resultado -- ver seccion 1 del Brief. Mantener sincronizado con submit-writing.
+// FULL_360. NIVEL1_ONLY debe quedar SIEMPRE en la ruta ENGLISH (Speaking breve tipo
+// English), sin importar el resultado -- ver seccion 1 del Brief. Mantener
+// sincronizado con submit-writing. Esta misma lectura de track ahora TAMBIEN decide
+// el profesor de Speaking (ver v24 al inicio del archivo).
 const { data: attemptRow, error: attemptTrackError } = await supabase
 .from("attempts")
 .select("track")
@@ -361,6 +448,36 @@ speakingAssessmentType = assignedRoute === "OET" ? "OET" : "English";
 }
 }
 
+// v25 (17/10/2026, pedido de Diana): NIVEL1_ONLY -> siempre Ary. FULL_360 (English u
+// OET) -> Liza o Bryan, el de MENOR carga (ver computeTeacherLoad); empate -> Liza.
+// PEGAJOSA: solo se asigna si speaking_teacher_email esta vacio; si ya hay uno, se
+// conserva tal cual, nunca se reasigna. Mismo calculo que submit-writing.ts,
+// DUPLICADO, mantener sincronizado.
+const { data: existingUnlock, error: existingUnlockError } = await supabase
+.from("unlock_state")
+.select("speaking_teacher_email")
+.eq("attempt_id", attemptId)
+.maybeSingle();
+if (existingUnlockError) {
+console.error("submit-response: error leyendo profesor asignado", existingUnlockError);
+return { error: "Error interno. Intenta de nuevo en un momento." };
+}
+let speakingTeacherEmail = existingUnlock ? existingUnlock.speaking_teacher_email : null;
+if (!speakingTeacherEmail && speakingAssessmentType) {
+if (track === "NIVEL1_ONLY") {
+speakingTeacherEmail = ARY_EMAIL;
+} else {
+const { load, error: loadError } = await computeTeacherLoad(supabase, FULL_360_TEACHERS);
+if (loadError) {
+// Nunca bloquea al estudiante: si no se pudo medir la carga, cae a Liza.
+console.error("submit-response: error calculando carga de profesores, se asigna Liza", loadError);
+speakingTeacherEmail = LIZA_EMAIL;
+} else {
+speakingTeacherEmail = pickLeastLoaded(FULL_360_TEACHERS, load);
+}
+}
+}
+
 const { error: unlockError } = await supabase
 .from("unlock_state")
 .upsert(
@@ -370,6 +487,7 @@ steps2_unlocked: steps2Unlocked,
 oet_unlocked: oetUnlocked,
 speaking_assessment_type: speakingAssessmentType,
 assigned_route: assignedRoute,
+speaking_teacher_email: speakingTeacherEmail,
 updated_at: new Date().toISOString(),
 },
 { onConflict: "attempt_id" },
@@ -392,7 +510,7 @@ if (nivel1Complete) {
 await checkAndMarkAttemptComplete(supabase, attemptId, assignedRoute);
 }
 
-return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, nivel1Complete };
+return { assignedRoute, oetUnlocked, steps2Unlocked, speakingAssessmentType, speakingTeacherEmail, nivel1Complete };
 }
 
 // Dispara generate-partial-report de forma fire-and-forget para este attempt --
