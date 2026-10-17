@@ -1,5 +1,11 @@
 // Edge Function: generate-report
 //
+// v35 (24/09/2026, pedido de Diana): track OET_MOCK (Mock Test OET). Para ese track:
+// no se exige ni se muestra el Nivel 1 (ni nivel funcional), solo OET Listening/
+// Reading/Writing + OET Speaking (cargado por Liza en admin-speaking-score.html despues
+// de la clase), sin el recuadro de Q&A Session, con el titulo "Mock Test OET", y el
+// correo va a info@speakeasy.lat Y a clearpath@speakeasy.lat (Liza).
+//
 // Genera el "reporte de resultados" (PDF) de un attempt, lo manda por correo a Diana
 // (info@speakeasy.lat) vía Resend y lo sube (best-effort) a una carpeta de Google
 // Drive -- ver v15 más abajo. NO se lo manda al estudiante -- es Diana quien decide,
@@ -29,6 +35,25 @@
 // proyecto):
 //   - NIVEL1_ONLY -> "Assessment Speak Easy"
 //   - FULL_360    -> "Assessment 360"
+//
+// v33 (10/09/2026, pedido de Diana): la Q&A Session de 30 min (ver v11 más abajo) ya no
+// tiene un único booking page fijo -- ahora hay dos (QA_BOOKING_URL_LIZA/
+// QA_BOOKING_URL_ARY), y se elige según a qué profesor le tocó el Speaking Assessment
+// del estudiante (unlock_state.speaking_teacher_email, mismo criterio ya calculado en
+// submit-response.ts v23/recomputeRouteAndPersist -- no se recalcula acá, solo se lee).
+// Fallback a Liza (el link de siempre) si el campo viene null (attempts de antes del
+// 10/09/2026) o si por lo que sea no es exactamente el correo de Ary.
+//
+// v32 (10/09/2026, pedido de Diana, caso real detectado en un reporte con Listening
+// 11/20 sin nivel asignado): cuando una destreza de Nivel 1 (grammar/listening/reading)
+// queda con cefr_estimate = null por un patrón inconsistente entre bandas
+// (band_detail.pattern_inconsistent -- ver highestPassingBand/detectPatternInconsistency
+// en submit-response.ts), skillCommentFromBandDetail ya no deja el mensaje genérico de
+// siempre ("No se pudo determinar un nivel CEFR...") sin explicación -- ahora agrega, en
+// lenguaje llano y sin mencionar bandas ni algoritmos, que sus resultados fueron
+// inconsistentes entre las partes de la prueba. Cuando no hubo inconsistencia (el
+// estudiante simplemente no alcanzó el umbral en ningún tramo) el mensaje de siempre se
+// mantiene. Espejo exacto en generate-partial-report.ts.
 //
 // v31 (09/09/2026, pedido de Diana -- "no se estan subiendo los resultados completos
 // del assessment al Drive"): uploadPdfToDrive() venia devolviendo SIEMPRE el mismo
@@ -129,7 +154,8 @@
 // v11 (21/08/2026, pedido de Diana): se agrega al final del reporte, antes del footer,
 // un bloque invitando a reservar la Q&A Session de 30 min -- NO es opcional, ya viene
 // incluida con la evaluación, así que el copy invita a reservar, no a "sumarse" a algo
-// extra. Incluye el link de booking (Google Calendar) fijo en QA_BOOKING_URL.
+// extra. Incluye el link de booking (Google Calendar) -- desde v24 (10/09/2026) hay dos,
+// uno por profesor, ver QA_BOOKING_URL_LIZA/QA_BOOKING_URL_ARY más abajo.
 //
 // v10 (21/08/2026, reportado por Diana): la tarjeta de Writing se veia partida en el
 // PDF de Fer -- el encabezado (nombre, puntaje, CEFR) en una pagina, un hueco enorme
@@ -288,6 +314,8 @@ function json(body: unknown, status = 200) {
 }
 
 const NOTIFY_EMAIL = "info@speakeasy.lat";
+// v35: copia del reporte del Mock Test OET para Liza.
+const LIZA_MOCK_EMAIL = "clearpath@speakeasy.lat";
 const NOTIFY_FROM = "ClearPath Assessment <notificaciones@speakeasy.lat>";
 
 // --- Branding (mismos tokens que css/style.css) --------------------------------
@@ -455,8 +483,20 @@ function skillRowHtml(s: {
     </div>`;
 }
 
-// v11: booking page de la Q&A Session de 30 min incluida con la evaluación (pedido de Diana).
-const QA_BOOKING_URL = "https://calendar.app.google/dp6uX1VWqh8WnVXK7";
+// v11: booking page de la Q&A Session de 30 min incluida con la evaluación (pedido de
+// Diana).
+// v24 (10/09/2026, pedido de Diana): ahora hay DOS booking pages -- una por profesor,
+// mismo criterio que ya se usa para el Speaking Assessment (ver speaking_teacher_email
+// en unlock_state / recomputeRouteAndPersist en submit-response.ts). El link de Liza es
+// el mismo de siempre (no cambia); el de Ary es nuevo. ARY_TEACHER_EMAIL debe
+// coincidir exactamente con el ARY_EMAIL de submit-response.ts/submit-writing.ts.
+const QA_BOOKING_URL_LIZA = "https://calendar.app.google/dp6uX1VWqh8WnVXK7";
+const QA_BOOKING_URL_ARY = "https://calendar.app.google/haS6Fnb75XwytmWD8";
+const ARY_TEACHER_EMAIL = "teacher@speakeasy.lat";
+// v25 (17/10/2026, pedido de Diana): Bryan, tercer profesor. Su Q&A Session tiene su propia
+// booking page; BRYAN_TEACHER_EMAIL debe coincidir con BRYAN_EMAIL de submit-response.ts.
+const QA_BOOKING_URL_BRYAN = "https://calendar.app.google/BYN34BFAkuovjcNd8";
+const BRYAN_TEACHER_EMAIL = "bryan@speakeasy.lat";
 
 function buildReportHtml(params: {
   studentName: string;
@@ -465,6 +505,12 @@ function buildReportHtml(params: {
   reportDate: string;
   overallCefr: string | null;
   overallNote: string;
+  // v24 (10/09/2026): a qué booking page de Google Calendar apunta el botón de la Q&A
+  // Session -- ya viene decidido por el llamador (Liza o Ary, según
+  // unlock_state.speaking_teacher_email), esta función solo lo imprime.
+  qaBookingUrl: string;
+  // v35: Mock Test OET -- oculta el recuadro de nivel funcional y el de Q&A Session.
+  isMock?: boolean;
   // v9: fila por destreza que va ANTES del resumen global -- puede llevar un badge CEFR
   // (nivel) o un badge de rango de puntaje (OET, STEPS2), según qué escala corresponda.
   skillLevels: Array<{ label: string; value: string; note?: string | null }>;
@@ -848,25 +894,25 @@ function buildReportHtml(params: {
 
   ${skillLevelsHtml}
 
-  <div class="overall-box">
+  ${params.isMock ? "" : `<div class="overall-box">
     <div class="overall-cefr">${params.overallCefr ? escapeHtml(params.overallCefr) : "—"}</div>
     <div class="overall-text">
       <span class="label">Nivel funcional</span>
       ${escapeHtml(params.overallNote)}
     </div>
-  </div>
+  </div>`}
 
   ${blocksHtml}
 
-  <div class="qa-cta">
+  ${params.isMock ? "" : `<div class="qa-cta">
     <div class="qa-cta-title">Termina tu Assessment con la Q&amp;A Session</div>
     <div class="qa-cta-text">
       Como parte de tu evaluación, tienes una sesión de 30 minutos en vivo con uno de
       nuestros tutores. Ahí repasamos tus resultados con más detalle y armamos juntos
       un plan de trabajo para llegar a tus objetivos.
     </div>
-    <a class="qa-cta-button" href="${QA_BOOKING_URL}">Reservar mi sesión →</a>
-  </div>
+    <a class="qa-cta-button" href="${params.qaBookingUrl}">Reservar mi sesión →</a>
+  </div>`}
 
   <div class="footer">
     ${escapeHtml(params.assessmentLabel)} · Speak Easy Online · Reporte generado automáticamente
@@ -952,8 +998,24 @@ function oetWritingGradeBadgeFromSubs(subs: any[]): string | null {
 // nota para Diana, no para el estudiante). Esa bandera sigue disponible en
 // sub_scores.band_detail para que Diana la consulte en Supabase si quiere revisar el
 // detalle de bandas antes de reenviar un reporte puntual.
-function skillCommentFromBandDetail(skillName: string, raw: number, max: number, cefr: string | null): string {
+// v (10/09/2026, pedido de Diana): cuando cefr queda null porque hubo un patrón
+// inconsistente entre bandas (band_detail.pattern_inconsistent -- ej. le fue peor en lo
+// más básico que en lo más avanzado), se lo explica al estudiante en lenguaje llano, sin
+// mencionar bandas, algoritmos ni nada técnico -- solo que sus resultados fueron
+// inconsistentes entre las partes de la prueba y por eso no se le asignó nivel. Cuando
+// cefr es null pero NO hubo inconsistencia (simplemente no alcanzó el umbral mínimo en
+// ningún tramo), se deja el mensaje neutro de siempre.
+function skillCommentFromBandDetail(
+  skillName: string,
+  raw: number,
+  max: number,
+  cefr: string | null,
+  bandDetail?: any,
+): string {
   if (!cefr) {
+    if (bandDetail?.pattern_inconsistent) {
+      return `Tus resultados en ${skillName} fueron inconsistentes entre las distintas partes de la prueba (te fue mejor en las preguntas más avanzadas que en las más básicas), así que no fue posible asignarte un nivel CEFR.`;
+    }
     return `No se pudo determinar un nivel CEFR a partir de tus respuestas guardadas en ${skillName}.`;
   }
   return `Alcanzaste nivel ${cefr} en ${skillName} (${raw}/${max} respuestas correctas).`;
@@ -1328,6 +1390,7 @@ async function sendReportEmail(params: {
   pdfBytes: Uint8Array;
   fileName: string;
   driveLink?: string | null;
+  extraTo?: string[];
 }) {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
@@ -1342,7 +1405,7 @@ async function sendReportEmail(params: {
     },
     body: JSON.stringify({
       from: NOTIFY_FROM,
-      to: [NOTIFY_EMAIL],
+      to: [NOTIFY_EMAIL, ...(params.extraTo || [])],
       subject: `Reporte de resultados: ${params.studentName} (${params.assessmentLabel})`,
       text: `Adjunto el reporte de resultados de ${params.studentName} (${params.assessmentLabel}), generado automáticamente al completar el assessment.${driveLine}`,
       attachments: [
@@ -1376,6 +1439,9 @@ async function buildAndSendReport(
     return { sent: false, reason: "ya se había enviado antes" };
   }
 
+  // v35: OET_MOCK se trata como FULL_360 con ruta OET (reusa todos los bloques OET),
+  // pero sin Nivel 1 -- ver isMock mas abajo.
+  const isMock = attempt.track === "OET_MOCK";
   const track = attempt.track === "NIVEL1_ONLY" ? "NIVEL1_ONLY" : "FULL_360";
 
   const { data: student, error: studentError } = await supabase
@@ -1390,11 +1456,20 @@ async function buildAndSendReport(
 
   const { data: unlock } = await supabase
     .from("unlock_state")
-    .select("assigned_route")
+    .select("assigned_route, speaking_teacher_email")
     .eq("attempt_id", attemptId)
     .maybeSingle();
 
   const assignedRoute = unlock ? unlock.assigned_route : null;
+  // v24 (10/09/2026, pedido de Diana): booking page de la Q&A Session -- Ary si el
+  // Speaking Assessment le tocó a ella (mismo campo que decide a quién le llega el
+  // booking del Speaking en admin-speaking-score.html), Liza en cualquier otro caso
+  // (incluye null -- attempts de antes de que existiera speaking_teacher_email, o
+  // cualquier valor que no sea exactamente el correo de Ary).
+  const qaBookingUrl =
+    unlock?.speaking_teacher_email === ARY_TEACHER_EMAIL ? QA_BOOKING_URL_ARY
+    : unlock?.speaking_teacher_email === BRYAN_TEACHER_EMAIL ? QA_BOOKING_URL_BRYAN
+    : QA_BOOKING_URL_LIZA;
 
   const { data: subScores, error: subScoresError } = await supabase
     .from("sub_scores")
@@ -1408,7 +1483,7 @@ async function buildAndSendReport(
   const nivel1Skills = ["grammar", "listening", "writing", "reading"];
   const nivel1Complete = nivel1Skills.every((sk) => byskill[sk]);
 
-  if (!nivel1Complete) {
+  if (!nivel1Complete && !isMock) {
     return { sent: false, reason: "Nivel 1 todavía no está completo" };
   }
 
@@ -1500,7 +1575,7 @@ async function buildAndSendReport(
 
   const nivel1Block = {
     title: "Nivel 1",
-    skills: nivel1Skills.map((sk) => {
+    skills: (isMock ? [] : nivel1Skills).map((sk) => {
       const row = byskill[sk];
       if (sk === "writing") {
         // v (01/09/2026): filtra a nivel1_writing -- antes tomaba TODAS las
@@ -1540,7 +1615,7 @@ async function buildAndSendReport(
       // submit-response.ts / submit-writing.ts), la nota queda guardada en
       // band_detail.oet_unlock_note -- se agrega al comentario de esta destreza para que
       // quede visible en el reporte final, igual que en generate-partial-report.ts.
-      const baseComment = skillCommentFromBandDetail(skillLabels[sk], row.raw_score, row.max_score, row.cefr_estimate);
+      const baseComment = skillCommentFromBandDetail(skillLabels[sk], row.raw_score, row.max_score, row.cefr_estimate, row.band_detail);
       const oetUnlockNote = row.band_detail?.oet_unlock_note || null;
       const comment = oetUnlockNote ? `${baseComment} ${oetUnlockNote}` : baseComment;
       return {
@@ -1554,7 +1629,7 @@ async function buildAndSendReport(
     }),
   };
 
-  const blocks = [nivel1Block];
+  const blocks = isMock ? [] : [nivel1Block];
 
   if (track === "FULL_360") {
     if (assignedRoute === "STEPS2") {
@@ -1644,7 +1719,7 @@ async function buildAndSendReport(
   // propia escala. Ver comentario largo de v9 al inicio del archivo para el porqué de
   // cada conversión.
   const skillLevels: Array<{ label: string; value: string; note?: string | null }> = [];
-  for (const sk of nivel1Skills) {
+  for (const sk of isMock ? [] : nivel1Skills) {
     const row = byskill[sk];
     skillLevels.push({ label: skillLabels[sk], value: row?.cefr_estimate || "—" });
   }
@@ -1736,23 +1811,25 @@ async function buildAndSendReport(
       ? `Tu nivel funcional resume tus dos resultados más bajos de Nivel 1 (${lowestCefr} y ${secondLowestCefr}): la destreza más débil es la que limita la comunicación real, aunque tengas otras más altas.${otherScalesNote}`
       : `Tu nivel funcional resume tu resultado más bajo de Nivel 1 (${lowestCefr}): la destreza más débil es la que limita la comunicación real, aunque tengas otras más altas.${otherScalesNote}`;
 
-  const assessmentLabel = track === "NIVEL1_ONLY" ? "Assessment Speak Easy" : "Assessment 360";
+  const assessmentLabel = isMock ? "Mock Test OET" : track === "NIVEL1_ONLY" ? "Assessment Speak Easy" : "Assessment 360";
   const logoUrl = track === "NIVEL1_ONLY" ? LOGO_GENERIC_URL : LOGO_CLEARPATH_URL;
   const reportDate = new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
 
   const html = buildReportHtml({
+    isMock,
     studentName: student.full_name || "Estudiante",
     assessmentLabel,
     logoUrl,
     reportDate,
     overallCefr,
     overallNote,
+    qaBookingUrl,
     skillLevels,
     blocks,
   });
 
   const pdfBytes = await htmlToPdf(html);
-  const fileName = `Resultados ${assessmentLabel} - ${(student.full_name || "Estudiante").replace(/[^a-zA-Z0-9 ]/g, "")}.pdf`;
+  const fileName = `Resultados ${assessmentLabel} - ${(student.full_name || "Estudiante").normalize("NFC").replace(/[^\p{L}\p{N} ]/gu, "").trim()}.pdf`;
 
   const driveResult = await uploadPdfToDrive(pdfBytes, fileName);
   if (!driveResult.uploaded) {
@@ -1765,6 +1842,7 @@ async function buildAndSendReport(
     pdfBytes,
     fileName,
     driveLink: driveResult.uploaded ? driveResult.webViewLink : null,
+    extraTo: isMock ? [LIZA_MOCK_EMAIL] : [],
   });
 
   await supabase
