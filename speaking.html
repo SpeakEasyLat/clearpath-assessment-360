@@ -43,14 +43,16 @@
 const SUPABASE_FUNCTIONS_BASE = 'https://qqdxmmvhthwcqhgmvyic.supabase.co/functions/v1';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxZHhtbXZodGh3Y3FoZ212eWljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzY3NDQsImV4cCI6MjA5OTAxMjc0NH0.iP5BTeUjw8FnElgQzp9r1-iSR-B9USVMcKGRs-Yh8GA';
 
-// v5 (10/09/2026, pedido de Diana): antes había 2 links compartidos (uno por
-// assessment_type: OET / CEFR), sin distinción de profesor. Ahora hay 3 páginas de
-// reserva, una por profesor -- Ary evalúa English cuando el nivel del estudiante en
-// Grammar, Reading y Listening queda por debajo de B1; Liza evalúa English cuando esos
-// 3 quedan en B1 o más, y evalúa OET siempre. Esa decisión (a qué profesor le toca)
-// la calcula el servidor (recomputeRouteAndPersist en submit-response.ts /
-// submit-writing.ts) y llega acá en data.speaking_teacher_email (ver init() más abajo)
-// -- este archivo NO recalcula nada, solo elige qué link mostrar según ese correo.
+// v6 (17/10/2026, pedido de Diana): hay una página de reserva por profesor y tipo.
+// Quién le toca a cada estudiante lo decide el servidor (recomputeRouteAndPersist en
+// submit-response.ts / submit-writing.ts) y llega acá en data.speaking_teacher_email:
+//   - Assessment Speak Easy no médico (NIVEL1_ONLY): siempre Ary.
+//   - Assessment 360 (FULL_360, English u OET): Liza o Bryan, el de menor carga
+//     (speakings asignados aún no realizados); en empate, Liza. La asignación es
+//     pegajosa: una vez fijada, no se reasigna.
+// (Antes, v5/v23 del 10/09/2026, el reparto era por nivel B1 en Grammar/Reading/
+// Listening; esa regla ya no existe.) Este archivo NO recalcula nada, solo elige qué
+// link mostrar según ese correo.
 const BOOKING_URLS_BY_TEACHER = {
   'clearpath@speakeasy.lat': {
     OET: 'https://calendar.app.google/xakFqWtpGqZdj64j9',
@@ -58,6 +60,10 @@ const BOOKING_URLS_BY_TEACHER = {
   },
   'teacher@speakeasy.lat': {
     English: 'https://calendar.app.google/HELZaNBJ9BwtswPX6',
+  },
+  'bryan@speakeasy.lat': {
+    OET: 'https://calendar.app.google/HQvTLqwKY7BeRdto6',
+    English: 'https://calendar.app.google/uvSiDzarYaGBLJtm9',
   },
 };
 
