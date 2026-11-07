@@ -490,7 +490,7 @@ function skillRowHtml(s: {
 // en unlock_state / recomputeRouteAndPersist en submit-response.ts). El link de Liza es
 // el mismo de siempre (no cambia); el de Ary es nuevo. ARY_TEACHER_EMAIL debe
 // coincidir exactamente con el ARY_EMAIL de submit-response.ts/submit-writing.ts.
-const QA_BOOKING_URL_LIZA = "https://calendar.app.google/dp6uX1VWqh8WnVXK7";
+const QA_BOOKING_URL_LIZA = "https://calendar.app.google/fPYrJpGBDgtkYbn4A";
 const QA_BOOKING_URL_ARY = "https://calendar.app.google/haS6Fnb75XwytmWD8";
 const ARY_TEACHER_EMAIL = "teacher@speakeasy.lat";
 // v25 (17/10/2026, pedido de Diana): Bryan, tercer profesor. Su Q&A Session tiene su propia
