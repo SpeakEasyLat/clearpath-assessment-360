@@ -21,10 +21,6 @@
     m.content = "notranslate";
     document.head.appendChild(m);
   }
-  var mc = document.createElement("meta");
-  mc.httpEquiv = "Content-Language";
-  mc.content = document.querySelector("body.lang-es, [data-ui-lang='es']") ? "es" : "en";
-  document.head.appendChild(mc);
 
   function ready(fn) {
     if (document.readyState !== "loading") fn();
@@ -80,10 +76,9 @@
         "Si Chrome, Edge o Safari te ofrece \"Traducir esta página\", elige " +
         "<em>Mostrar original</em> y <em>Nunca traducir inglés</em>. " +
         "Si respondes en español, tendrás que repetir esa parte.";
-      var btn =
-        document.querySelector('a[href*="intake"]') ||
-        document.querySelector("button#start, button.btn, .btn, button");
-      if (btn && btn.parentNode) btn.parentNode.insertBefore(box, btn);
+      var btn = document.getElementById("continueBtn");
+      var target = btn ? (btn.closest(".card") || btn) : null;
+      if (target && target.parentNode) target.parentNode.insertBefore(box, target);
       else document.body.appendChild(box);
     }
   });
